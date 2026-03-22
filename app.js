@@ -50,6 +50,7 @@ const CATEGORY_OPTIONS = {
 };
 const PLAN_TYPES = ["NISA", "iDeCo", "貯蓄性保険", "貯金"];
 const ASSET_FORMATION_CATEGORY = "資産形成支出";
+const ASSET_PIE_COLORS = ["#2f5d8a", "#b86245", "#4a8a78", "#8f6bb3", "#b08a3c", "#5f748d", "#c0567e", "#4f7f9f"];
 
 const yen = new Intl.NumberFormat("ja-JP", {
   style: "currency",
@@ -418,7 +419,7 @@ function calculateMonthlyContributionTotal(settings, month) {
 function calculateProjectedTotalAtAge(settings, age) {
   if (!settings.birthDate || !Array.isArray(settings.plans) || settings.plans.length === 0) return 0;
   return settings.plans.reduce((sum, plan) => {
-    const projection = projectPlanAssetDetails({ ...plan, withdrawAge: age }, settings.birthDate);
+    const projection = projectPlanAssetDetails(plan, settings.birthDate, resolveWithdrawTargetMonth(settings.birthDate, age));
     return sum + (projection.amount || 0);
   }, 0);
 }
@@ -580,8 +581,7 @@ function renderAutoBreakdown(autoTransactions, month) {
 }
 
 function createPieChartElements(entries, total, options = {}) {
-  const chartColors =
-    options.colors || ["#2f5a8a", "#3e7c9a", "#4b9c95", "#6aa87a", "#8aa95f", "#b38f4f", "#9e7384", "#617089"];
+  const chartColors = options.colors || ASSET_PIE_COLORS;
   let currentDegree = 0;
   const segments = entries.map(([, amount], index) => {
     const ratio = amount / total;
@@ -700,10 +700,10 @@ function resolveProjectionStartMonth(plan, targetMonth) {
   return compareMonth(monthlyStart, lumpStart) <= 0 ? monthlyStart : lumpStart;
 }
 
-function projectPlanAssetDetails(plan, birthDate) {
+function projectPlanAssetDetails(plan, birthDate, explicitTargetMonth = null) {
   const annualReturn = (Number(plan.expectedReturn) || 0) / 100;
   const monthlyRate = Math.pow(1 + annualReturn, 1 / 12) - 1;
-  const targetMonth = resolveWithdrawTargetMonth(birthDate, plan.withdrawAge);
+  const targetMonth = explicitTargetMonth || resolveWithdrawTargetMonth(birthDate, plan.withdrawAge);
   if (!targetMonth) {
     return { amount: 0, startMonth: null, targetMonth, months: 0, appliedMonthly: [], appliedLumpSums: [] };
   }
@@ -747,28 +747,53 @@ function projectPlanAssetDetails(plan, birthDate) {
   };
 }
 
+function resolveCurrentAssetTargetMonth(settings, transactions) {
+  const months = [
+    todayISO().slice(0, 7),
+    parseMonth(monthFilter.value) ? monthFilter.value : "",
+    resolveEntryStartMonth(settings, transactions),
+    ...transactions.map((item) => monthISO(item.date)),
+  ].filter((month) => parseMonth(month));
+
+  if (months.length === 0) return todayISO().slice(0, 7);
+  return months.sort(compareMonth).at(-1);
+}
+
 function renderAssetForecast(settings) {
   assetForecast.innerHTML = "";
   if (!settings.birthDate || settings.plans.length === 0) {
-    assetForecast.innerHTML = '<p class="chart-empty">生年月日と積立設定を保存すると、想定資産額が表示されます。</p>';
+    assetForecast.innerHTML = '<p class="chart-empty">生年月日と積立設定を保存すると、現時点と60歳時点の資産試算が表示されます。</p>';
     return;
   }
 
+  const transactions = loadTransactions();
   const currentAge = calculateAge(settings.birthDate);
-  const projectedRows = settings.plans.map((plan) => {
-    const projection = projectPlanAssetDetails(plan, settings.birthDate);
+  const age60TargetMonth = resolveWithdrawTargetMonth(settings.birthDate, 60);
+  const currentAssetTargetMonth = resolveCurrentAssetTargetMonth(settings, transactions);
+
+  const projectedRowsAt60 = settings.plans.map((plan) => {
+    const projection = projectPlanAssetDetails(plan, settings.birthDate, age60TargetMonth);
     return {
       ...plan,
       projectedAmount: projection.amount,
-      effectiveWithdrawAge: Number(plan.withdrawAge) || currentAge,
       projection,
     };
   });
-  const rows = projectedRows
+
+  const currentRows = settings.plans.map((plan) => {
+    const currentProjection = projectPlanAssetDetails(plan, settings.birthDate, currentAssetTargetMonth);
+    return {
+      ...plan,
+      currentAmount: currentProjection.amount,
+      currentProjection,
+    };
+  });
+
+  const rows = projectedRowsAt60
     .map(
       (plan) => `
       <li>
-        <span>${plan.type}${plan.name ? `（${plan.name}）` : ""} / 取崩${plan.effectiveWithdrawAge}歳</span>
+        <span>${plan.type}${plan.name ? `（${plan.name}）` : ""} / 60歳時点</span>
         <strong>${yen.format(plan.projectedAmount)}</strong>
       </li>
     `
@@ -776,30 +801,35 @@ function renderAssetForecast(settings) {
     .join("");
 
   const typeTotals = PLAN_TYPES.map((type) => {
-    const amount = projectedRows
+    const amount = projectedRowsAt60
       .filter((plan) => plan.type === type)
       .reduce((sum, plan) => sum + plan.projectedAmount, 0);
     return { type, amount };
   });
 
-  const total = projectedRows.reduce((sum, plan) => sum + plan.projectedAmount, 0);
+  const totalAt60 = projectedRowsAt60.reduce((sum, plan) => sum + plan.projectedAmount, 0);
   const typeTotalsHtml = typeTotals
     .map((item) => `<li><span>${item.type} 合計</span><strong>${yen.format(item.amount)}</strong></li>`)
     .join("");
   assetForecast.innerHTML = `
     <p>現在年齢: <strong>${currentAge}歳</strong></p>
-    <h3>契約ごとの想定資産額（取崩年齢時点）</h3>
+    <p class="section-description">60歳までの積立・運用をもとに試算しています。</p>
+    <h3>60歳時点の想定資産額（契約別）</h3>
     <ul class="asset-list">${rows}</ul>
-    <h3>種別ごとの想定資産額</h3>
+    <h3>60歳時点の想定資産額（種別別）</h3>
     <ul class="asset-list">${typeTotalsHtml}</ul>
-    <div class="asset-total">想定総資産額: <strong>${yen.format(total)}</strong></div>
+    <div class="asset-total">60歳時点の想定総資産額: <strong>${yen.format(totalAt60)}</strong></div>
   `;
 
   const chartSection = document.createElement("section");
   chartSection.className = "chart asset-composition";
-  chartSection.innerHTML = "<h3>総資産額の構成比（契約別）</h3>";
+  chartSection.innerHTML = `
+    <h3>現時点の総資産額の構成比（契約別）</h3>
+    <p class="section-description">現在入力されている積立・一括入金の実績をもとに算出しています（基準月: ${currentAssetTargetMonth}）。</p>
+  `;
 
-  if (projectedRows.length === 0 || total === 0) {
+  const currentTotal = currentRows.reduce((sum, plan) => sum + plan.currentAmount, 0);
+  if (currentRows.length === 0 || currentTotal === 0) {
     const empty = document.createElement("p");
     empty.className = "chart-empty";
     empty.textContent = "データがありません";
@@ -808,10 +838,13 @@ function renderAssetForecast(settings) {
     return;
   }
 
-  const contractEntries = projectedRows
-    .filter((plan) => plan.projectedAmount > 0)
-    .map((plan) => [`${plan.type}${plan.name ? `（${plan.name}）` : ""}`, plan.projectedAmount]);
-  const { pieWrap, legend } = createPieChartElements(contractEntries, total, { centerLabel: "想定総額" });
+  const contractEntries = currentRows
+    .filter((plan) => plan.currentAmount > 0)
+    .map((plan) => [`${plan.type}${plan.name ? `（${plan.name}）` : ""}`, plan.currentAmount]);
+  const { pieWrap, legend } = createPieChartElements(contractEntries, currentTotal, {
+    centerLabel: "現時点総額",
+    colors: ASSET_PIE_COLORS,
+  });
   chartSection.appendChild(pieWrap);
   chartSection.appendChild(legend);
 
