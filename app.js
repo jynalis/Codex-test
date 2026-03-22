@@ -59,14 +59,20 @@ const yen = new Intl.NumberFormat("ja-JP", {
 const numberWithComma = new Intl.NumberFormat("ja-JP");
 
 function parseAmountInput(value) {
-  if (typeof value !== "string") return 0;
-  const normalized = value.replace(/[^\d]/g, "");
-  return normalized ? Number(normalized) : 0;
+  if (typeof value !== "string") return NaN;
+
+  const trimmed = value.trim();
+  if (!trimmed) return 0;
+
+  const normalized = trimmed.replace(/,/g, "");
+  if (!/^\d+$/.test(normalized)) return NaN;
+
+  return Number(normalized);
 }
 
 function formatAmountInputValue(value) {
   const amount = parseAmountInput(value);
-  return amount > 0 ? numberWithComma.format(amount) : "";
+  return Number.isFinite(amount) && amount > 0 ? numberWithComma.format(amount) : "";
 }
 
 function syncCategoryOptions() {
