@@ -148,7 +148,7 @@ function addTransaction(event) {
 
   saveTransactions(current);
   form.reset();
-  dateInput.value = todayISO();
+  dateInput.value = date;
   typeInput.value = "expense";
   syncCategoryOptions();
   render();
