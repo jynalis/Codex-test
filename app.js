@@ -31,6 +31,7 @@ const dashboardExpenseTotal = document.getElementById("dashboard-expense-total")
 const dashboardBalanceTotal = document.getElementById("dashboard-balance-total");
 const dashboardMonthlySavingTotal = document.getElementById("dashboard-monthly-saving-total");
 const dashboardAge60Total = document.getElementById("dashboard-age60-total");
+const dashboardDiagnosisComment = document.getElementById("dashboard-diagnosis-comment");
 const expenseChart = document.getElementById("expense-chart");
 const autoBreakdown = document.getElementById("auto-breakdown");
 const bottomNavButtons = Array.from(document.querySelectorAll(".bottom-nav-btn"));
@@ -411,13 +412,45 @@ function calculateProjectedTotalAtAge(settings, age) {
   }, 0);
 }
 
-function renderDashboard(summary, settings, currentMonth) {
+function createDashboardDiagnosisComment({ summary, monthlySavingTotal, manualTransactionCount }) {
+  if (manualTransactionCount < 3) {
+    return "取引データが少ないため、簡易診断を表示しています。入力が増えると、より実態に近い診断ができます。";
+  }
+
+  const balance = summary.endingBalance;
+  if (balance < 0) {
+    return "今月は赤字傾向です。固定費や臨時支出の見直し余地があります。";
+  }
+
+  const income = summary.income;
+  const reserveRatio = income > 0 ? balance / income : 0;
+  const savingsHeavyAndLowCash = monthlySavingTotal > 0 && income > 0 && monthlySavingTotal / income >= 0.25 && reserveRatio <= 0.1;
+  if (savingsHeavyAndLowCash) {
+    return "資産形成はできていますが、手元資金に余裕が少ない状態です。積立額とのバランス確認がおすすめです。";
+  }
+
+  const hasSavings = monthlySavingTotal > 0;
+  if (hasSavings && reserveRatio >= 0.2) {
+    return "今月は家計が安定しています。この調子で資産形成を継続できそうです。";
+  }
+
+  return "今月は黒字ですが、月末の余裕はやや小さめです。支出バランスを確認してみましょう。";
+}
+
+function renderDashboard(summary, settings, currentMonth, transactions) {
+  const monthlySavingTotal = calculateMonthlyContributionTotal(settings, currentMonth);
+  const manualTransactionCount = transactions.filter((item) => monthISO(item.date) === currentMonth).length;
   dashboardCarryoverTotal.textContent = yen.format(summary.carryover);
   dashboardIncomeTotal.textContent = yen.format(summary.income);
   dashboardExpenseTotal.textContent = yen.format(summary.expense);
   dashboardBalanceTotal.textContent = yen.format(summary.endingBalance);
-  dashboardMonthlySavingTotal.textContent = yen.format(calculateMonthlyContributionTotal(settings, currentMonth));
+  dashboardMonthlySavingTotal.textContent = yen.format(monthlySavingTotal);
   dashboardAge60Total.textContent = yen.format(calculateProjectedTotalAtAge(settings, 60));
+  dashboardDiagnosisComment.textContent = createDashboardDiagnosisComment({
+    summary,
+    monthlySavingTotal,
+    manualTransactionCount,
+  });
 }
 
 function renderExpenseChart(transactions, currentMonth) {
@@ -973,7 +1006,7 @@ function render() {
   expenseTotal.textContent = yen.format(summary.expense);
   carryoverTotal.textContent = yen.format(summary.carryover);
   balanceTotal.textContent = yen.format(summary.endingBalance);
-  renderDashboard(summary, settings, currentMonth);
+  renderDashboard(summary, settings, currentMonth, transactions);
 
   renderExpenseChart([...transactions, ...autoTransactions], currentMonth);
   renderAutoBreakdown(autoTransactions, currentMonth);
