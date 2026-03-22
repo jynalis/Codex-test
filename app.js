@@ -25,6 +25,12 @@ const regularExpenseTotal = document.getElementById("regular-expense-total");
 const assetExpenseTotal = document.getElementById("asset-expense-total");
 const expenseTotal = document.getElementById("expense-total");
 const balanceTotal = document.getElementById("balance-total");
+const dashboardCarryoverTotal = document.getElementById("dashboard-carryover-total");
+const dashboardIncomeTotal = document.getElementById("dashboard-income-total");
+const dashboardExpenseTotal = document.getElementById("dashboard-expense-total");
+const dashboardBalanceTotal = document.getElementById("dashboard-balance-total");
+const dashboardMonthlySavingTotal = document.getElementById("dashboard-monthly-saving-total");
+const dashboardAge60Total = document.getElementById("dashboard-age60-total");
 const expenseChart = document.getElementById("expense-chart");
 const autoBreakdown = document.getElementById("auto-breakdown");
 
@@ -381,6 +387,28 @@ function calculateMonthlySummary(transactions, settings, targetMonth) {
     expense: totalExpense,
     endingBalance: carryover + monthly.income - totalExpense,
   };
+}
+
+function calculateMonthlyContributionTotal(settings, month) {
+  if (!month || !Array.isArray(settings.plans)) return 0;
+  return settings.plans.reduce((sum, plan) => sum + findActiveMonthlyContribution(plan, month), 0);
+}
+
+function calculateProjectedTotalAtAge(settings, age) {
+  if (!settings.birthDate || !Array.isArray(settings.plans) || settings.plans.length === 0) return 0;
+  return settings.plans.reduce((sum, plan) => {
+    const projection = projectPlanAssetDetails({ ...plan, withdrawAge: age }, settings.birthDate);
+    return sum + (projection.amount || 0);
+  }, 0);
+}
+
+function renderDashboard(summary, settings, currentMonth) {
+  dashboardCarryoverTotal.textContent = yen.format(summary.carryover);
+  dashboardIncomeTotal.textContent = yen.format(summary.income);
+  dashboardExpenseTotal.textContent = yen.format(summary.expense);
+  dashboardBalanceTotal.textContent = yen.format(summary.endingBalance);
+  dashboardMonthlySavingTotal.textContent = yen.format(calculateMonthlyContributionTotal(settings, currentMonth));
+  dashboardAge60Total.textContent = yen.format(calculateProjectedTotalAtAge(settings, 60));
 }
 
 function renderExpenseChart(transactions, currentMonth) {
@@ -936,6 +964,7 @@ function render() {
   expenseTotal.textContent = yen.format(summary.expense);
   carryoverTotal.textContent = yen.format(summary.carryover);
   balanceTotal.textContent = yen.format(summary.endingBalance);
+  renderDashboard(summary, settings, currentMonth);
 
   renderExpenseChart([...transactions, ...autoTransactions], currentMonth);
   renderAutoBreakdown(autoTransactions, currentMonth);
