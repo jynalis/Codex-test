@@ -175,6 +175,16 @@ button:hover {
   margin-top: 12px;
   display: grid;
   gap: 8px;
+  min-height: 180px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #f8fafc;
+  align-content: start;
+}
+
+.chart.has-data {
+  background: #ffffff;
 }
 
 .chart-row {
@@ -205,6 +215,7 @@ button:hover {
 .chart-empty {
   color: var(--muted);
   font-size: 0.9rem;
+  align-self: center;
 }
 
 @media (max-width: 640px) {
