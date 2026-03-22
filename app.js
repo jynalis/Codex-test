@@ -23,6 +23,7 @@ const incomeTotal = document.getElementById("income-total");
 const expenseTotal = document.getElementById("expense-total");
 const balanceTotal = document.getElementById("balance-total");
 const expenseChart = document.getElementById("expense-chart");
+const autoBreakdown = document.getElementById("auto-breakdown");
 
 const EXPENSE_CATEGORIES = ["日常費", "趣味・レジャー費", "雑費・予備費", "家賃・マイホーム費", "生命保険"];
 const CATEGORY_OPTIONS = {
@@ -55,7 +56,16 @@ function loadTransactions() {
   try {
     const data = JSON.parse(raw);
     if (!Array.isArray(data)) return [];
-    return data;
+    return data
+      .map((item) => ({
+        ...item,
+        amount: Number(item.amount) || 0,
+      }))
+      .filter((item) => {
+        if (!item?.date || !item?.type || !item?.category || item.amount <= 0) return false;
+        if (item.type === "expense") return EXPENSE_CATEGORIES.includes(item.category);
+        return true;
+      });
   } catch {
     return [];
   }
@@ -75,9 +85,27 @@ function loadSettings() {
 
   try {
     const data = JSON.parse(raw);
+    const plans = Array.isArray(data.plans) ? data.plans : [];
     return {
       birthDate: data.birthDate ?? "",
-      plans: Array.isArray(data.plans) ? data.plans : [],
+      plans: plans
+        .map((plan) => ({
+          ...plan,
+          type: PLAN_TYPES.includes(plan.type) ? plan.type : "NISA",
+          baseAmount: Number(plan.baseAmount) || 0,
+          expectedReturn: Number(plan.expectedReturn) || 0,
+          withdrawalDay: Number(plan.withdrawalDay) || 1,
+          withdrawAge: Number(plan.withdrawAge) || 0,
+          changes: Array.isArray(plan.changes)
+            ? plan.changes
+                .map((change) => ({
+                  month: change.month,
+                  amount: Number(change.amount) || 0,
+                }))
+                .filter((change) => change.month)
+            : [],
+        }))
+        .filter((plan) => plan.startMonth),
     };
   } catch {
     return defaultSettings();
@@ -142,10 +170,11 @@ function createAutoExpensesForMonth(settings, month) {
         id: `auto-${plan.id}-${month}`,
         date,
         type: "expense",
-        category: plan.expenseCategory || "日常費",
+        category: plan.type,
         amount,
         memo: `自動反映: ${plan.type}${plan.name ? `（${plan.name}）` : ""}`,
         isAuto: true,
+        sourceType: plan.type,
       },
     ];
   });
@@ -216,7 +245,7 @@ function renderExpenseChart(transactions, currentMonth) {
   }
 
   const categoryTotals = transactions.reduce((acc, item) => {
-    if (item.type !== "expense" || monthISO(item.date) !== currentMonth) return acc;
+    if (item.type !== "expense" || monthISO(item.date) !== currentMonth || item.isAuto) return acc;
     acc[item.category] = (acc[item.category] ?? 0) + item.amount;
     return acc;
   }, {});
@@ -278,6 +307,46 @@ function renderExpenseChart(transactions, currentMonth) {
   expenseChart.appendChild(legend);
 }
 
+function renderAutoBreakdown(autoTransactions, month) {
+  autoBreakdown.innerHTML = "";
+  if (!month) return;
+
+  const totals = PLAN_TYPES.reduce((acc, type) => ({ ...acc, [type]: 0 }), {});
+  autoTransactions.forEach((item) => {
+    totals[item.sourceType] = (totals[item.sourceType] ?? 0) + item.amount;
+  });
+
+  const hasAny = Object.values(totals).some((amount) => amount > 0);
+  const wrap = document.createElement("div");
+  wrap.className = "auto-card";
+  wrap.innerHTML = `<h3>固定引落の内訳（${month}）</h3>`;
+
+  if (!hasAny) {
+    const empty = document.createElement("p");
+    empty.className = "chart-empty";
+    empty.textContent = "この月の固定引落はありません。";
+    wrap.appendChild(empty);
+    autoBreakdown.appendChild(wrap);
+    return;
+  }
+
+  const listEl = document.createElement("ul");
+  listEl.className = "asset-list";
+  PLAN_TYPES.forEach((type) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<span>${type}</span><strong>${yen.format(totals[type] || 0)}</strong>`;
+    listEl.appendChild(li);
+  });
+  wrap.appendChild(listEl);
+
+  const total = Object.values(totals).reduce((sum, amount) => sum + amount, 0);
+  const totalEl = document.createElement("div");
+  totalEl.className = "asset-total";
+  totalEl.innerHTML = `固定引落合計: <strong>${yen.format(total)}</strong>`;
+  wrap.appendChild(totalEl);
+  autoBreakdown.appendChild(wrap);
+}
+
 function calculateAge(birthDate) {
   if (!birthDate) return 0;
   const today = new Date();
@@ -296,7 +365,7 @@ function projectedAsset(plan, birthDate) {
   const currentAge = calculateAge(birthDate);
   const targetAge = Number(plan.withdrawAge) || currentAge;
   const annualReturn = (Number(plan.expectedReturn) || 0) / 100;
-  const monthlyRate = annualReturn / 12;
+  const monthlyRate = Math.pow(1 + annualReturn, 1 / 12) - 1;
 
   const birth = new Date(birthDate || todayISO());
   const withdrawDate = new Date(birth.getFullYear() + targetAge, birth.getMonth(), 1);
@@ -305,6 +374,8 @@ function projectedAsset(plan, birthDate) {
   let month = startMonth;
   let total = 0;
 
+  const simulationStartMonth = compareMonth(startMonth, nowMonth) < 0 ? nowMonth : startMonth;
+  month = simulationStartMonth;
   while (compareMonth(month, targetMonth) <= 0) {
     const amount = planAmountAtMonth(plan, month);
     total = total * (1 + monthlyRate) + amount;
@@ -328,21 +399,37 @@ function renderAssetForecast(settings) {
     return;
   }
 
-  const rows = settings.plans
-    .map((plan) => {
-      const amount = projectedAsset(plan, settings.birthDate);
-      return `
+  const currentAge = calculateAge(settings.birthDate);
+  const projectedRows = settings.plans.map((plan) => ({
+    ...plan,
+    projectedAmount: projectedAsset(plan, settings.birthDate),
+    effectiveWithdrawAge: Number(plan.withdrawAge) || currentAge,
+  }));
+  const rows = projectedRows
+    .map(
+      (plan) => `
       <li>
-        <span>${plan.type}${plan.name ? `（${plan.name}）` : ""}</span>
-        <strong>${yen.format(amount)}</strong>
+        <span>${plan.type}${plan.name ? `（${plan.name}）` : ""} / 取崩${plan.effectiveWithdrawAge}歳</span>
+        <strong>${yen.format(plan.projectedAmount)}</strong>
       </li>
-    `;
-    })
+    `
+    )
     .join("");
 
-  const total = settings.plans.reduce((sum, plan) => sum + projectedAsset(plan, settings.birthDate), 0);
+  const typeTotals = PLAN_TYPES.map((type) => {
+    const amount = projectedRows
+      .filter((plan) => plan.type === type)
+      .reduce((sum, plan) => sum + plan.projectedAmount, 0);
+    return `<li><span>${type} 合計</span><strong>${yen.format(amount)}</strong></li>`;
+  }).join("");
+
+  const total = projectedRows.reduce((sum, plan) => sum + plan.projectedAmount, 0);
   assetForecast.innerHTML = `
+    <p>現在年齢: <strong>${currentAge}歳</strong></p>
+    <h3>契約ごとの想定資産額（取崩年齢時点）</h3>
     <ul class="asset-list">${rows}</ul>
+    <h3>種別ごとの想定資産額</h3>
+    <ul class="asset-list">${typeTotals}</ul>
     <div class="asset-total">想定総資産額: <strong>${yen.format(total)}</strong></div>
   `;
 }
@@ -365,10 +452,6 @@ function createPlanBlock(plan = {}) {
   const planId = plan.id || crypto.randomUUID();
 
   const typeOptions = PLAN_TYPES.map((type) => `<option value="${type}" ${plan.type === type ? "selected" : ""}>${type}</option>`).join("");
-  const categoryOptions = EXPENSE_CATEGORIES.map(
-    (category) => `<option value="${category}" ${plan.expenseCategory === category ? "selected" : ""}>${category}</option>`
-  ).join("");
-
   wrap.innerHTML = `
     <input type="hidden" class="plan-id" value="${planId}" />
     <div class="plan-grid">
@@ -377,7 +460,6 @@ function createPlanBlock(plan = {}) {
       <label>開始月<input class="plan-start-month" type="month" value="${plan.startMonth || todayISO().slice(0, 7)}" /></label>
       <label>月額(円)<input class="plan-base-amount" type="number" min="0" step="1" value="${plan.baseAmount ?? ""}" /></label>
       <label>引き落とし日<input class="plan-withdrawal-day" type="number" min="1" max="31" step="1" value="${plan.withdrawalDay ?? 1}" /></label>
-      <label>支出カテゴリ<select class="plan-expense-category">${categoryOptions}</select></label>
       <label>想定利回り(年%)<input class="plan-expected-return" type="number" step="0.1" value="${plan.expectedReturn ?? ""}" /></label>
       <label>取崩年齢<input class="plan-withdraw-age" type="number" min="0" max="120" step="1" value="${plan.withdrawAge ?? ""}" /></label>
     </div>
@@ -423,7 +505,6 @@ function collectPlansFromForm() {
         startMonth: block.querySelector(".plan-start-month").value,
         baseAmount: Number(block.querySelector(".plan-base-amount").value),
         withdrawalDay: Number(block.querySelector(".plan-withdrawal-day").value),
-        expenseCategory: block.querySelector(".plan-expense-category").value,
         expectedReturn: Number(block.querySelector(".plan-expected-return").value),
         withdrawAge: Number(block.querySelector(".plan-withdraw-age").value),
         changes,
@@ -510,6 +591,7 @@ function render() {
   balanceTotal.textContent = yen.format(summary.endingBalance);
 
   renderExpenseChart([...transactions, ...autoTransactions], currentMonth);
+  renderAutoBreakdown(autoTransactions, currentMonth);
   renderAssetForecast(settings);
 }
 
