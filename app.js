@@ -411,34 +411,77 @@ function calculateAge(birthDate) {
   return Math.max(age, 0);
 }
 
+function parseBirthDate(birthDate) {
+  if (typeof birthDate !== "string") return null;
+  const match = birthDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  const day = Number(match[3]);
+  const date = new Date(year, monthIndex, day);
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== monthIndex ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+  return date;
+}
+
+function parseMonth(month) {
+  if (typeof month !== "string") return null;
+  const match = month.match(/^(\d{4})-(\d{2})$/);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  if (!Number.isInteger(year) || monthIndex < 0 || monthIndex > 11) return null;
+  return { year, monthIndex };
+}
+
+function formatMonth(year, monthIndex) {
+  return `${year}-${String(monthIndex + 1).padStart(2, "0")}`;
+}
+
+function addOneMonth(month) {
+  const parsed = parseMonth(month);
+  if (!parsed) return month;
+  const next = new Date(parsed.year, parsed.monthIndex + 1, 1);
+  return formatMonth(next.getFullYear(), next.getMonth());
+}
+
+function resolveWithdrawTargetMonth(birthDate, withdrawAge) {
+  const birth = parseBirthDate(birthDate);
+  if (!birth) return null;
+
+  const targetAge = Number(withdrawAge);
+  if (!Number.isFinite(targetAge) || targetAge < 0) return null;
+
+  const withdrawDate = new Date(
+    birth.getFullYear() + targetAge,
+    birth.getMonth(),
+    birth.getDate()
+  );
+  return formatMonth(withdrawDate.getFullYear(), withdrawDate.getMonth());
+}
+
 function projectedAsset(plan, birthDate) {
   const startMonth = plan.startMonth || todayISO().slice(0, 7);
-  const nowMonth = todayISO().slice(0, 7);
-  const currentAge = calculateAge(birthDate);
-  const targetAge = Number(plan.withdrawAge) || currentAge;
   const annualReturn = (Number(plan.expectedReturn) || 0) / 100;
   const monthlyRate = Math.pow(1 + annualReturn, 1 / 12) - 1;
-
-  const birth = new Date(birthDate || todayISO());
-  const withdrawDate = new Date(birth.getFullYear() + targetAge, birth.getMonth(), 1);
-  const targetMonth = `${withdrawDate.getFullYear()}-${String(withdrawDate.getMonth() + 1).padStart(2, "0")}`;
+  const targetMonth = resolveWithdrawTargetMonth(birthDate, plan.withdrawAge);
+  if (!targetMonth || !parseMonth(startMonth)) return 0;
+  if (compareMonth(startMonth, targetMonth) > 0) return 0;
 
   let month = startMonth;
   let total = 0;
 
-  const simulationStartMonth = compareMonth(startMonth, nowMonth) < 0 ? nowMonth : startMonth;
-  month = simulationStartMonth;
   while (compareMonth(month, targetMonth) <= 0) {
     const amount = planAmountAtMonth(plan, month);
     total = total * (1 + monthlyRate) + amount;
-
-    const [y, m] = month.split("-").map(Number);
-    const next = new Date(y, m, 1);
-    month = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`;
-  }
-
-  if (compareMonth(targetMonth, nowMonth) < 0) {
-    return 0;
+    month = addOneMonth(month);
   }
 
   return Math.round(total);
