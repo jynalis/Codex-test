@@ -952,11 +952,20 @@ function addTransaction(event) {
 }
 
 function clearAll() {
-  const ok = window.confirm("すべての取引・設定を削除します。よろしいですか？");
+  const currentMonth = monthFilter.value;
+  if (!parseMonth(currentMonth)) return;
+
+  const ok = window.confirm(`${currentMonth}の手動取引をすべて削除します。よろしいですか？`);
   if (!ok) return;
-  localStorage.removeItem(STORAGE_KEY);
-  localStorage.removeItem(SETTINGS_KEY);
-  planList.innerHTML = "";
+
+  const transactions = loadTransactions();
+  const next = transactions.filter((item) => {
+    const isCurrentMonth = monthISO(item.date) === currentMonth;
+    const isManual = !item.isAuto;
+    return !(isCurrentMonth && isManual);
+  });
+
+  saveTransactions(next);
   render();
 }
 
