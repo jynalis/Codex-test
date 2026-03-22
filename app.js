@@ -20,6 +20,8 @@ const list = document.getElementById("transaction-list");
 const template = document.getElementById("transaction-item-template");
 const carryoverTotal = document.getElementById("carryover-total");
 const incomeTotal = document.getElementById("income-total");
+const regularExpenseTotal = document.getElementById("regular-expense-total");
+const assetExpenseTotal = document.getElementById("asset-expense-total");
 const expenseTotal = document.getElementById("expense-total");
 const balanceTotal = document.getElementById("balance-total");
 const expenseChart = document.getElementById("expense-chart");
@@ -31,6 +33,7 @@ const CATEGORY_OPTIONS = {
   income: ["定期収入", "臨時収入"],
 };
 const PLAN_TYPES = ["NISA", "iDeCo", "貯蓄性保険", "貯金"];
+const ASSET_FORMATION_CATEGORY = "資産形成支出";
 
 const yen = new Intl.NumberFormat("ja-JP", {
   style: "currency",
@@ -170,9 +173,9 @@ function createAutoExpensesForMonth(settings, month) {
         id: `auto-${plan.id}-${month}`,
         date,
         type: "expense",
-        category: plan.type,
+        category: ASSET_FORMATION_CATEGORY,
         amount,
-        memo: `自動反映: ${plan.type}${plan.name ? `（${plan.name}）` : ""}`,
+        memo: `固定積立: ${plan.type}${plan.name ? `（${plan.name}）` : ""}`,
         isAuto: true,
         sourceType: plan.type,
       },
@@ -206,7 +209,7 @@ function calculateCarryover(transactions, settings, targetMonth) {
 
 function calculateMonthlySummary(transactions, settings, targetMonth) {
   if (!targetMonth) {
-    return { carryover: 0, income: 0, expense: 0, endingBalance: 0 };
+    return { carryover: 0, income: 0, regularExpense: 0, assetExpense: 0, expense: 0, endingBalance: 0 };
   }
 
   const carryover = calculateCarryover(transactions, settings, targetMonth);
@@ -216,19 +219,24 @@ function calculateMonthlySummary(transactions, settings, targetMonth) {
       if (monthISO(item.date) !== targetMonth) return totals;
       if (item.type === "income") {
         totals.income += item.amount;
+      } else if (item.isAuto) {
+        totals.assetExpense += item.amount;
       } else {
-        totals.expense += item.amount;
+        totals.regularExpense += item.amount;
       }
       return totals;
     },
-    { income: 0, expense: 0 }
+    { income: 0, regularExpense: 0, assetExpense: 0 }
   );
+  const totalExpense = monthly.regularExpense + monthly.assetExpense;
 
   return {
     carryover,
     income: monthly.income,
-    expense: monthly.expense,
-    endingBalance: carryover + monthly.income - monthly.expense,
+    regularExpense: monthly.regularExpense,
+    assetExpense: monthly.assetExpense,
+    expense: totalExpense,
+    endingBalance: carryover + monthly.income - totalExpense,
   };
 }
 
@@ -319,12 +327,12 @@ function renderAutoBreakdown(autoTransactions, month) {
   const hasAny = Object.values(totals).some((amount) => amount > 0);
   const wrap = document.createElement("div");
   wrap.className = "auto-card";
-  wrap.innerHTML = `<h3>固定引落の内訳（${month}）</h3>`;
+  wrap.innerHTML = `<h3>資産形成支出（固定積立）の内訳（${month}）</h3>`;
 
   if (!hasAny) {
     const empty = document.createElement("p");
     empty.className = "chart-empty";
-    empty.textContent = "この月の固定引落はありません。";
+    empty.textContent = "この月の資産形成支出はありません。";
     wrap.appendChild(empty);
     autoBreakdown.appendChild(wrap);
     return;
@@ -342,9 +350,53 @@ function renderAutoBreakdown(autoTransactions, month) {
   const total = Object.values(totals).reduce((sum, amount) => sum + amount, 0);
   const totalEl = document.createElement("div");
   totalEl.className = "asset-total";
-  totalEl.innerHTML = `固定引落合計: <strong>${yen.format(total)}</strong>`;
+  totalEl.innerHTML = `資産形成支出合計: <strong>${yen.format(total)}</strong>`;
   wrap.appendChild(totalEl);
   autoBreakdown.appendChild(wrap);
+}
+
+function createPieChartElements(entries, total, options = {}) {
+  const chartColors =
+    options.colors || ["#f76707", "#20c997", "#4c6ef5", "#ae3ec9", "#e64980", "#1098ad", "#fab005", "#495057"];
+  let currentDegree = 0;
+  const segments = entries.map(([, amount], index) => {
+    const ratio = amount / total;
+    const degree = ratio * 360;
+    const start = currentDegree;
+    const end = currentDegree + degree;
+    currentDegree = end;
+    return `${chartColors[index % chartColors.length]} ${start}deg ${end}deg`;
+  });
+
+  const pieWrap = document.createElement("div");
+  pieWrap.className = "pie-wrap";
+
+  const pieChart = document.createElement("div");
+  pieChart.className = "pie-chart";
+  pieChart.style.background = `conic-gradient(${segments.join(", ")})`;
+
+  const pieCenter = document.createElement("div");
+  pieCenter.className = "pie-center";
+  pieCenter.innerHTML = `<span>${options.centerLabel || "合計"}</span><strong>${yen.format(total)}</strong>`;
+  pieChart.appendChild(pieCenter);
+  pieWrap.appendChild(pieChart);
+
+  const legend = document.createElement("ul");
+  legend.className = "pie-legend";
+  entries.forEach(([name, amount], index) => {
+    const ratio = total === 0 ? 0 : (amount / total) * 100;
+    const item = document.createElement("li");
+    item.className = "pie-legend-item";
+    item.innerHTML = `
+      <span class="dot" style="background:${chartColors[index % chartColors.length]}"></span>
+      <span class="category">${name}</span>
+      <strong class="ratio">${ratio.toFixed(1)}%</strong>
+      <span class="value">${yen.format(amount)}</span>
+    `;
+    legend.appendChild(item);
+  });
+
+  return { pieWrap, legend };
 }
 
 function calculateAge(birthDate) {
@@ -420,18 +472,69 @@ function renderAssetForecast(settings) {
     const amount = projectedRows
       .filter((plan) => plan.type === type)
       .reduce((sum, plan) => sum + plan.projectedAmount, 0);
-    return `<li><span>${type} 合計</span><strong>${yen.format(amount)}</strong></li>`;
-  }).join("");
+    return { type, amount };
+  });
 
   const total = projectedRows.reduce((sum, plan) => sum + plan.projectedAmount, 0);
+  const typeTotalsHtml = typeTotals
+    .map((item) => `<li><span>${item.type} 合計</span><strong>${yen.format(item.amount)}</strong></li>`)
+    .join("");
   assetForecast.innerHTML = `
     <p>現在年齢: <strong>${currentAge}歳</strong></p>
     <h3>契約ごとの想定資産額（取崩年齢時点）</h3>
     <ul class="asset-list">${rows}</ul>
     <h3>種別ごとの想定資産額</h3>
-    <ul class="asset-list">${typeTotals}</ul>
+    <ul class="asset-list">${typeTotalsHtml}</ul>
     <div class="asset-total">想定総資産額: <strong>${yen.format(total)}</strong></div>
   `;
+
+  const chartSection = document.createElement("section");
+  chartSection.className = "chart asset-composition";
+  chartSection.innerHTML = "<h3>想定資産額の構成比</h3>";
+
+  if (projectedRows.length === 0 || total === 0) {
+    const empty = document.createElement("p");
+    empty.className = "chart-empty";
+    empty.textContent = "データがありません";
+    chartSection.appendChild(empty);
+    assetForecast.appendChild(chartSection);
+    return;
+  }
+
+  const typeEntries = typeTotals.filter((item) => item.amount > 0).map((item) => [item.type, item.amount]);
+  const { pieWrap, legend } = createPieChartElements(typeEntries, total, { centerLabel: "想定総額" });
+  chartSection.appendChild(pieWrap);
+  chartSection.appendChild(legend);
+
+  if (projectedRows.length > 1) {
+    const detailTitle = document.createElement("h4");
+    detailTitle.textContent = "契約ごとの内訳";
+    chartSection.appendChild(detailTitle);
+
+    const detailEntries = projectedRows
+      .filter((plan) => plan.projectedAmount > 0)
+      .map((plan) => [`${plan.type}${plan.name ? `（${plan.name}）` : ""}`, plan.projectedAmount]);
+
+    if (detailEntries.length > 0) {
+      const detailLegend = document.createElement("ul");
+      detailLegend.className = "pie-legend";
+      detailEntries.forEach(([name, amount]) => {
+        const ratio = (amount / total) * 100;
+        const item = document.createElement("li");
+        item.className = "pie-legend-item";
+        item.innerHTML = `
+          <span class="dot" style="background:#868e96"></span>
+          <span class="category">${name}</span>
+          <strong class="ratio">${ratio.toFixed(1)}%</strong>
+          <span class="value">${yen.format(amount)}</span>
+        `;
+        detailLegend.appendChild(item);
+      });
+      chartSection.appendChild(detailLegend);
+    }
+  }
+
+  assetForecast.appendChild(chartSection);
 }
 
 function createChangeRow(change = { month: "", amount: "" }) {
@@ -566,7 +669,9 @@ function render() {
       const amount = node.querySelector(".amount");
       const del = node.querySelector(".delete");
 
-      meta.textContent = `${item.date} / ${item.category}`;
+      meta.textContent = item.isAuto
+        ? `${item.date} / 固定積立 / ${item.sourceType}`
+        : `${item.date} / ${item.category}`;
       memo.textContent = item.memo || "メモなし";
       amount.textContent = `${item.type === "income" ? "+" : "-"}${yen.format(item.amount)}`;
       amount.classList.add(item.type);
@@ -586,6 +691,8 @@ function render() {
     });
 
   incomeTotal.textContent = yen.format(summary.income);
+  regularExpenseTotal.textContent = yen.format(summary.regularExpense);
+  assetExpenseTotal.textContent = yen.format(summary.assetExpense);
   expenseTotal.textContent = yen.format(summary.expense);
   carryoverTotal.textContent = yen.format(summary.carryover);
   balanceTotal.textContent = yen.format(summary.endingBalance);
