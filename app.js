@@ -33,6 +33,15 @@ const dashboardMonthlySavingTotal = document.getElementById("dashboard-monthly-s
 const dashboardAge60Total = document.getElementById("dashboard-age60-total");
 const expenseChart = document.getElementById("expense-chart");
 const autoBreakdown = document.getElementById("auto-breakdown");
+const bottomNavButtons = Array.from(document.querySelectorAll(".bottom-nav-btn"));
+const navToast = document.getElementById("nav-toast");
+
+const NAV_TARGETS = {
+  home: "section-home",
+  input: "section-input",
+  assets: "section-assets",
+  history: "section-history",
+};
 
 const EXPENSE_CATEGORIES = ["日常費", "趣味・レジャー費", "雑費・予備費", "家賃・マイホーム費", "生命保険"];
 const CATEGORY_OPTIONS = {
@@ -1020,6 +1029,76 @@ function clearAll() {
   render();
 }
 
+function setBottomNavActive(target) {
+  bottomNavButtons.forEach((button) => {
+    const isActive = button.dataset.navTarget === target;
+    button.classList.toggle("is-active", isActive);
+    if (isActive) {
+      button.setAttribute("aria-current", "page");
+    } else {
+      button.removeAttribute("aria-current");
+    }
+  });
+}
+
+function showNavToast(message) {
+  if (!navToast) return;
+  navToast.textContent = message;
+  navToast.classList.add("show");
+  window.setTimeout(() => {
+    navToast.classList.remove("show");
+  }, 1500);
+}
+
+function scrollToNavSection(target) {
+  if (target === "schedule") {
+    showNavToast("ライフイベント表は今後追加予定です。");
+    return;
+  }
+
+  const sectionId = NAV_TARGETS[target];
+  const targetSection = sectionId ? document.getElementById(sectionId) : null;
+  if (!targetSection) return;
+
+  const accordion = targetSection.querySelector("details.accordion");
+  if (accordion) {
+    accordion.open = true;
+  }
+
+  targetSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  setBottomNavActive(target);
+}
+
+function setupBottomNavigation() {
+  bottomNavButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      scrollToNavSection(button.dataset.navTarget);
+    });
+  });
+
+  const sectionElements = Object.entries(NAV_TARGETS)
+    .map(([name, id]) => ({ name, element: document.getElementById(id) }))
+    .filter((item) => item.element);
+  if (sectionElements.length === 0) return;
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      const visible = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (!visible) return;
+
+      const activeSection = sectionElements.find((item) => item.element === visible.target);
+      if (activeSection) {
+        setBottomNavActive(activeSection.name);
+      }
+    },
+    { threshold: [0.35, 0.6], rootMargin: "-10% 0px -35% 0px" }
+  );
+
+  sectionElements.forEach((item) => observer.observe(item.element));
+}
+
 function init() {
   const settings = loadSettings();
 
@@ -1038,6 +1117,7 @@ function init() {
     planList.appendChild(createPlanBlock());
   });
   profileForm.addEventListener("submit", saveProfile);
+  setupBottomNavigation();
 
   render();
 }
