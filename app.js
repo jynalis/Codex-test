@@ -77,8 +77,41 @@ function calculateCarryover(transactions, targetMonth) {
   }, 0);
 }
 
+function calculateMonthlySummary(transactions, targetMonth) {
+  if (!targetMonth) {
+    return {
+      carryover: 0,
+      income: 0,
+      expense: 0,
+      endingBalance: 0,
+    };
+  }
+
+  const carryover = calculateCarryover(transactions, targetMonth);
+  const monthlyTotals = transactions.reduce(
+    (totals, item) => {
+      if (monthISO(item.date) !== targetMonth) return totals;
+      if (item.type === "income") {
+        totals.income += item.amount;
+      } else {
+        totals.expense += item.amount;
+      }
+      return totals;
+    },
+    { income: 0, expense: 0 }
+  );
+
+  return {
+    carryover,
+    income: monthlyTotals.income,
+    expense: monthlyTotals.expense,
+    endingBalance: carryover + monthlyTotals.income - monthlyTotals.expense,
+  };
+}
+
 function renderExpenseChart(transactions, currentMonth) {
   expenseChart.innerHTML = "";
+  expenseChart.classList.toggle("has-data", false);
 
   if (!currentMonth) {
     const empty = document.createElement("p");
@@ -103,6 +136,7 @@ function renderExpenseChart(transactions, currentMonth) {
     return;
   }
 
+  expenseChart.classList.toggle("has-data", true);
   const maxValue = entries[0][1];
 
   entries.forEach(([category, total]) => {
@@ -129,6 +163,7 @@ function renderExpenseChart(transactions, currentMonth) {
 function render() {
   const transactions = loadTransactions();
   const currentMonth = monthFilter.value;
+  const summary = calculateMonthlySummary(transactions, currentMonth);
 
   const filtered = currentMonth
     ? transactions.filter((item) => monthISO(item.date) === currentMonth)
@@ -142,10 +177,6 @@ function render() {
     empty.className = "item";
     list.appendChild(empty);
   }
-
-  let income = 0;
-  let expense = 0;
-  const carryover = calculateCarryover(transactions, currentMonth);
 
   filtered
     .slice()
@@ -171,18 +202,12 @@ function render() {
 
       row.dataset.id = item.id;
       list.appendChild(node);
-
-      if (item.type === "income") {
-        income += item.amount;
-      } else {
-        expense += item.amount;
-      }
     });
 
-  incomeTotal.textContent = yen.format(income);
-  expenseTotal.textContent = yen.format(expense);
-  carryoverTotal.textContent = yen.format(carryover);
-  balanceTotal.textContent = yen.format(carryover + income - expense);
+  incomeTotal.textContent = yen.format(summary.income);
+  expenseTotal.textContent = yen.format(summary.expense);
+  carryoverTotal.textContent = yen.format(summary.carryover);
+  balanceTotal.textContent = yen.format(summary.endingBalance);
   renderExpenseChart(transactions, currentMonth);
 }
 
