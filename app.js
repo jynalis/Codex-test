@@ -233,6 +233,7 @@ function getLumpSumsOnMonth(plan, month) {
 
 function createAutoExpensesForMonth(settings, month) {
   if (!month) return [];
+  if (parseMonth(settings.entryStartMonth) && compareMonth(month, settings.entryStartMonth) < 0) return [];
   const [yearStr, monthStr] = month.split("-");
   const year = Number(yearStr);
   const monthNum = Number(monthStr);
@@ -285,6 +286,8 @@ function resolveEntryStartMonth(settings, transactions) {
 
 function createEligibleAutoExpensesForMonth(settings, transactions, month) {
   if (!month) return [];
+  const entryStartMonth = resolveEntryStartMonth(settings, transactions);
+  if (entryStartMonth && compareMonth(month, entryStartMonth) < 0) return [];
 
   const generated = createAutoExpensesForMonth(settings, month);
   return generated.filter((autoTx) => {
@@ -315,6 +318,15 @@ function resolveAutoExpenseStartMonth(settings) {
   return planMonths.sort(compareMonth)[0];
 }
 
+function resolveEffectiveAutoStartMonth(settings) {
+  const autoStartMonth = resolveAutoExpenseStartMonth(settings);
+  const entryStartMonth = parseMonth(settings.entryStartMonth) ? settings.entryStartMonth : null;
+
+  if (!autoStartMonth) return null;
+  if (!entryStartMonth) return autoStartMonth;
+  return compareMonth(autoStartMonth, entryStartMonth) < 0 ? entryStartMonth : autoStartMonth;
+}
+
 function calculateCarryover(transactions, settings, targetMonth) {
   if (!targetMonth) return 0;
 
@@ -325,7 +337,7 @@ function calculateCarryover(transactions, settings, targetMonth) {
   }, 0);
 
   let auto = 0;
-  const autoStartMonth = resolveAutoExpenseStartMonth(settings);
+  const autoStartMonth = resolveEffectiveAutoStartMonth(settings);
   if (autoStartMonth) {
     let month = autoStartMonth;
     while (compareMonth(month, targetMonth) < 0) {
