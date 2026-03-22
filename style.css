@@ -1,15 +1,15 @@
 :root {
   color-scheme: light;
   font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", system-ui, sans-serif;
-  --bg: #f4f7fb;
+  --bg: #f7fafc;
   --card: #ffffff;
   --text: #1f2937;
-  --muted: #4b5563;
+  --muted: #556377;
   --income: #0ca678;
   --expense: #c92a2a;
-  --primary: #1d3557;
-  --primary-strong: #0f172a;
-  --border: #d7e2f1;
+  --primary: #1b365f;
+  --primary-strong: #10243f;
+  --border: #d6e0ec;
 }
 
 * {
@@ -25,15 +25,15 @@ body {
 .container {
   max-width: 980px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 24px 24px 32px;
   display: grid;
-  gap: 16px;
+  gap: 20px;
 }
 
 .card {
   background: var(--card);
   border-radius: 14px;
-  padding: 18px;
+  padding: 20px;
   border: 1px solid var(--border);
   box-shadow: 0 8px 20px rgb(15 23 42 / 8%);
 }
@@ -89,7 +89,18 @@ body {
 }
 
 .accordion-content {
-  padding: 10px 2px 4px;
+  padding: 12px 2px 6px;
+}
+
+.section-heading {
+  display: grid;
+  gap: 6px;
+}
+
+.section-description {
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.6;
 }
 
 h1,
@@ -113,7 +124,7 @@ header p {
 }
 
 .grid {
-  margin-top: 12px;
+  margin-top: 14px;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 10px;
@@ -252,7 +263,7 @@ button.danger {
 }
 
 .summary {
-  margin-top: 12px;
+  margin-top: 14px;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 8px;
@@ -273,7 +284,7 @@ button.danger {
 }
 
 .asset-forecast {
-  margin-top: 12px;
+  margin-top: 14px;
   display: grid;
   gap: 10px;
 }
@@ -304,7 +315,7 @@ button.danger {
   display: flex;
   justify-content: space-between;
   gap: 10px;
-  align-items: center;
+  align-items: flex-start;
   flex-wrap: wrap;
 }
 
@@ -314,7 +325,7 @@ button.danger {
 }
 
 .list {
-  margin: 12px 0 0;
+  margin: 14px 0 0;
   padding: 0;
   list-style: none;
   display: grid;
@@ -365,7 +376,7 @@ button.danger {
 }
 
 .chart {
-  margin-top: 12px;
+  margin-top: 14px;
   display: grid;
   gap: 16px;
   min-height: 180px;
@@ -451,7 +462,7 @@ button.danger {
 }
 
 .auto-breakdown {
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
 .auto-card {
@@ -476,7 +487,7 @@ button.danger {
 @media (max-width: 640px) {
   .container {
     padding: 16px;
-    gap: 14px;
+    gap: 16px;
   }
 
   .card {
@@ -494,6 +505,24 @@ button.danger {
 
   .accordion-title {
     font-size: 1rem;
+  }
+
+  .section-heading {
+    gap: 4px;
+  }
+
+  .section-description {
+    font-size: 0.8rem;
+    line-height: 1.55;
+  }
+
+  .filters {
+    width: 100%;
+  }
+
+  .filters input,
+  .filters button {
+    flex: 1;
   }
 
   .dashboard-grid {
