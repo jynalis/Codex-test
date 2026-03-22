@@ -102,6 +102,16 @@ function compareMonth(a, b) {
   return a.localeCompare(b);
 }
 
+function isMonthOnOrAfter(targetMonth, baseMonth) {
+  if (!parseMonth(targetMonth) || !parseMonth(baseMonth)) return false;
+  return compareMonth(targetMonth, baseMonth) >= 0;
+}
+
+function isSameMonth(a, b) {
+  if (!parseMonth(a) || !parseMonth(b)) return false;
+  return compareMonth(a, b) === 0;
+}
+
 function normalizeMonthlyContributionHistory(plan) {
   if (Array.isArray(plan.monthlyContributions) && plan.monthlyContributions.length > 0) {
     return plan.monthlyContributions
@@ -210,7 +220,7 @@ function monthsBetweenInclusive(startMonth, endMonth) {
 function findActiveMonthlyContribution(plan, month) {
   const histories = Array.isArray(plan.monthlyContributions) ? plan.monthlyContributions : [];
   const active = histories
-    .filter((history) => history.startMonth && compareMonth(history.startMonth, month) <= 0)
+    .filter((history) => history.startMonth && isMonthOnOrAfter(month, history.startMonth))
     .sort((a, b) => compareMonth(a.startMonth, b.startMonth));
   if (active.length === 0) return 0;
   return Math.max(Number(active[active.length - 1].amount) || 0, 0);
@@ -218,7 +228,7 @@ function findActiveMonthlyContribution(plan, month) {
 
 function getLumpSumsOnMonth(plan, month) {
   const histories = Array.isArray(plan.lumpSums) ? plan.lumpSums : [];
-  return histories.filter((history) => history.month === month).map((history) => Math.max(Number(history.amount) || 0, 0));
+  return histories.filter((history) => isSameMonth(history.month, month)).map((history) => Math.max(Number(history.amount) || 0, 0));
 }
 
 function createAutoExpensesForMonth(settings, month) {
@@ -569,12 +579,12 @@ function resolveWithdrawTargetMonth(birthDate, withdrawAge) {
 function resolveProjectionStartMonth(plan, targetMonth) {
   const monthlyStart = (Array.isArray(plan.monthlyContributions) ? plan.monthlyContributions : [])
     .map((history) => history.startMonth)
-    .filter((month) => parseMonth(month) && compareMonth(month, targetMonth) <= 0)
+    .filter((month) => parseMonth(month) && isMonthOnOrAfter(targetMonth, month))
     .sort(compareMonth)[0];
 
   const lumpStart = (Array.isArray(plan.lumpSums) ? plan.lumpSums : [])
     .map((history) => history.month)
-    .filter((month) => parseMonth(month) && compareMonth(month, targetMonth) <= 0)
+    .filter((month) => parseMonth(month) && isMonthOnOrAfter(targetMonth, month))
     .sort(compareMonth)[0];
 
   if (!monthlyStart) return lumpStart || null;
