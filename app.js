@@ -50,7 +50,7 @@ const CATEGORY_OPTIONS = {
 };
 const PLAN_TYPES = ["NISA", "iDeCo", "貯蓄性保険", "貯金"];
 const ASSET_FORMATION_CATEGORY = "資産形成支出";
-const ASSET_PIE_COLORS = ["#2f5d8a", "#b86245", "#4a8a78", "#8f6bb3", "#b08a3c", "#5f748d", "#c0567e", "#4f7f9f"];
+const ASSET_PIE_COLORS = ["#245e8f", "#b85c3f", "#2f7e68", "#7a56ad", "#9b7a2f", "#3c6a9b", "#b04f74", "#4f7f9f"];
 
 const yen = new Intl.NumberFormat("ja-JP", {
   style: "currency",
@@ -812,13 +812,15 @@ function renderAssetForecast(settings) {
     .map((item) => `<li><span>${item.type} 合計</span><strong>${yen.format(item.amount)}</strong></li>`)
     .join("");
   assetForecast.innerHTML = `
-    <p>現在年齢: <strong>${currentAge}歳</strong></p>
-    <p class="section-description">60歳までの積立・運用をもとに試算しています。</p>
-    <h3>60歳時点の想定資産額（契約別）</h3>
-    <ul class="asset-list">${rows}</ul>
-    <h3>60歳時点の想定資産額（種別別）</h3>
-    <ul class="asset-list">${typeTotalsHtml}</ul>
-    <div class="asset-total">60歳時点の想定総資産額: <strong>${yen.format(totalAt60)}</strong></div>
+    <section class="chart asset-outlook">
+      <h3>将来の資産見通し（60歳時点）</h3>
+      <p class="section-description">現在年齢: <strong>${currentAge}歳</strong> / 60歳までの積立・運用をもとに試算しています。</p>
+      <h4>契約別の想定資産額</h4>
+      <ul class="asset-list">${rows}</ul>
+      <h4>種別別の想定資産額</h4>
+      <ul class="asset-list">${typeTotalsHtml}</ul>
+      <div class="asset-total">60歳時点の想定総資産額: <strong>${yen.format(totalAt60)}</strong></div>
+    </section>
   `;
 
   const chartSection = document.createElement("section");
