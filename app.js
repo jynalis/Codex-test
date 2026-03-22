@@ -452,6 +452,13 @@ function addOneMonth(month) {
   return formatMonth(next.getFullYear(), next.getMonth());
 }
 
+function monthsBetweenInclusive(startMonth, endMonth) {
+  const start = parseMonth(startMonth);
+  const end = parseMonth(endMonth);
+  if (!start || !end) return 0;
+  return (end.year - start.year) * 12 + (end.monthIndex - start.monthIndex) + 1;
+}
+
 function resolveWithdrawTargetMonth(birthDate, withdrawAge) {
   const birth = parseBirthDate(birthDate);
   if (!birth) return null;
@@ -467,24 +474,51 @@ function resolveWithdrawTargetMonth(birthDate, withdrawAge) {
   return formatMonth(withdrawDate.getFullYear(), withdrawDate.getMonth());
 }
 
-function projectedAsset(plan, birthDate) {
-  const startMonth = plan.startMonth || todayISO().slice(0, 7);
+function resolvePlanChanges(plan) {
+  return (Array.isArray(plan.changes) ? plan.changes : [])
+    .filter((change) => change.month && parseMonth(change.month))
+    .sort((a, b) => compareMonth(a.month, b.month))
+    .map((change) => ({
+      month: change.month,
+      amount: Math.max(Number(change.amount) || 0, 0),
+    }));
+}
+
+function projectPlanAssetDetails(plan, birthDate) {
+  const startMonth = plan.startMonth;
   const annualReturn = (Number(plan.expectedReturn) || 0) / 100;
   const monthlyRate = Math.pow(1 + annualReturn, 1 / 12) - 1;
   const targetMonth = resolveWithdrawTargetMonth(birthDate, plan.withdrawAge);
-  if (!targetMonth || !parseMonth(startMonth)) return 0;
-  if (compareMonth(startMonth, targetMonth) > 0) return 0;
+  if (!targetMonth || !parseMonth(startMonth)) {
+    return { amount: 0, startMonth, targetMonth, months: 0, appliedChanges: [] };
+  }
+  if (compareMonth(startMonth, targetMonth) > 0) {
+    return { amount: 0, startMonth, targetMonth, months: 0, appliedChanges: [] };
+  }
 
+  const changes = resolvePlanChanges(plan);
   let month = startMonth;
+  let currentAmount = Math.max(Number(plan.baseAmount) || 0, 0);
   let total = 0;
+  const appliedChanges = [];
 
   while (compareMonth(month, targetMonth) <= 0) {
-    const amount = planAmountAtMonth(plan, month);
-    total = total * (1 + monthlyRate) + amount;
+    while (changes.length > appliedChanges.length && changes[appliedChanges.length].month === month) {
+      const change = changes[appliedChanges.length];
+      currentAmount = change.amount;
+      appliedChanges.push(change);
+    }
+    total = total * (1 + monthlyRate) + currentAmount;
     month = addOneMonth(month);
   }
 
-  return Math.round(total);
+  return {
+    amount: Math.round(total),
+    startMonth,
+    targetMonth,
+    months: monthsBetweenInclusive(startMonth, targetMonth),
+    appliedChanges,
+  };
 }
 
 function renderAssetForecast(settings) {
@@ -495,11 +529,25 @@ function renderAssetForecast(settings) {
   }
 
   const currentAge = calculateAge(settings.birthDate);
-  const projectedRows = settings.plans.map((plan) => ({
-    ...plan,
-    projectedAmount: projectedAsset(plan, settings.birthDate),
-    effectiveWithdrawAge: Number(plan.withdrawAge) || currentAge,
-  }));
+  const projectedRows = settings.plans.map((plan) => {
+    const projection = projectPlanAssetDetails(plan, settings.birthDate);
+    const row = {
+      ...plan,
+      projectedAmount: projection.amount,
+      effectiveWithdrawAge: Number(plan.withdrawAge) || currentAge,
+      projection,
+    };
+    console.log("[asset-forecast debug]", {
+      planId: plan.id,
+      planName: plan.name || "",
+      birthDate: settings.birthDate,
+      startMonth: projection.startMonth,
+      targetWithdrawalMonth: projection.targetMonth,
+      accumulationMonths: projection.months,
+      appliedChangeHistory: projection.appliedChanges,
+    });
+    return row;
+  });
   const rows = projectedRows
     .map(
       (plan) => `
