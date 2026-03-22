@@ -275,8 +275,6 @@ function resolveEntryStartMonth(settings, transactions) {
 
 function createEligibleAutoExpensesForMonth(settings, transactions, month) {
   if (!month) return [];
-  const entryStartMonth = resolveEntryStartMonth(settings, transactions);
-  if (compareMonth(month, entryStartMonth) < 0) return [];
 
   const generated = createAutoExpensesForMonth(settings, month);
   return generated.filter((autoTx) => {
@@ -292,23 +290,39 @@ function createEligibleAutoExpensesForMonth(settings, transactions, month) {
   });
 }
 
+function resolveAutoExpenseStartMonth(settings) {
+  const planMonths = (settings.plans ?? []).flatMap((plan) => {
+    const monthlyMonths = (Array.isArray(plan.monthlyContributions) ? plan.monthlyContributions : [])
+      .map((history) => history.startMonth)
+      .filter((month) => parseMonth(month));
+    const lumpMonths = (Array.isArray(plan.lumpSums) ? plan.lumpSums : [])
+      .map((history) => history.month)
+      .filter((month) => parseMonth(month));
+    return [...monthlyMonths, ...lumpMonths];
+  });
+
+  if (planMonths.length === 0) return null;
+  return planMonths.sort(compareMonth)[0];
+}
+
 function calculateCarryover(transactions, settings, targetMonth) {
   if (!targetMonth) return 0;
-  const entryStartMonth = resolveEntryStartMonth(settings, transactions);
-  if (compareMonth(targetMonth, entryStartMonth) <= 0) return 0;
 
   const manual = transactions.reduce((sum, item) => {
     const txMonth = monthISO(item.date);
-    if (compareMonth(txMonth, entryStartMonth) < 0 || compareMonth(txMonth, targetMonth) >= 0) return sum;
+    if (compareMonth(txMonth, targetMonth) >= 0) return sum;
     return sum + (item.type === "income" ? item.amount : -item.amount);
   }, 0);
 
   let auto = 0;
-  let month = entryStartMonth;
-  while (compareMonth(month, targetMonth) < 0) {
-    const autoTransactions = createEligibleAutoExpensesForMonth(settings, transactions, month);
-    auto -= autoTransactions.reduce((sum, item) => sum + item.amount, 0);
-    month = addOneMonth(month);
+  const autoStartMonth = resolveAutoExpenseStartMonth(settings);
+  if (autoStartMonth) {
+    let month = autoStartMonth;
+    while (compareMonth(month, targetMonth) < 0) {
+      const autoTransactions = createEligibleAutoExpensesForMonth(settings, transactions, month);
+      auto -= autoTransactions.reduce((sum, item) => sum + item.amount, 0);
+      month = addOneMonth(month);
+    }
   }
 
   return manual + auto;
