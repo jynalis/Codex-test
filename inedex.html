@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>かんたん家計簿</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>かんたん家計簿</h1>
+        <p>収入と支出を記録して、毎月の収支を見える化しましょう。</p>
+      </header>
+
+      <section class="card">
+        <h2>取引を追加</h2>
+        <form id="transaction-form" class="grid">
+          <label>
+            日付
+            <input type="date" id="date" required />
+          </label>
+          <label>
+            種類
+            <select id="type" required>
+              <option value="expense">支出</option>
+              <option value="income">収入</option>
+            </select>
+          </label>
+          <label>
+            カテゴリ
+            <input id="category" type="text" placeholder="例: 食費、給料" maxlength="20" required />
+          </label>
+          <label>
+            金額 (円)
+            <input id="amount" type="number" min="1" step="1" required />
+          </label>
+          <label class="full">
+            メモ
+            <input id="memo" type="text" placeholder="任意" maxlength="50" />
+          </label>
+          <button type="submit">追加する</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>今月のサマリー</h2>
+        <div class="summary">
+          <div>
+            <span>収入</span>
+            <strong id="income-total">¥0</strong>
+          </div>
+          <div>
+            <span>支出</span>
+            <strong id="expense-total">¥0</strong>
+          </div>
+          <div>
+            <span>収支</span>
+            <strong id="balance-total">¥0</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-header">
+          <h2>取引一覧</h2>
+          <div class="filters">
+            <input id="month-filter" type="month" />
+            <button id="clear-btn" type="button">全削除</button>
+          </div>
+        </div>
+        <ul id="transaction-list" class="list"></ul>
+      </section>
+    </main>
+
+    <template id="transaction-item-template">
+      <li class="item">
+        <div>
+          <p class="meta"></p>
+          <p class="memo"></p>
+        </div>
+        <div class="amount-wrap">
+          <p class="amount"></p>
+          <button class="delete" type="button">削除</button>
+        </div>
+      </li>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
