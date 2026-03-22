@@ -45,54 +45,68 @@
         </div>
       </section>
 
-      <section class="card accent-card">
-        <h2>プロフィール・積立設定</h2>
-        <form id="profile-form" class="grid">
-          <label>
-            記入開始月
-            <input type="month" id="entry-start-month" required />
-          </label>
-          <label>
-            生年月日
-            <input type="date" id="birth-date" required />
-          </label>
-          <div class="full split-title">
-            <h3>積立・保有資産（NISA / iDeCo / 貯蓄性保険 / 貯金）</h3>
-            <button id="add-plan-btn" type="button">＋追加</button>
+      <section class="card accordion-card accent-card">
+        <details class="accordion">
+          <summary class="accordion-summary">
+            <span class="accordion-title">プロフィール・積立設定</span>
+            <span class="accordion-icon" aria-hidden="true"></span>
+          </summary>
+          <div class="accordion-content">
+            <form id="profile-form" class="grid">
+              <label>
+                記入開始月
+                <input type="month" id="entry-start-month" required />
+              </label>
+              <label>
+                生年月日
+                <input type="date" id="birth-date" required />
+              </label>
+              <div class="full split-title">
+                <h3>積立・保有資産（NISA / iDeCo / 貯蓄性保険 / 貯金）</h3>
+                <button id="add-plan-btn" type="button">＋追加</button>
+              </div>
+              <div id="plan-list" class="full plan-list"></div>
+              <button type="submit" class="full">設定を保存</button>
+            </form>
           </div>
-          <div id="plan-list" class="full plan-list"></div>
-          <button type="submit" class="full">設定を保存</button>
-        </form>
+        </details>
       </section>
 
-      <section class="card">
-        <h2>取引を追加</h2>
-        <form id="transaction-form" class="grid">
-          <label>
-            日付
-            <input type="date" id="date" required />
-          </label>
-          <label>
-            種類
-            <select id="type" required>
-              <option value="expense">支出</option>
-              <option value="income">収入</option>
-            </select>
-          </label>
-          <label>
-            カテゴリ
-            <select id="category" required></select>
-          </label>
-          <label>
-            金額 (円)
-            <input id="amount" type="number" min="1" step="1" required />
-          </label>
-          <label class="full">
-            メモ
-            <input id="memo" type="text" placeholder="任意" maxlength="50" />
-          </label>
-          <button type="submit">追加する</button>
-        </form>
+      <section class="card accordion-card">
+        <details class="accordion">
+          <summary class="accordion-summary">
+            <span class="accordion-title">取引を追加</span>
+            <span class="accordion-icon" aria-hidden="true"></span>
+          </summary>
+          <div class="accordion-content">
+            <form id="transaction-form" class="grid">
+              <label>
+                日付
+                <input type="date" id="date" required />
+              </label>
+              <label>
+                種類
+                <select id="type" required>
+                  <option value="expense">支出</option>
+                  <option value="income">収入</option>
+                </select>
+              </label>
+              <label>
+                カテゴリ
+                <select id="category" required></select>
+              </label>
+              <label>
+                金額 (円)
+                <input id="amount" type="number" min="1" step="1" required />
+              </label>
+              <label class="full">
+                メモ
+                <input id="memo" type="text" placeholder="任意" maxlength="50" />
+              </label>
+              <button type="submit">追加する</button>
+            </form>
+          </div>
+        </details>
       </section>
 
       <section class="card">
