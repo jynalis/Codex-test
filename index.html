@@ -47,6 +47,10 @@
         <h2>今月のサマリー</h2>
         <div class="summary">
           <div>
+            <span>前月繰越</span>
+            <strong id="carryover-total">¥0</strong>
+          </div>
+          <div>
             <span>収入</span>
             <strong id="income-total">¥0</strong>
           </div>
@@ -55,10 +59,15 @@
             <strong id="expense-total">¥0</strong>
           </div>
           <div>
-            <span>収支</span>
+            <span>当月収支（繰越込み）</span>
             <strong id="balance-total">¥0</strong>
           </div>
         </div>
+      </section>
+
+      <section class="card">
+        <h2>支出グラフ（カテゴリ別）</h2>
+        <div id="expense-chart" class="chart"></div>
       </section>
 
       <section class="card">

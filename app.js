@@ -11,9 +11,11 @@ const clearButton = document.getElementById("clear-btn");
 
 const list = document.getElementById("transaction-list");
 const template = document.getElementById("transaction-item-template");
+const carryoverTotal = document.getElementById("carryover-total");
 const incomeTotal = document.getElementById("income-total");
 const expenseTotal = document.getElementById("expense-total");
 const balanceTotal = document.getElementById("balance-total");
+const expenseChart = document.getElementById("expense-chart");
 
 const CATEGORY_OPTIONS = {
   expense: ["日常費", "趣味レジャー費", "雑費・予備費", "家賃・マイホーム費", "貯蓄", "NISA", "iDeCo"],
@@ -66,6 +68,64 @@ function monthISO(dateString) {
   return dateString.slice(0, 7);
 }
 
+function calculateCarryover(transactions, targetMonth) {
+  if (!targetMonth) return 0;
+
+  return transactions.reduce((sum, item) => {
+    if (monthISO(item.date) >= targetMonth) return sum;
+    return sum + (item.type === "income" ? item.amount : -item.amount);
+  }, 0);
+}
+
+function renderExpenseChart(transactions, currentMonth) {
+  expenseChart.innerHTML = "";
+
+  if (!currentMonth) {
+    const empty = document.createElement("p");
+    empty.className = "chart-empty";
+    empty.textContent = "月を選択すると支出グラフが表示されます。";
+    expenseChart.appendChild(empty);
+    return;
+  }
+
+  const categoryTotals = transactions.reduce((acc, item) => {
+    if (item.type !== "expense" || monthISO(item.date) !== currentMonth) return acc;
+    acc[item.category] = (acc[item.category] ?? 0) + item.amount;
+    return acc;
+  }, {});
+
+  const entries = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1]);
+  if (entries.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "chart-empty";
+    empty.textContent = "この月の支出データはありません。";
+    expenseChart.appendChild(empty);
+    return;
+  }
+
+  const maxValue = entries[0][1];
+
+  entries.forEach(([category, total]) => {
+    const row = document.createElement("div");
+    row.className = "chart-row";
+
+    const meta = document.createElement("div");
+    meta.className = "chart-meta";
+    meta.innerHTML = `<span>${category}</span><strong>${yen.format(total)}</strong>`;
+
+    const track = document.createElement("div");
+    track.className = "chart-track";
+
+    const bar = document.createElement("div");
+    bar.className = "chart-bar";
+    bar.style.width = `${(total / maxValue) * 100}%`;
+
+    track.appendChild(bar);
+    row.append(meta, track);
+    expenseChart.appendChild(row);
+  });
+}
+
 function render() {
   const transactions = loadTransactions();
   const currentMonth = monthFilter.value;
@@ -85,6 +145,7 @@ function render() {
 
   let income = 0;
   let expense = 0;
+  const carryover = calculateCarryover(transactions, currentMonth);
 
   filtered
     .slice()
@@ -120,7 +181,9 @@ function render() {
 
   incomeTotal.textContent = yen.format(income);
   expenseTotal.textContent = yen.format(expense);
-  balanceTotal.textContent = yen.format(income - expense);
+  carryoverTotal.textContent = yen.format(carryover);
+  balanceTotal.textContent = yen.format(carryover + income - expense);
+  renderExpenseChart(transactions, currentMonth);
 }
 
 function addTransaction(event) {
