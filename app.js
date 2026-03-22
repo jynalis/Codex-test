@@ -8,7 +8,6 @@ const categoryInput = document.getElementById("category");
 const amountInput = document.getElementById("amount");
 const memoInput = document.getElementById("memo");
 const monthFilter = document.getElementById("month-filter");
-const clearButton = document.getElementById("clear-btn");
 
 const profileForm = document.getElementById("profile-form");
 const entryStartMonthInput = document.getElementById("entry-start-month");
@@ -57,6 +56,18 @@ const yen = new Intl.NumberFormat("ja-JP", {
   currency: "JPY",
   maximumFractionDigits: 0,
 });
+const numberWithComma = new Intl.NumberFormat("ja-JP");
+
+function parseAmountInput(value) {
+  if (typeof value !== "string") return 0;
+  const normalized = value.replace(/[^\d]/g, "");
+  return normalized ? Number(normalized) : 0;
+}
+
+function formatAmountInputValue(value) {
+  const amount = parseAmountInput(value);
+  return amount > 0 ? numberWithComma.format(amount) : "";
+}
 
 function syncCategoryOptions() {
   const options = CATEGORY_OPTIONS[typeInput.value] ?? [];
@@ -570,7 +581,7 @@ function renderAutoBreakdown(autoTransactions, month) {
 
 function createPieChartElements(entries, total, options = {}) {
   const chartColors =
-    options.colors || ["#f76707", "#20c997", "#4c6ef5", "#ae3ec9", "#e64980", "#1098ad", "#fab005", "#495057"];
+    options.colors || ["#2f5a8a", "#3e7c9a", "#4b9c95", "#6aa87a", "#8aa95f", "#b38f4f", "#9e7384", "#617089"];
   let currentDegree = 0;
   const segments = entries.map(([, amount], index) => {
     const ratio = amount / total;
@@ -610,6 +621,21 @@ function createPieChartElements(entries, total, options = {}) {
   });
 
   return { pieWrap, legend };
+}
+
+function setupFormattedAmountInput(input) {
+  if (!input) return;
+  input.addEventListener("input", () => {
+    const amount = parseAmountInput(input.value);
+    input.dataset.rawValue = amount > 0 ? String(amount) : "";
+  });
+  input.addEventListener("blur", () => {
+    input.value = formatAmountInputValue(input.value);
+  });
+  input.addEventListener("focus", () => {
+    const amount = parseAmountInput(input.value);
+    input.value = amount > 0 ? String(amount) : "";
+  });
 }
 
 function calculateAge(birthDate) {
@@ -771,7 +797,7 @@ function renderAssetForecast(settings) {
 
   const chartSection = document.createElement("section");
   chartSection.className = "chart asset-composition";
-  chartSection.innerHTML = "<h3>想定資産額の構成比</h3>";
+  chartSection.innerHTML = "<h3>総資産額の構成比（契約別）</h3>";
 
   if (projectedRows.length === 0 || total === 0) {
     const empty = document.createElement("p");
@@ -782,38 +808,12 @@ function renderAssetForecast(settings) {
     return;
   }
 
-  const typeEntries = typeTotals.filter((item) => item.amount > 0).map((item) => [item.type, item.amount]);
-  const { pieWrap, legend } = createPieChartElements(typeEntries, total, { centerLabel: "想定総額" });
+  const contractEntries = projectedRows
+    .filter((plan) => plan.projectedAmount > 0)
+    .map((plan) => [`${plan.type}${plan.name ? `（${plan.name}）` : ""}`, plan.projectedAmount]);
+  const { pieWrap, legend } = createPieChartElements(contractEntries, total, { centerLabel: "想定総額" });
   chartSection.appendChild(pieWrap);
   chartSection.appendChild(legend);
-
-  if (projectedRows.length > 1) {
-    const detailTitle = document.createElement("h4");
-    detailTitle.textContent = "契約ごとの内訳";
-    chartSection.appendChild(detailTitle);
-
-    const detailEntries = projectedRows
-      .filter((plan) => plan.projectedAmount > 0)
-      .map((plan) => [`${plan.type}${plan.name ? `（${plan.name}）` : ""}`, plan.projectedAmount]);
-
-    if (detailEntries.length > 0) {
-      const detailLegend = document.createElement("ul");
-      detailLegend.className = "pie-legend";
-      detailEntries.forEach(([name, amount]) => {
-        const ratio = (amount / total) * 100;
-        const item = document.createElement("li");
-        item.className = "pie-legend-item";
-        item.innerHTML = `
-          <span class="dot" style="background:#868e96"></span>
-          <span class="category">${name}</span>
-          <strong class="ratio">${ratio.toFixed(1)}%</strong>
-          <span class="value">${yen.format(amount)}</span>
-        `;
-        detailLegend.appendChild(item);
-      });
-      chartSection.appendChild(detailLegend);
-    }
-  }
 
   assetForecast.appendChild(chartSection);
 }
@@ -828,9 +828,11 @@ function createHistoryRow({ type, month = "", amount = "" } = {}) {
 
   row.innerHTML = `
     <label>${monthLabel}<input type="month" class="${monthClass}" value="${month}" /></label>
-    <label>${amountLabel}<input type="number" min="0" step="1" class="${amountClass}" value="${amount}" /></label>
+    <label>${amountLabel}<input type="text" inputmode="numeric" class="${amountClass} js-amount-field" value="${amount ? numberWithComma.format(amount) : ""}" /></label>
     <button type="button" class="small danger remove-history">削除</button>
   `;
+  const amountField = row.querySelector(`.${amountClass}`);
+  setupFormattedAmountInput(amountField);
   row.querySelector(".remove-history").addEventListener("click", () => row.remove());
   return row;
 }
@@ -896,7 +898,7 @@ function collectPlansFromForm() {
       const lumpSums = Array.from(block.querySelectorAll(".lump-list .history-row"))
         .map((row) => ({
           month: row.querySelector(".lump-month").value,
-          amount: Number(row.querySelector(".lump-amount").value),
+          amount: parseAmountInput(row.querySelector(".lump-amount").value),
         }))
         .filter((item) => item.month && Number.isFinite(item.amount) && item.amount >= 0)
         .sort((a, b) => compareMonth(a.month, b.month));
@@ -904,7 +906,7 @@ function collectPlansFromForm() {
       const monthlyContributions = Array.from(block.querySelectorAll(".monthly-list .history-row"))
         .map((row) => ({
           startMonth: row.querySelector(".monthly-start-month").value,
-          amount: Number(row.querySelector(".monthly-amount").value),
+          amount: parseAmountInput(row.querySelector(".monthly-amount").value),
         }))
         .filter((item) => item.startMonth && Number.isFinite(item.amount) && item.amount >= 0)
         .sort((a, b) => compareMonth(a.startMonth, b.startMonth));
@@ -1019,7 +1021,7 @@ function addTransaction(event) {
   const date = dateInput.value;
   const type = typeInput.value;
   const category = categoryInput.value.trim();
-  const amount = Number(amountInput.value);
+  const amount = parseAmountInput(amountInput.value);
   const memo = memoInput.value.trim();
 
   if (!date || !category || !Number.isFinite(amount) || amount <= 0) {
@@ -1041,24 +1043,7 @@ function addTransaction(event) {
   dateInput.value = date;
   typeInput.value = "expense";
   syncCategoryOptions();
-  render();
-}
-
-function clearAll() {
-  const currentMonth = monthFilter.value;
-  if (!parseMonth(currentMonth)) return;
-
-  const ok = window.confirm(`${currentMonth}の手動取引をすべて削除します。よろしいですか？`);
-  if (!ok) return;
-
-  const transactions = loadTransactions();
-  const next = transactions.filter((item) => {
-    const isCurrentMonth = monthISO(item.date) === currentMonth;
-    const isManual = !item.isAuto;
-    return !(isCurrentMonth && isManual);
-  });
-
-  saveTransactions(next);
+  amountInput.value = "";
   render();
 }
 
@@ -1144,7 +1129,7 @@ function init() {
   form.addEventListener("submit", addTransaction);
   typeInput.addEventListener("change", syncCategoryOptions);
   monthFilter.addEventListener("change", render);
-  clearButton.addEventListener("click", clearAll);
+  setupFormattedAmountInput(amountInput);
 
   addPlanButton.addEventListener("click", () => {
     planList.appendChild(createPlanBlock());

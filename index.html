@@ -109,7 +109,7 @@
               </label>
               <label>
                 金額 (円)
-                <input id="amount" type="number" min="1" step="1" required />
+                <input id="amount" type="text" inputmode="numeric" autocomplete="off" placeholder="例: 50,000" required />
               </label>
               <label class="full">
                 メモ
@@ -187,7 +187,6 @@
           </div>
           <div class="filters">
             <input id="month-filter" type="month" />
-            <button id="clear-btn" type="button">全削除</button>
           </div>
         </div>
         <ul id="transaction-list" class="list"></ul>
