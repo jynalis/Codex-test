@@ -18,7 +18,7 @@ const balanceTotal = document.getElementById("balance-total");
 const expenseChart = document.getElementById("expense-chart");
 
 const CATEGORY_OPTIONS = {
-  expense: ["日常費", "趣味レジャー費", "雑費・予備費", "家賃・マイホーム費", "貯蓄", "NISA", "iDeCo"],
+  expense: ["日常費", "趣味レジャー費", "雑費・予備費", "家賃・マイホーム費", "生命保険費", "貯蓄", "NISA", "iDeCo"],
   income: ["定期収入", "臨時収入"],
 };
 
@@ -137,27 +137,51 @@ function renderExpenseChart(transactions, currentMonth) {
   }
 
   expenseChart.classList.toggle("has-data", true);
-  const maxValue = entries[0][1];
+  const totalExpense = entries.reduce((sum, [, amount]) => sum + amount, 0);
+  const chartColors = ["#e07a5f", "#f2cc8f", "#81b29a", "#3d405b", "#f4a261", "#84a59d", "#c9ada7", "#9d8189"];
 
-  entries.forEach(([category, total]) => {
-    const row = document.createElement("div");
-    row.className = "chart-row";
-
-    const meta = document.createElement("div");
-    meta.className = "chart-meta";
-    meta.innerHTML = `<span>${category}</span><strong>${yen.format(total)}</strong>`;
-
-    const track = document.createElement("div");
-    track.className = "chart-track";
-
-    const bar = document.createElement("div");
-    bar.className = "chart-bar";
-    bar.style.width = `${(total / maxValue) * 100}%`;
-
-    track.appendChild(bar);
-    row.append(meta, track);
-    expenseChart.appendChild(row);
+  let currentDegree = 0;
+  const segments = entries.map(([, amount], index) => {
+    const ratio = amount / totalExpense;
+    const degree = ratio * 360;
+    const start = currentDegree;
+    const end = currentDegree + degree;
+    currentDegree = end;
+    return `${chartColors[index % chartColors.length]} ${start}deg ${end}deg`;
   });
+
+  const pieWrap = document.createElement("div");
+  pieWrap.className = "pie-wrap";
+
+  const pieChart = document.createElement("div");
+  pieChart.className = "pie-chart";
+  pieChart.style.background = `conic-gradient(${segments.join(", ")})`;
+
+  const pieCenter = document.createElement("div");
+  pieCenter.className = "pie-center";
+  pieCenter.innerHTML = `<span>合計</span><strong>${yen.format(totalExpense)}</strong>`;
+
+  pieChart.appendChild(pieCenter);
+  pieWrap.appendChild(pieChart);
+  expenseChart.appendChild(pieWrap);
+
+  const legend = document.createElement("ul");
+  legend.className = "pie-legend";
+
+  entries.forEach(([category, amount], index) => {
+    const ratio = (amount / totalExpense) * 100;
+    const item = document.createElement("li");
+    item.className = "pie-legend-item";
+    item.innerHTML = `
+      <span class="dot" style="background:${chartColors[index % chartColors.length]}"></span>
+      <span class="category">${category}</span>
+      <strong class="ratio">${ratio.toFixed(1)}%</strong>
+      <span class="value">${yen.format(amount)}</span>
+    `;
+    legend.appendChild(item);
+  });
+
+  expenseChart.appendChild(legend);
 }
 
 function render() {
