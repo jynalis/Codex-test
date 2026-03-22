@@ -83,6 +83,78 @@ function defaultSettings() {
   return { birthDate: "", entryStartMonth: "", plans: [] };
 }
 
+function parseMonth(month) {
+  if (typeof month !== "string") return null;
+  const match = month.match(/^(\d{4})-(\d{2})$/);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  if (!Number.isInteger(year) || monthIndex < 0 || monthIndex > 11) return null;
+  return { year, monthIndex };
+}
+
+function formatMonth(year, monthIndex) {
+  return `${year}-${String(monthIndex + 1).padStart(2, "0")}`;
+}
+
+function compareMonth(a, b) {
+  return a.localeCompare(b);
+}
+
+function normalizeMonthlyContributionHistory(plan) {
+  if (Array.isArray(plan.monthlyContributions) && plan.monthlyContributions.length > 0) {
+    return plan.monthlyContributions
+      .map((item) => ({
+        startMonth: item.startMonth,
+        amount: Math.max(Number(item.amount) || 0, 0),
+      }))
+      .filter((item) => parseMonth(item.startMonth))
+      .sort((a, b) => compareMonth(a.startMonth, b.startMonth));
+  }
+
+  const migrated = [];
+  if (parseMonth(plan.startMonth)) {
+    migrated.push({ startMonth: plan.startMonth, amount: Math.max(Number(plan.baseAmount) || 0, 0) });
+  }
+
+  const oldChanges = Array.isArray(plan.changes) ? plan.changes : [];
+  oldChanges.forEach((change) => {
+    if (!parseMonth(change.month)) return;
+    migrated.push({
+      startMonth: change.month,
+      amount: Math.max(Number(change.amount) || 0, 0),
+    });
+  });
+
+  return migrated.sort((a, b) => compareMonth(a.startMonth, b.startMonth));
+}
+
+function normalizeLumpSumHistory(plan) {
+  if (!Array.isArray(plan.lumpSums)) return [];
+  return plan.lumpSums
+    .map((item) => ({
+      month: item.month,
+      amount: Math.max(Number(item.amount) || 0, 0),
+    }))
+    .filter((item) => parseMonth(item.month))
+    .sort((a, b) => compareMonth(a.month, b.month));
+}
+
+function normalizePlan(rawPlan) {
+  const plan = rawPlan ?? {};
+  return {
+    id: plan.id || crypto.randomUUID(),
+    type: PLAN_TYPES.includes(plan.type) ? plan.type : "NISA",
+    name: typeof plan.name === "string" ? plan.name : "",
+    expectedReturn: Number(plan.expectedReturn) || 0,
+    withdrawalDay: Math.max(Number(plan.withdrawalDay) || 1, 1),
+    withdrawAge: Math.max(Number(plan.withdrawAge) || 0, 0),
+    lumpSums: normalizeLumpSumHistory(plan),
+    monthlyContributions: normalizeMonthlyContributionHistory(plan),
+  };
+}
+
 function loadSettings() {
   const raw = localStorage.getItem(SETTINGS_KEY);
   if (!raw) return defaultSettings();
@@ -93,24 +165,7 @@ function loadSettings() {
     return {
       birthDate: data.birthDate ?? "",
       entryStartMonth: parseMonth(data.entryStartMonth) ? data.entryStartMonth : "",
-      plans: plans
-        .map((plan) => ({
-          ...plan,
-          type: PLAN_TYPES.includes(plan.type) ? plan.type : "NISA",
-          baseAmount: Number(plan.baseAmount) || 0,
-          expectedReturn: Number(plan.expectedReturn) || 0,
-          withdrawalDay: Number(plan.withdrawalDay) || 1,
-          withdrawAge: Number(plan.withdrawAge) || 0,
-          changes: Array.isArray(plan.changes)
-            ? plan.changes
-                .map((change) => ({
-                  month: change.month,
-                  amount: Number(change.amount) || 0,
-                }))
-                .filter((change) => change.month)
-            : [],
-        }))
-        .filter((plan) => plan.startMonth),
+      plans: plans.map((plan) => normalizePlan(plan)),
     };
   } catch {
     return defaultSettings();
@@ -133,29 +188,37 @@ function monthISO(dateString) {
   return dateString.slice(0, 7);
 }
 
-function compareMonth(a, b) {
-  return a.localeCompare(b);
-}
-
 function clampDay(year, month, day) {
   const lastDay = new Date(year, month, 0).getDate();
   return Math.min(Math.max(day, 1), lastDay);
 }
 
-function planAmountAtMonth(plan, month) {
-  if (!plan.startMonth || compareMonth(month, plan.startMonth) < 0) return 0;
+function addOneMonth(month) {
+  const parsed = parseMonth(month);
+  if (!parsed) return month;
+  const next = new Date(parsed.year, parsed.monthIndex + 1, 1);
+  return formatMonth(next.getFullYear(), next.getMonth());
+}
 
-  const changes = Array.isArray(plan.changes) ? plan.changes : [];
-  let amount = Number(plan.baseAmount) || 0;
+function monthsBetweenInclusive(startMonth, endMonth) {
+  const start = parseMonth(startMonth);
+  const end = parseMonth(endMonth);
+  if (!start || !end) return 0;
+  return (end.year - start.year) * 12 + (end.monthIndex - start.monthIndex) + 1;
+}
 
-  changes
-    .filter((change) => change.month && compareMonth(change.month, month) <= 0)
-    .sort((a, b) => compareMonth(a.month, b.month))
-    .forEach((change) => {
-      amount = Number(change.amount) || 0;
-    });
+function findActiveMonthlyContribution(plan, month) {
+  const histories = Array.isArray(plan.monthlyContributions) ? plan.monthlyContributions : [];
+  const active = histories
+    .filter((history) => history.startMonth && compareMonth(history.startMonth, month) <= 0)
+    .sort((a, b) => compareMonth(a.startMonth, b.startMonth));
+  if (active.length === 0) return 0;
+  return Math.max(Number(active[active.length - 1].amount) || 0, 0);
+}
 
-  return Math.max(amount, 0);
+function getLumpSumsOnMonth(plan, month) {
+  const histories = Array.isArray(plan.lumpSums) ? plan.lumpSums : [];
+  return histories.filter((history) => history.month === month).map((history) => Math.max(Number(history.amount) || 0, 0));
 }
 
 function createAutoExpensesForMonth(settings, month) {
@@ -165,23 +228,37 @@ function createAutoExpensesForMonth(settings, month) {
   const monthNum = Number(monthStr);
 
   return settings.plans.flatMap((plan) => {
-    const amount = planAmountAtMonth(plan, month);
-    if (!amount) return [];
-
     const day = clampDay(year, monthNum, Number(plan.withdrawalDay) || 1);
     const date = `${month}-${String(day).padStart(2, "0")}`;
-    return [
-      {
-        id: `auto-${plan.id}-${month}`,
-        date,
-        type: "expense",
-        category: ASSET_FORMATION_CATEGORY,
-        amount,
-        memo: `固定積立: ${plan.type}${plan.name ? `（${plan.name}）` : ""}`,
-        isAuto: true,
-        sourceType: plan.type,
-      },
-    ];
+
+    const monthlyAmount = findActiveMonthlyContribution(plan, month);
+    const monthlyTx = monthlyAmount
+      ? [{
+          id: `auto-monthly-${plan.id}-${month}`,
+          date,
+          type: "expense",
+          category: ASSET_FORMATION_CATEGORY,
+          amount: monthlyAmount,
+          memo: `月額積立: ${plan.type}${plan.name ? `（${plan.name}）` : ""}`,
+          isAuto: true,
+          sourceType: plan.type,
+          sourceKind: "monthly",
+        }]
+      : [];
+
+    const lumpTx = getLumpSumsOnMonth(plan, month).map((amount, index) => ({
+      id: `auto-lump-${plan.id}-${month}-${index}`,
+      date,
+      type: "expense",
+      category: ASSET_FORMATION_CATEGORY,
+      amount,
+      memo: `一括入金: ${plan.type}${plan.name ? `（${plan.name}）` : ""}`,
+      isAuto: true,
+      sourceType: plan.type,
+      sourceKind: "lump",
+    }));
+
+    return [...monthlyTx, ...lumpTx];
   });
 }
 
@@ -231,9 +308,7 @@ function calculateCarryover(transactions, settings, targetMonth) {
   while (compareMonth(month, targetMonth) < 0) {
     const autoTransactions = createEligibleAutoExpensesForMonth(settings, transactions, month);
     auto -= autoTransactions.reduce((sum, item) => sum + item.amount, 0);
-    const [y, m] = month.split("-").map(Number);
-    const next = new Date(y, m, 1);
-    month = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`;
+    month = addOneMonth(month);
   }
 
   return manual + auto;
@@ -359,7 +434,7 @@ function renderAutoBreakdown(autoTransactions, month) {
   const hasAny = Object.values(totals).some((amount) => amount > 0);
   const wrap = document.createElement("div");
   wrap.className = "auto-card";
-  wrap.innerHTML = `<h3>資産形成支出（固定積立）の内訳（${month}）</h3>`;
+  wrap.innerHTML = `<h3>資産形成支出（自動反映）の内訳（${month}）</h3>`;
 
   if (!hasAny) {
     const empty = document.createElement("p");
@@ -462,35 +537,6 @@ function parseBirthDate(birthDate) {
   return date;
 }
 
-function parseMonth(month) {
-  if (typeof month !== "string") return null;
-  const match = month.match(/^(\d{4})-(\d{2})$/);
-  if (!match) return null;
-
-  const year = Number(match[1]);
-  const monthIndex = Number(match[2]) - 1;
-  if (!Number.isInteger(year) || monthIndex < 0 || monthIndex > 11) return null;
-  return { year, monthIndex };
-}
-
-function formatMonth(year, monthIndex) {
-  return `${year}-${String(monthIndex + 1).padStart(2, "0")}`;
-}
-
-function addOneMonth(month) {
-  const parsed = parseMonth(month);
-  if (!parsed) return month;
-  const next = new Date(parsed.year, parsed.monthIndex + 1, 1);
-  return formatMonth(next.getFullYear(), next.getMonth());
-}
-
-function monthsBetweenInclusive(startMonth, endMonth) {
-  const start = parseMonth(startMonth);
-  const end = parseMonth(endMonth);
-  if (!start || !end) return 0;
-  return (end.year - start.year) * 12 + (end.monthIndex - start.monthIndex) + 1;
-}
-
 function resolveWithdrawTargetMonth(birthDate, withdrawAge) {
   const birth = parseBirthDate(birthDate);
   if (!birth) return null;
@@ -506,41 +552,56 @@ function resolveWithdrawTargetMonth(birthDate, withdrawAge) {
   return formatMonth(withdrawDate.getFullYear(), withdrawDate.getMonth());
 }
 
-function resolvePlanChanges(plan) {
-  return (Array.isArray(plan.changes) ? plan.changes : [])
-    .filter((change) => change.month && parseMonth(change.month))
-    .sort((a, b) => compareMonth(a.month, b.month))
-    .map((change) => ({
-      month: change.month,
-      amount: Math.max(Number(change.amount) || 0, 0),
-    }));
+function resolveProjectionStartMonth(plan, targetMonth) {
+  const monthlyStart = (Array.isArray(plan.monthlyContributions) ? plan.monthlyContributions : [])
+    .map((history) => history.startMonth)
+    .filter((month) => parseMonth(month) && compareMonth(month, targetMonth) <= 0)
+    .sort(compareMonth)[0];
+
+  const lumpStart = (Array.isArray(plan.lumpSums) ? plan.lumpSums : [])
+    .map((history) => history.month)
+    .filter((month) => parseMonth(month) && compareMonth(month, targetMonth) <= 0)
+    .sort(compareMonth)[0];
+
+  if (!monthlyStart) return lumpStart || null;
+  if (!lumpStart) return monthlyStart;
+  return compareMonth(monthlyStart, lumpStart) <= 0 ? monthlyStart : lumpStart;
 }
 
 function projectPlanAssetDetails(plan, birthDate) {
-  const startMonth = plan.startMonth;
   const annualReturn = (Number(plan.expectedReturn) || 0) / 100;
   const monthlyRate = Math.pow(1 + annualReturn, 1 / 12) - 1;
   const targetMonth = resolveWithdrawTargetMonth(birthDate, plan.withdrawAge);
-  if (!targetMonth || !parseMonth(startMonth)) {
-    return { amount: 0, startMonth, targetMonth, months: 0, appliedChanges: [] };
-  }
-  if (compareMonth(startMonth, targetMonth) > 0) {
-    return { amount: 0, startMonth, targetMonth, months: 0, appliedChanges: [] };
+  if (!targetMonth) {
+    return { amount: 0, startMonth: null, targetMonth, months: 0, appliedMonthly: [], appliedLumpSums: [] };
   }
 
-  const changes = resolvePlanChanges(plan);
+  const startMonth = resolveProjectionStartMonth(plan, targetMonth);
+  if (!startMonth || compareMonth(startMonth, targetMonth) > 0) {
+    return { amount: 0, startMonth, targetMonth, months: 0, appliedMonthly: [], appliedLumpSums: [] };
+  }
+
   let month = startMonth;
-  let currentAmount = Math.max(Number(plan.baseAmount) || 0, 0);
   let total = 0;
-  const appliedChanges = [];
+  const appliedMonthly = [];
+  const appliedLumpSums = [];
 
   while (compareMonth(month, targetMonth) <= 0) {
-    while (changes.length > appliedChanges.length && changes[appliedChanges.length].month === month) {
-      const change = changes[appliedChanges.length];
-      currentAmount = change.amount;
-      appliedChanges.push(change);
+    const monthlyAmount = findActiveMonthlyContribution(plan, month);
+    if (monthlyAmount > 0) {
+      appliedMonthly.push({ month, amount: monthlyAmount });
+      total += monthlyAmount;
     }
-    total = total * (1 + monthlyRate) + currentAmount;
+
+    const lumpSums = getLumpSumsOnMonth(plan, month);
+    lumpSums.forEach((amount) => {
+      if (amount > 0) {
+        appliedLumpSums.push({ month, amount });
+        total += amount;
+      }
+    });
+
+    total *= 1 + monthlyRate;
     month = addOneMonth(month);
   }
 
@@ -549,7 +610,8 @@ function projectPlanAssetDetails(plan, birthDate) {
     startMonth,
     targetMonth,
     months: monthsBetweenInclusive(startMonth, targetMonth),
-    appliedChanges,
+    appliedMonthly,
+    appliedLumpSums,
   };
 }
 
@@ -563,22 +625,12 @@ function renderAssetForecast(settings) {
   const currentAge = calculateAge(settings.birthDate);
   const projectedRows = settings.plans.map((plan) => {
     const projection = projectPlanAssetDetails(plan, settings.birthDate);
-    const row = {
+    return {
       ...plan,
       projectedAmount: projection.amount,
       effectiveWithdrawAge: Number(plan.withdrawAge) || currentAge,
       projection,
     };
-    console.log("[asset-forecast debug]", {
-      planId: plan.id,
-      planName: plan.name || "",
-      birthDate: settings.birthDate,
-      startMonth: projection.startMonth,
-      targetWithdrawalMonth: projection.targetMonth,
-      accumulationMonths: projection.months,
-      appliedChangeHistory: projection.appliedChanges,
-    });
-    return row;
   });
   const rows = projectedRows
     .map(
@@ -660,51 +712,69 @@ function renderAssetForecast(settings) {
   assetForecast.appendChild(chartSection);
 }
 
-function createChangeRow(change = { month: "", amount: "" }) {
+function createHistoryRow({ type, month = "", amount = "" } = {}) {
   const row = document.createElement("div");
-  row.className = "change-row";
+  row.className = "history-row";
+  const monthClass = type === "lump" ? "lump-month" : "monthly-start-month";
+  const amountClass = type === "lump" ? "lump-amount" : "monthly-amount";
+  const monthLabel = type === "lump" ? "年月" : "開始年月";
+  const amountLabel = type === "lump" ? "一括入金額(円)" : "月額(円)";
+
   row.innerHTML = `
-    <input type="month" class="change-month" value="${change.month || ""}" />
-    <input type="number" min="0" step="1" class="change-amount" placeholder="変更後月額(円)" value="${change.amount || ""}" />
-    <button type="button" class="small danger remove-change">削除</button>
+    <label>${monthLabel}<input type="month" class="${monthClass}" value="${month}" /></label>
+    <label>${amountLabel}<input type="number" min="0" step="1" class="${amountClass}" value="${amount}" /></label>
+    <button type="button" class="small danger remove-history">削除</button>
   `;
-  row.querySelector(".remove-change").addEventListener("click", () => row.remove());
+  row.querySelector(".remove-history").addEventListener("click", () => row.remove());
   return row;
 }
 
 function createPlanBlock(plan = {}) {
+  const normalizedPlan = normalizePlan(plan);
   const wrap = document.createElement("article");
   wrap.className = "plan-item";
-  const planId = plan.id || crypto.randomUUID();
 
-  const typeOptions = PLAN_TYPES.map((type) => `<option value="${type}" ${plan.type === type ? "selected" : ""}>${type}</option>`).join("");
+  const typeOptions = PLAN_TYPES.map((type) => `<option value="${type}" ${normalizedPlan.type === type ? "selected" : ""}>${type}</option>`).join("");
   wrap.innerHTML = `
-    <input type="hidden" class="plan-id" value="${planId}" />
+    <input type="hidden" class="plan-id" value="${normalizedPlan.id}" />
     <div class="plan-grid">
       <label>種類<select class="plan-type">${typeOptions}</select></label>
-      <label>識別名<input class="plan-name" type="text" maxlength="30" placeholder="例: つみたて枠" value="${plan.name || ""}" /></label>
-      <label>開始月<input class="plan-start-month" type="month" value="${plan.startMonth || todayISO().slice(0, 7)}" /></label>
-      <label>月額(円)<input class="plan-base-amount" type="number" min="0" step="1" value="${plan.baseAmount ?? ""}" /></label>
-      <label>引き落とし日<input class="plan-withdrawal-day" type="number" min="1" max="31" step="1" value="${plan.withdrawalDay ?? 1}" /></label>
-      <label>想定利回り(年%)<input class="plan-expected-return" type="number" step="0.1" value="${plan.expectedReturn ?? ""}" /></label>
-      <label>取崩年齢<input class="plan-withdraw-age" type="number" min="0" max="120" step="1" value="${plan.withdrawAge ?? ""}" /></label>
+      <label>識別名<input class="plan-name" type="text" maxlength="30" placeholder="例: つみたて枠" value="${normalizedPlan.name || ""}" /></label>
+      <label>想定利回り(年%)<input class="plan-expected-return" type="number" step="0.1" value="${normalizedPlan.expectedReturn ?? ""}" /></label>
+      <label>取崩年齢<input class="plan-withdraw-age" type="number" min="0" max="120" step="1" value="${normalizedPlan.withdrawAge ?? ""}" /></label>
+      <label>引き落とし日<input class="plan-withdrawal-day" type="number" min="1" max="31" step="1" value="${normalizedPlan.withdrawalDay ?? 1}" /></label>
     </div>
     <div class="change-wrap">
       <div class="change-header">
-        <p>金額変更（月から反映）</p>
-        <button type="button" class="small add-change">変更を追加</button>
+        <p>一括入金履歴（登録月に1回のみ反映）</p>
+        <button type="button" class="small add-lump">一括入金を追加</button>
       </div>
-      <div class="change-list"></div>
+      <div class="lump-list"></div>
+    </div>
+    <div class="change-wrap">
+      <div class="change-header">
+        <p>月額積立履歴（開始年月以降で有効）</p>
+        <button type="button" class="small add-monthly">月額履歴を追加</button>
+      </div>
+      <div class="monthly-list"></div>
     </div>
     <button type="button" class="danger remove-plan">この枠を削除</button>
   `;
 
-  const changeList = wrap.querySelector(".change-list");
-  const changes = Array.isArray(plan.changes) && plan.changes.length > 0 ? plan.changes : [];
-  changes.forEach((change) => changeList.appendChild(createChangeRow(change)));
+  const lumpList = wrap.querySelector(".lump-list");
+  const monthlyList = wrap.querySelector(".monthly-list");
 
-  wrap.querySelector(".add-change").addEventListener("click", () => {
-    changeList.appendChild(createChangeRow());
+  normalizedPlan.lumpSums.forEach((history) => lumpList.appendChild(createHistoryRow({ type: "lump", month: history.month, amount: history.amount })));
+  normalizedPlan.monthlyContributions.forEach((history) =>
+    monthlyList.appendChild(createHistoryRow({ type: "monthly", month: history.startMonth, amount: history.amount }))
+  );
+
+  wrap.querySelector(".add-lump").addEventListener("click", () => {
+    lumpList.appendChild(createHistoryRow({ type: "lump" }));
+  });
+
+  wrap.querySelector(".add-monthly").addEventListener("click", () => {
+    monthlyList.appendChild(createHistoryRow({ type: "monthly" }));
   });
 
   wrap.querySelector(".remove-plan").addEventListener("click", () => {
@@ -717,26 +787,35 @@ function createPlanBlock(plan = {}) {
 function collectPlansFromForm() {
   return Array.from(planList.querySelectorAll(".plan-item"))
     .map((block) => {
-      const changes = Array.from(block.querySelectorAll(".change-row"))
+      const lumpSums = Array.from(block.querySelectorAll(".lump-list .history-row"))
         .map((row) => ({
-          month: row.querySelector(".change-month").value,
-          amount: Number(row.querySelector(".change-amount").value),
+          month: row.querySelector(".lump-month").value,
+          amount: Number(row.querySelector(".lump-amount").value),
         }))
-        .filter((item) => item.month && Number.isFinite(item.amount));
+        .filter((item) => item.month && Number.isFinite(item.amount) && item.amount >= 0)
+        .sort((a, b) => compareMonth(a.month, b.month));
+
+      const monthlyContributions = Array.from(block.querySelectorAll(".monthly-list .history-row"))
+        .map((row) => ({
+          startMonth: row.querySelector(".monthly-start-month").value,
+          amount: Number(row.querySelector(".monthly-amount").value),
+        }))
+        .filter((item) => item.startMonth && Number.isFinite(item.amount) && item.amount >= 0)
+        .sort((a, b) => compareMonth(a.startMonth, b.startMonth));
 
       return {
         id: block.querySelector(".plan-id").value,
         type: block.querySelector(".plan-type").value,
         name: block.querySelector(".plan-name").value.trim(),
-        startMonth: block.querySelector(".plan-start-month").value,
-        baseAmount: Number(block.querySelector(".plan-base-amount").value),
-        withdrawalDay: Number(block.querySelector(".plan-withdrawal-day").value),
         expectedReturn: Number(block.querySelector(".plan-expected-return").value),
         withdrawAge: Number(block.querySelector(".plan-withdraw-age").value),
-        changes,
+        withdrawalDay: Number(block.querySelector(".plan-withdrawal-day").value),
+        lumpSums,
+        monthlyContributions,
       };
     })
-    .filter((plan) => Number.isFinite(plan.baseAmount) && plan.baseAmount >= 0 && plan.startMonth);
+    .filter((plan) => plan.lumpSums.length > 0 || plan.monthlyContributions.length > 0)
+    .map((plan) => normalizePlan(plan));
 }
 
 function renderPlans(settings) {
@@ -795,7 +874,7 @@ function render() {
       const del = node.querySelector(".delete");
 
       meta.textContent = item.isAuto
-        ? `${item.date} / 固定積立 / ${item.sourceType}`
+        ? `${item.date} / 自動反映 / ${item.sourceType}`
         : `${item.date} / ${item.category}`;
       memo.textContent = item.memo || "メモなし";
       amount.textContent = `${item.type === "income" ? "+" : "-"}${yen.format(item.amount)}`;

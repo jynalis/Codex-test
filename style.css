@@ -156,10 +156,15 @@ button.danger {
   gap: 8px;
 }
 
-.change-row {
+.history-row {
   display: grid;
   grid-template-columns: 1fr 1fr auto;
   gap: 8px;
+  align-items: end;
+}
+
+.history-row label {
+  font-size: 0.8rem;
 }
 
 .summary {
