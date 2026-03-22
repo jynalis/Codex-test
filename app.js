@@ -15,11 +15,27 @@ const incomeTotal = document.getElementById("income-total");
 const expenseTotal = document.getElementById("expense-total");
 const balanceTotal = document.getElementById("balance-total");
 
+const CATEGORY_OPTIONS = {
+  expense: ["日常費", "趣味レジャー費", "雑費・予備費", "家賃・マイホーム費", "貯蓄", "NISA", "iDeCo"],
+  income: ["定期収入", "臨時収入"],
+};
+
 const yen = new Intl.NumberFormat("ja-JP", {
   style: "currency",
   currency: "JPY",
   maximumFractionDigits: 0,
 });
+
+function syncCategoryOptions() {
+  const options = CATEGORY_OPTIONS[typeInput.value] ?? [];
+  categoryInput.innerHTML = "";
+  options.forEach((category) => {
+    const option = document.createElement("option");
+    option.value = category;
+    option.textContent = category;
+    categoryInput.appendChild(option);
+  });
+}
 
 function loadTransactions() {
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -134,6 +150,7 @@ function addTransaction(event) {
   form.reset();
   dateInput.value = todayISO();
   typeInput.value = "expense";
+  syncCategoryOptions();
   render();
 }
 
@@ -147,7 +164,9 @@ function clearAll() {
 function init() {
   dateInput.value = todayISO();
   monthFilter.value = todayISO().slice(0, 7);
+  syncCategoryOptions();
   form.addEventListener("submit", addTransaction);
+  typeInput.addEventListener("change", syncCategoryOptions);
   monthFilter.addEventListener("change", render);
   clearButton.addEventListener("click", clearAll);
   render();
