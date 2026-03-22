@@ -13,7 +13,7 @@
         <p>収入・支出・積立資産をまとめて管理できます。</p>
       </header>
 
-      <section class="card dashboard-section">
+      <section id="section-home" class="card dashboard-section" data-nav-section="home">
         <div class="section-header">
           <h2>家計診断ダッシュボード</h2>
         </div>
@@ -75,7 +75,7 @@
         </details>
       </section>
 
-      <section class="card accordion-card">
+      <section id="section-input" class="card accordion-card" data-nav-section="input">
         <details class="accordion">
           <summary class="accordion-summary">
             <span class="accordion-title">収支を入力</span>
@@ -150,7 +150,7 @@
         </div>
       </section>
 
-      <section class="card">
+      <section id="section-assets" class="card" data-nav-section="assets">
         <div class="section-heading">
           <h2>将来資産シミュレーション</h2>
           <p class="section-description">
@@ -171,7 +171,7 @@
         <div id="auto-breakdown" class="auto-breakdown"></div>
       </section>
 
-      <section class="card">
+      <section id="section-history" class="card" data-nav-section="history">
         <div class="section-header">
           <div class="section-heading">
             <h2>取引履歴</h2>
@@ -187,6 +187,31 @@
         <ul id="transaction-list" class="list"></ul>
       </section>
     </main>
+
+    <nav class="bottom-nav" aria-label="下部ナビゲーション">
+      <button type="button" class="bottom-nav-btn is-active" data-nav-target="home" aria-current="page">
+        <span class="nav-icon" aria-hidden="true">⌂</span>
+        <span class="nav-label">ホーム</span>
+      </button>
+      <button type="button" class="bottom-nav-btn" data-nav-target="input">
+        <span class="nav-icon" aria-hidden="true">✎</span>
+        <span class="nav-label">入力</span>
+      </button>
+      <button type="button" class="bottom-nav-btn" data-nav-target="assets">
+        <span class="nav-icon" aria-hidden="true">◔</span>
+        <span class="nav-label">資産</span>
+      </button>
+      <button type="button" class="bottom-nav-btn" data-nav-target="schedule">
+        <span class="nav-icon" aria-hidden="true">☰</span>
+        <span class="nav-label">予定</span>
+      </button>
+      <button type="button" class="bottom-nav-btn" data-nav-target="history">
+        <span class="nav-icon" aria-hidden="true">⎘</span>
+        <span class="nav-label">履歴</span>
+      </button>
+    </nav>
+
+    <p id="nav-toast" class="nav-toast" role="status" aria-live="polite"></p>
 
     <template id="transaction-item-template">
       <li class="item">
