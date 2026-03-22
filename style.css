@@ -1,14 +1,15 @@
 :root {
   color-scheme: light;
   font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", system-ui, sans-serif;
-  --bg: #ffe0cc;
-  --card: #fffaf6;
-  --text: #3b1c32;
-  --muted: #6a4261;
+  --bg: #f4f7fb;
+  --card: #ffffff;
+  --text: #1f2937;
+  --muted: #4b5563;
   --income: #0ca678;
   --expense: #c92a2a;
-  --primary: #c2255c;
-  --primary-strong: #862e9c;
+  --primary: #1d3557;
+  --primary-strong: #0f172a;
+  --border: #d7e2f1;
 }
 
 * {
@@ -17,7 +18,7 @@
 
 body {
   margin: 0;
-  background: linear-gradient(180deg, #ffc078 0%, #ffd8a8 45%, #eebefa 100%);
+  background: var(--bg);
   color: var(--text);
 }
 
@@ -32,14 +33,14 @@ body {
 .card {
   background: var(--card);
   border-radius: 14px;
-  padding: 16px;
-  border: 1px solid #f3a6bf;
-  box-shadow: 0 10px 24px rgb(134 46 156 / 15%);
+  padding: 18px;
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 20px rgb(15 23 42 / 8%);
 }
 
 .accent-card {
-  background: #ffe8f3;
-  border-color: #f783ac;
+  background: #f8fbff;
+  border-color: #c7d8ef;
 }
 
 h1,
@@ -55,7 +56,7 @@ header {
 }
 
 header h1 {
-  color: #862e9c;
+  color: var(--primary);
 }
 
 header p {
@@ -78,7 +79,7 @@ label {
 input,
 select,
 button {
-  border: 1px solid #e599f7;
+  border: 1px solid #bfd1e7;
   border-radius: 8px;
   padding: 10px;
   font: inherit;
@@ -124,7 +125,7 @@ button.danger {
 }
 
 .plan-item {
-  border: 1px solid #f3a6bf;
+  border: 1px solid var(--border);
   border-radius: 12px;
   background: #fff;
   padding: 12px;
@@ -139,7 +140,7 @@ button.danger {
 }
 
 .change-wrap {
-  border-top: 1px dashed #e599f7;
+  border-top: 1px dashed #d2ddea;
   padding-top: 10px;
   display: grid;
   gap: 8px;
@@ -167,6 +168,40 @@ button.danger {
   font-size: 0.8rem;
 }
 
+.dashboard-section {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+.dashboard-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dashboard-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 12px;
+  display: grid;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgb(15 23 42 / 6%);
+}
+
+.dashboard-card span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.dashboard-card strong {
+  color: var(--primary-strong);
+  font-size: 1.26rem;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+}
+
 .summary {
   margin-top: 12px;
   display: grid;
@@ -175,8 +210,8 @@ button.danger {
 }
 
 .summary > div {
-  background: #ffe8f3;
-  border: 1px solid #f3a6bf;
+  background: #f8fbff;
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 10px;
   display: grid;
@@ -206,7 +241,7 @@ button.danger {
   display: flex;
   justify-content: space-between;
   padding: 8px 10px;
-  border: 1px solid #f3a6bf;
+  border: 1px solid var(--border);
   border-radius: 8px;
   background: #fff;
 }
@@ -238,7 +273,7 @@ button.danger {
 }
 
 .item {
-  border: 1px solid #f3a6bf;
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 10px;
   display: flex;
@@ -286,9 +321,9 @@ button.danger {
   gap: 16px;
   min-height: 180px;
   padding: 16px;
-  border: 1px solid #f3a6bf;
+  border: 1px solid var(--border);
   border-radius: 10px;
-  background: #ffe8f3;
+  background: #f8fbff;
   align-content: start;
 }
 
@@ -319,7 +354,7 @@ button.danger {
   text-align: center;
   gap: 2px;
   color: var(--muted);
-  border: 1px solid #f3a6bf;
+  border: 1px solid var(--border);
 }
 
 .pie-center strong {
@@ -341,7 +376,7 @@ button.danger {
   gap: 8px;
   align-items: center;
   background: #fff;
-  border: 1px solid #f3a6bf;
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 8px 10px;
 }
@@ -371,7 +406,7 @@ button.danger {
 }
 
 .auto-card {
-  border: 1px solid #f3a6bf;
+  border: 1px solid var(--border);
   background: #fff;
   border-radius: 10px;
   padding: 12px;
@@ -387,4 +422,32 @@ button.danger {
   margin-top: 4px;
   color: var(--muted);
   font-size: 0.95rem;
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 16px;
+    gap: 14px;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .dashboard-card {
+    padding: 16px;
+  }
+
+  .dashboard-card strong {
+    font-size: 1.45rem;
+  }
+
+  .item {
+    flex-direction: column;
+  }
 }
