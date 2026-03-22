@@ -48,10 +48,13 @@
       <section class="card accordion-card accent-card">
         <details class="accordion">
           <summary class="accordion-summary">
-            <span class="accordion-title">プロフィール・積立設定</span>
+            <span class="accordion-title">基本情報・資産形成設定</span>
             <span class="accordion-icon" aria-hidden="true"></span>
           </summary>
           <div class="accordion-content">
+            <p class="section-description">
+              記入開始月や生年月日、積立・保有資産の設定を行います。
+            </p>
             <form id="profile-form" class="grid">
               <label>
                 記入開始月
@@ -75,10 +78,13 @@
       <section class="card accordion-card">
         <details class="accordion">
           <summary class="accordion-summary">
-            <span class="accordion-title">取引を追加</span>
+            <span class="accordion-title">収支を入力</span>
             <span class="accordion-icon" aria-hidden="true"></span>
           </summary>
           <div class="accordion-content">
+            <p class="section-description">
+              日々の収入・支出を追加して、今月の家計を記録します。
+            </p>
             <form id="transaction-form" class="grid">
               <label>
                 日付
@@ -110,7 +116,12 @@
       </section>
 
       <section class="card">
-        <h2>今月のサマリー</h2>
+        <div class="section-heading">
+          <h2>家計診断サマリー</h2>
+          <p class="section-description">
+            今月の収支状況を一覧で確認できます。
+          </p>
+        </div>
         <div class="summary">
           <div>
             <span>前月末残高</span>
@@ -140,19 +151,34 @@
       </section>
 
       <section class="card">
-        <h2>想定資産額（積立別）</h2>
+        <div class="section-heading">
+          <h2>将来資産シミュレーション</h2>
+          <p class="section-description">
+            積立設定をもとに、将来の資産見込みを確認できます。
+          </p>
+        </div>
         <div id="asset-forecast" class="asset-forecast"></div>
       </section>
 
       <section class="card">
-        <h2>支出グラフ（カテゴリ別）</h2>
+        <div class="section-heading">
+          <h2>支出バランス分析</h2>
+          <p class="section-description">
+            どの項目に支出が偏っているかを視覚的に確認できます。
+          </p>
+        </div>
         <div id="expense-chart" class="chart"></div>
         <div id="auto-breakdown" class="auto-breakdown"></div>
       </section>
 
       <section class="card">
         <div class="section-header">
-          <h2>取引一覧</h2>
+          <div class="section-heading">
+            <h2>取引履歴</h2>
+            <p class="section-description">
+              入力済みの取引内容を時系列で確認・削除できます。
+            </p>
+          </div>
           <div class="filters">
             <input id="month-filter" type="month" />
             <button id="clear-btn" type="button">全削除</button>
