@@ -11,6 +11,7 @@ const monthFilter = document.getElementById("month-filter");
 const clearButton = document.getElementById("clear-btn");
 
 const profileForm = document.getElementById("profile-form");
+const entryStartMonthInput = document.getElementById("entry-start-month");
 const birthDateInput = document.getElementById("birth-date");
 const addPlanButton = document.getElementById("add-plan-btn");
 const planList = document.getElementById("plan-list");
@@ -79,7 +80,7 @@ function saveTransactions(transactions) {
 }
 
 function defaultSettings() {
-  return { birthDate: "", plans: [] };
+  return { birthDate: "", entryStartMonth: "", plans: [] };
 }
 
 function loadSettings() {
@@ -91,6 +92,7 @@ function loadSettings() {
     const plans = Array.isArray(data.plans) ? data.plans : [];
     return {
       birthDate: data.birthDate ?? "",
+      entryStartMonth: parseMonth(data.entryStartMonth) ? data.entryStartMonth : "",
       plans: plans
         .map((plan) => ({
           ...plan,
@@ -183,26 +185,56 @@ function createAutoExpensesForMonth(settings, month) {
   });
 }
 
+function resolveEntryStartMonth(settings, transactions) {
+  if (parseMonth(settings.entryStartMonth)) return settings.entryStartMonth;
+
+  const earliestManual = transactions
+    .map((item) => item.date)
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b))[0];
+  if (earliestManual) return monthISO(earliestManual);
+  return todayISO().slice(0, 7);
+}
+
+function createEligibleAutoExpensesForMonth(settings, transactions, month) {
+  if (!month) return [];
+  const entryStartMonth = resolveEntryStartMonth(settings, transactions);
+  if (compareMonth(month, entryStartMonth) < 0) return [];
+
+  const generated = createAutoExpensesForMonth(settings, month);
+  return generated.filter((autoTx) => {
+    return !transactions.some((item) => {
+      return (
+        item.type === "expense" &&
+        item.date === autoTx.date &&
+        item.category === ASSET_FORMATION_CATEGORY &&
+        item.amount === autoTx.amount &&
+        item.memo === autoTx.memo
+      );
+    });
+  });
+}
+
 function calculateCarryover(transactions, settings, targetMonth) {
   if (!targetMonth) return 0;
+  const entryStartMonth = resolveEntryStartMonth(settings, transactions);
+  if (compareMonth(targetMonth, entryStartMonth) <= 0) return 0;
 
   const manual = transactions.reduce((sum, item) => {
-    if (monthISO(item.date) >= targetMonth) return sum;
+    const txMonth = monthISO(item.date);
+    if (compareMonth(txMonth, entryStartMonth) < 0 || compareMonth(txMonth, targetMonth) >= 0) return sum;
     return sum + (item.type === "income" ? item.amount : -item.amount);
   }, 0);
 
-  const auto = settings.plans.reduce((sum, plan) => {
-    if (!plan.startMonth || compareMonth(plan.startMonth, targetMonth) >= 0) return sum;
-
-    let month = plan.startMonth;
-    while (compareMonth(month, targetMonth) < 0) {
-      sum -= planAmountAtMonth(plan, month);
-      const [y, m] = month.split("-").map(Number);
-      const next = new Date(y, m, 1);
-      month = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`;
-    }
-    return sum;
-  }, 0);
+  let auto = 0;
+  let month = entryStartMonth;
+  while (compareMonth(month, targetMonth) < 0) {
+    const autoTransactions = createEligibleAutoExpensesForMonth(settings, transactions, month);
+    auto -= autoTransactions.reduce((sum, item) => sum + item.amount, 0);
+    const [y, m] = month.split("-").map(Number);
+    const next = new Date(y, m, 1);
+    month = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`;
+  }
 
   return manual + auto;
 }
@@ -213,7 +245,7 @@ function calculateMonthlySummary(transactions, settings, targetMonth) {
   }
 
   const carryover = calculateCarryover(transactions, settings, targetMonth);
-  const autoTransactions = createAutoExpensesForMonth(settings, targetMonth);
+  const autoTransactions = createEligibleAutoExpensesForMonth(settings, transactions, targetMonth);
   const monthly = [...transactions, ...autoTransactions].reduce(
     (totals, item) => {
       if (monthISO(item.date) !== targetMonth) return totals;
@@ -718,10 +750,11 @@ function saveProfile(event) {
   event.preventDefault();
   const settings = {
     birthDate: birthDateInput.value,
+    entryStartMonth: entryStartMonthInput.value,
     plans: collectPlansFromForm(),
   };
 
-  if (!settings.birthDate) return;
+  if (!settings.birthDate || !settings.entryStartMonth) return;
 
   saveSettings(settings);
   render();
@@ -731,9 +764,10 @@ function render() {
   const transactions = loadTransactions();
   const settings = loadSettings();
   const currentMonth = monthFilter.value;
-  const autoTransactions = createAutoExpensesForMonth(settings, currentMonth);
+  const autoTransactions = createEligibleAutoExpensesForMonth(settings, transactions, currentMonth);
   const summary = calculateMonthlySummary(transactions, settings, currentMonth);
 
+  entryStartMonthInput.value = resolveEntryStartMonth(settings, transactions);
   birthDateInput.value = settings.birthDate || "";
 
   const filtered = currentMonth
@@ -838,6 +872,7 @@ function init() {
 
   dateInput.value = todayISO();
   monthFilter.value = todayISO().slice(0, 7);
+  entryStartMonthInput.value = settings.entryStartMonth || todayISO().slice(0, 7);
   syncCategoryOptions();
   renderPlans(settings);
 
