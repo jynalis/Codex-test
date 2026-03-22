@@ -8,14 +8,16 @@
   </head>
   <body>
     <main class="container">
-      <header>
+      <header class="page-header card">
+        <p class="eyebrow">FP家計診断ツール</p>
         <h1>かんたん家計簿</h1>
         <p>収入・支出・積立資産をまとめて管理できます。</p>
       </header>
 
       <section id="section-home" class="card dashboard-section" data-nav-section="home">
-        <div class="section-header">
+        <div class="section-header dashboard-header">
           <h2>家計診断ダッシュボード</h2>
+          <p class="section-description">毎月の収支と資産形成の進捗を一目で確認できます。</p>
         </div>
         <div class="dashboard-grid">
           <article class="dashboard-card">
@@ -30,7 +32,7 @@
             <span>当月支出</span>
             <strong id="dashboard-expense-total">¥0</strong>
           </article>
-          <article class="dashboard-card">
+          <article class="dashboard-card is-accent">
             <span>当月末残高</span>
             <strong id="dashboard-balance-total">¥0</strong>
           </article>
@@ -38,7 +40,7 @@
             <span>毎月の積立額</span>
             <strong id="dashboard-monthly-saving-total">¥0</strong>
           </article>
-          <article class="dashboard-card">
+          <article class="dashboard-card is-accent">
             <span>60歳時点の想定総資産額</span>
             <strong id="dashboard-age60-total">¥0</strong>
           </article>
@@ -145,11 +147,11 @@
             <span>当月資産形成支出（自動反映）</span>
             <strong id="asset-expense-total">¥0</strong>
           </div>
-          <div>
+          <div class="summary-danger">
             <span>当月支出合計</span>
             <strong id="expense-total">¥0</strong>
           </div>
-          <div>
+          <div class="summary-positive">
             <span>当月末残高</span>
             <strong id="balance-total">¥0</strong>
           </div>
@@ -189,7 +191,7 @@
             <input id="month-filter" type="month" />
           </div>
         </div>
-        <ul id="transaction-list" class="list"></ul>
+        <ul id="transaction-list" class="list transaction-list"></ul>
       </section>
     </main>
 
