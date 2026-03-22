@@ -1,14 +1,14 @@
 :root {
   color-scheme: light;
   font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", system-ui, sans-serif;
-  --bg: #ffe8d6;
-  --card: #fff8f2;
-  --text: #3f1d38;
-  --muted: #7c4f74;
+  --bg: #ffe0cc;
+  --card: #fffaf6;
+  --text: #3b1c32;
+  --muted: #6a4261;
   --income: #0ca678;
-  --expense: #e03131;
-  --primary: #d6336c;
-  --primary-strong: #a61e4d;
+  --expense: #c92a2a;
+  --primary: #c2255c;
+  --primary-strong: #862e9c;
 }
 
 * {
@@ -17,7 +17,7 @@
 
 body {
   margin: 0;
-  background: linear-gradient(180deg, #ffd8a8 0%, #ffe3e3 60%, #f8edff 100%);
+  background: linear-gradient(180deg, #ffc078 0%, #ffd8a8 45%, #eebefa 100%);
   color: var(--text);
 }
 
@@ -33,13 +33,13 @@ body {
   background: var(--card);
   border-radius: 14px;
   padding: 16px;
-  border: 1px solid #ffccd5;
-  box-shadow: 0 8px 20px rgb(214 51 108 / 12%);
+  border: 1px solid #f3a6bf;
+  box-shadow: 0 10px 24px rgb(134 46 156 / 15%);
 }
 
 .accent-card {
-  background: #fff0f6;
-  border-color: #faa2c1;
+  background: #ffe8f3;
+  border-color: #f783ac;
 }
 
 h1,
@@ -55,7 +55,7 @@ header {
 }
 
 header h1 {
-  color: #9c36b5;
+  color: #862e9c;
 }
 
 header p {
@@ -78,7 +78,7 @@ label {
 input,
 select,
 button {
-  border: 1px solid #f783ac;
+  border: 1px solid #e599f7;
   border-radius: 8px;
   padding: 10px;
   font: inherit;
@@ -124,7 +124,7 @@ button.danger {
 }
 
 .plan-item {
-  border: 1px solid #faa2c1;
+  border: 1px solid #f3a6bf;
   border-radius: 12px;
   background: #fff;
   padding: 12px;
@@ -139,7 +139,7 @@ button.danger {
 }
 
 .change-wrap {
-  border-top: 1px dashed #faa2c1;
+  border-top: 1px dashed #e599f7;
   padding-top: 10px;
   display: grid;
   gap: 8px;
@@ -170,8 +170,8 @@ button.danger {
 }
 
 .summary > div {
-  background: #fff0f6;
-  border: 1px solid #fcc2d7;
+  background: #ffe8f3;
+  border: 1px solid #f3a6bf;
   border-radius: 10px;
   padding: 10px;
   display: grid;
@@ -201,7 +201,7 @@ button.danger {
   display: flex;
   justify-content: space-between;
   padding: 8px 10px;
-  border: 1px solid #fcc2d7;
+  border: 1px solid #f3a6bf;
   border-radius: 8px;
   background: #fff;
 }
@@ -233,7 +233,7 @@ button.danger {
 }
 
 .item {
-  border: 1px solid #fcc2d7;
+  border: 1px solid #f3a6bf;
   border-radius: 10px;
   padding: 10px;
   display: flex;
@@ -281,9 +281,9 @@ button.danger {
   gap: 16px;
   min-height: 180px;
   padding: 16px;
-  border: 1px solid #fcc2d7;
+  border: 1px solid #f3a6bf;
   border-radius: 10px;
-  background: #fff0f6;
+  background: #ffe8f3;
   align-content: start;
 }
 
@@ -314,7 +314,7 @@ button.danger {
   text-align: center;
   gap: 2px;
   color: var(--muted);
-  border: 1px solid #fcc2d7;
+  border: 1px solid #f3a6bf;
 }
 
 .pie-center strong {
@@ -336,7 +336,7 @@ button.danger {
   gap: 8px;
   align-items: center;
   background: #fff;
-  border: 1px solid #fcc2d7;
+  border: 1px solid #f3a6bf;
   border-radius: 8px;
   padding: 8px 10px;
 }
@@ -359,4 +359,17 @@ button.danger {
 .chart-empty {
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+.auto-breakdown {
+  margin-top: 12px;
+}
+
+.auto-card {
+  border: 1px solid #f3a6bf;
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px;
+  display: grid;
+  gap: 8px;
 }
