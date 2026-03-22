@@ -43,6 +43,55 @@ body {
   border-color: #c7d8ef;
 }
 
+.accordion-card {
+  padding: 10px 12px;
+}
+
+.accordion {
+  width: 100%;
+}
+
+.accordion-summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  padding: 14px 16px;
+  min-height: 52px;
+}
+
+.accordion-summary::-webkit-details-marker {
+  display: none;
+}
+
+.accordion-title {
+  font-weight: 700;
+  color: var(--primary-strong);
+}
+
+.accordion-icon::before {
+  content: "＋";
+  font-size: 1.2rem;
+  line-height: 1;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.accordion[open] .accordion-icon::before {
+  content: "－";
+}
+
+.accordion-content {
+  padding: 10px 2px 4px;
+}
+
 h1,
 h2,
 h3,
@@ -432,6 +481,19 @@ button.danger {
 
   .card {
     padding: 16px;
+  }
+
+  .accordion-card {
+    padding: 10px;
+  }
+
+  .accordion-summary {
+    padding: 16px;
+    min-height: 56px;
+  }
+
+  .accordion-title {
+    font-size: 1rem;
   }
 
   .dashboard-grid {
