@@ -10,8 +10,24 @@
     <main class="container">
       <header>
         <h1>かんたん家計簿</h1>
-        <p>収入と支出を記録して、毎月の収支を見える化しましょう。</p>
+        <p>収入・支出・積立資産をまとめて管理できます。</p>
       </header>
+
+      <section class="card accent-card">
+        <h2>プロフィール・積立設定</h2>
+        <form id="profile-form" class="grid">
+          <label>
+            生年月日
+            <input type="date" id="birth-date" required />
+          </label>
+          <div class="full split-title">
+            <h3>積立・保有資産（NISA / iDeCo / 貯蓄性保険 / 貯金）</h3>
+            <button id="add-plan-btn" type="button">入力枠を追加</button>
+          </div>
+          <div id="plan-list" class="full plan-list"></div>
+          <button type="submit" class="full">設定を保存</button>
+        </form>
+      </section>
 
       <section class="card">
         <h2>取引を追加</h2>
@@ -55,7 +71,7 @@
             <strong id="income-total">¥0</strong>
           </div>
           <div>
-            <span>当月支出</span>
+            <span>当月支出（自動反映込）</span>
             <strong id="expense-total">¥0</strong>
           </div>
           <div>
@@ -63,6 +79,11 @@
             <strong id="balance-total">¥0</strong>
           </div>
         </div>
+      </section>
+
+      <section class="card">
+        <h2>想定資産額（積立別）</h2>
+        <div id="asset-forecast" class="asset-forecast"></div>
       </section>
 
       <section class="card">

@@ -1,4 +1,5 @@
 const STORAGE_KEY = "kakeibo_transactions_v1";
+const SETTINGS_KEY = "kakeibo_settings_v1";
 
 const form = document.getElementById("transaction-form");
 const dateInput = document.getElementById("date");
@@ -9,6 +10,12 @@ const memoInput = document.getElementById("memo");
 const monthFilter = document.getElementById("month-filter");
 const clearButton = document.getElementById("clear-btn");
 
+const profileForm = document.getElementById("profile-form");
+const birthDateInput = document.getElementById("birth-date");
+const addPlanButton = document.getElementById("add-plan-btn");
+const planList = document.getElementById("plan-list");
+const assetForecast = document.getElementById("asset-forecast");
+
 const list = document.getElementById("transaction-list");
 const template = document.getElementById("transaction-item-template");
 const carryoverTotal = document.getElementById("carryover-total");
@@ -17,10 +24,12 @@ const expenseTotal = document.getElementById("expense-total");
 const balanceTotal = document.getElementById("balance-total");
 const expenseChart = document.getElementById("expense-chart");
 
+const EXPENSE_CATEGORIES = ["日常費", "趣味・レジャー費", "雑費・予備費", "家賃・マイホーム費", "生命保険"];
 const CATEGORY_OPTIONS = {
-  expense: ["日常費", "趣味レジャー費", "雑費・予備費", "家賃・マイホーム費", "生命保険費", "貯蓄", "NISA", "iDeCo"],
+  expense: EXPENSE_CATEGORIES,
   income: ["定期収入", "臨時収入"],
 };
+const PLAN_TYPES = ["NISA", "iDeCo", "貯蓄性保険", "貯金"];
 
 const yen = new Intl.NumberFormat("ja-JP", {
   style: "currency",
@@ -56,6 +65,29 @@ function saveTransactions(transactions) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
 }
 
+function defaultSettings() {
+  return { birthDate: "", plans: [] };
+}
+
+function loadSettings() {
+  const raw = localStorage.getItem(SETTINGS_KEY);
+  if (!raw) return defaultSettings();
+
+  try {
+    const data = JSON.parse(raw);
+    return {
+      birthDate: data.birthDate ?? "",
+      plans: Array.isArray(data.plans) ? data.plans : [],
+    };
+  } catch {
+    return defaultSettings();
+  }
+}
+
+function saveSettings(settings) {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+}
+
 function todayISO() {
   const now = new Date();
   const year = now.getFullYear();
@@ -68,27 +100,89 @@ function monthISO(dateString) {
   return dateString.slice(0, 7);
 }
 
-function calculateCarryover(transactions, targetMonth) {
+function compareMonth(a, b) {
+  return a.localeCompare(b);
+}
+
+function clampDay(year, month, day) {
+  const lastDay = new Date(year, month, 0).getDate();
+  return Math.min(Math.max(day, 1), lastDay);
+}
+
+function planAmountAtMonth(plan, month) {
+  if (!plan.startMonth || compareMonth(month, plan.startMonth) < 0) return 0;
+
+  const changes = Array.isArray(plan.changes) ? plan.changes : [];
+  let amount = Number(plan.baseAmount) || 0;
+
+  changes
+    .filter((change) => change.month && compareMonth(change.month, month) <= 0)
+    .sort((a, b) => compareMonth(a.month, b.month))
+    .forEach((change) => {
+      amount = Number(change.amount) || 0;
+    });
+
+  return Math.max(amount, 0);
+}
+
+function createAutoExpensesForMonth(settings, month) {
+  if (!month) return [];
+  const [yearStr, monthStr] = month.split("-");
+  const year = Number(yearStr);
+  const monthNum = Number(monthStr);
+
+  return settings.plans.flatMap((plan) => {
+    const amount = planAmountAtMonth(plan, month);
+    if (!amount) return [];
+
+    const day = clampDay(year, monthNum, Number(plan.withdrawalDay) || 1);
+    const date = `${month}-${String(day).padStart(2, "0")}`;
+    return [
+      {
+        id: `auto-${plan.id}-${month}`,
+        date,
+        type: "expense",
+        category: plan.expenseCategory || "日常費",
+        amount,
+        memo: `自動反映: ${plan.type}${plan.name ? `（${plan.name}）` : ""}`,
+        isAuto: true,
+      },
+    ];
+  });
+}
+
+function calculateCarryover(transactions, settings, targetMonth) {
   if (!targetMonth) return 0;
 
-  return transactions.reduce((sum, item) => {
+  const manual = transactions.reduce((sum, item) => {
     if (monthISO(item.date) >= targetMonth) return sum;
     return sum + (item.type === "income" ? item.amount : -item.amount);
   }, 0);
+
+  const auto = settings.plans.reduce((sum, plan) => {
+    if (!plan.startMonth || compareMonth(plan.startMonth, targetMonth) >= 0) return sum;
+
+    let month = plan.startMonth;
+    while (compareMonth(month, targetMonth) < 0) {
+      sum -= planAmountAtMonth(plan, month);
+      const [y, m] = month.split("-").map(Number);
+      const next = new Date(y, m, 1);
+      month = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`;
+    }
+    return sum;
+  }, 0);
+
+  return manual + auto;
 }
 
-function calculateMonthlySummary(transactions, targetMonth) {
+function calculateMonthlySummary(transactions, settings, targetMonth) {
   if (!targetMonth) {
-    return {
-      carryover: 0,
-      income: 0,
-      expense: 0,
-      endingBalance: 0,
-    };
+    return { carryover: 0, income: 0, expense: 0, endingBalance: 0 };
   }
 
-  const carryover = calculateCarryover(transactions, targetMonth);
-  const monthlyTotals = transactions.reduce(
+  const carryover = calculateCarryover(transactions, settings, targetMonth);
+  const autoTransactions = createAutoExpensesForMonth(settings, targetMonth);
+  const monthly = [...transactions, ...autoTransactions].reduce(
     (totals, item) => {
       if (monthISO(item.date) !== targetMonth) return totals;
       if (item.type === "income") {
@@ -103,9 +197,9 @@ function calculateMonthlySummary(transactions, targetMonth) {
 
   return {
     carryover,
-    income: monthlyTotals.income,
-    expense: monthlyTotals.expense,
-    endingBalance: carryover + monthlyTotals.income - monthlyTotals.expense,
+    income: monthly.income,
+    expense: monthly.expense,
+    endingBalance: carryover + monthly.income - monthly.expense,
   };
 }
 
@@ -138,7 +232,7 @@ function renderExpenseChart(transactions, currentMonth) {
 
   expenseChart.classList.toggle("has-data", true);
   const totalExpense = entries.reduce((sum, [, amount]) => sum + amount, 0);
-  const chartColors = ["#e07a5f", "#f2cc8f", "#81b29a", "#3d405b", "#f4a261", "#84a59d", "#c9ada7", "#9d8189"];
+  const chartColors = ["#ff6b6b", "#ff922b", "#ffd43b", "#38d9a9", "#4dabf7", "#9775fa", "#f06595", "#74c0fc"];
 
   let currentDegree = 0;
   const segments = entries.map(([, amount], index) => {
@@ -184,14 +278,192 @@ function renderExpenseChart(transactions, currentMonth) {
   expenseChart.appendChild(legend);
 }
 
+function calculateAge(birthDate) {
+  if (!birthDate) return 0;
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const hadBirthday =
+    today.getMonth() > birth.getMonth() ||
+    (today.getMonth() === birth.getMonth() && today.getDate() >= birth.getDate());
+  if (!hadBirthday) age -= 1;
+  return Math.max(age, 0);
+}
+
+function projectedAsset(plan, birthDate) {
+  const startMonth = plan.startMonth || todayISO().slice(0, 7);
+  const nowMonth = todayISO().slice(0, 7);
+  const currentAge = calculateAge(birthDate);
+  const targetAge = Number(plan.withdrawAge) || currentAge;
+  const annualReturn = (Number(plan.expectedReturn) || 0) / 100;
+  const monthlyRate = annualReturn / 12;
+
+  const birth = new Date(birthDate || todayISO());
+  const withdrawDate = new Date(birth.getFullYear() + targetAge, birth.getMonth(), 1);
+  const targetMonth = `${withdrawDate.getFullYear()}-${String(withdrawDate.getMonth() + 1).padStart(2, "0")}`;
+
+  let month = startMonth;
+  let total = 0;
+
+  while (compareMonth(month, targetMonth) <= 0) {
+    const amount = planAmountAtMonth(plan, month);
+    total = total * (1 + monthlyRate) + amount;
+
+    const [y, m] = month.split("-").map(Number);
+    const next = new Date(y, m, 1);
+    month = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`;
+  }
+
+  if (compareMonth(targetMonth, nowMonth) < 0) {
+    return 0;
+  }
+
+  return Math.round(total);
+}
+
+function renderAssetForecast(settings) {
+  assetForecast.innerHTML = "";
+  if (!settings.birthDate || settings.plans.length === 0) {
+    assetForecast.innerHTML = '<p class="chart-empty">生年月日と積立設定を保存すると、想定資産額が表示されます。</p>';
+    return;
+  }
+
+  const rows = settings.plans
+    .map((plan) => {
+      const amount = projectedAsset(plan, settings.birthDate);
+      return `
+      <li>
+        <span>${plan.type}${plan.name ? `（${plan.name}）` : ""}</span>
+        <strong>${yen.format(amount)}</strong>
+      </li>
+    `;
+    })
+    .join("");
+
+  const total = settings.plans.reduce((sum, plan) => sum + projectedAsset(plan, settings.birthDate), 0);
+  assetForecast.innerHTML = `
+    <ul class="asset-list">${rows}</ul>
+    <div class="asset-total">想定総資産額: <strong>${yen.format(total)}</strong></div>
+  `;
+}
+
+function createChangeRow(change = { month: "", amount: "" }) {
+  const row = document.createElement("div");
+  row.className = "change-row";
+  row.innerHTML = `
+    <input type="month" class="change-month" value="${change.month || ""}" />
+    <input type="number" min="0" step="1" class="change-amount" placeholder="変更後月額(円)" value="${change.amount || ""}" />
+    <button type="button" class="small danger remove-change">削除</button>
+  `;
+  row.querySelector(".remove-change").addEventListener("click", () => row.remove());
+  return row;
+}
+
+function createPlanBlock(plan = {}) {
+  const wrap = document.createElement("article");
+  wrap.className = "plan-item";
+  const planId = plan.id || crypto.randomUUID();
+
+  const typeOptions = PLAN_TYPES.map((type) => `<option value="${type}" ${plan.type === type ? "selected" : ""}>${type}</option>`).join("");
+  const categoryOptions = EXPENSE_CATEGORIES.map(
+    (category) => `<option value="${category}" ${plan.expenseCategory === category ? "selected" : ""}>${category}</option>`
+  ).join("");
+
+  wrap.innerHTML = `
+    <input type="hidden" class="plan-id" value="${planId}" />
+    <div class="plan-grid">
+      <label>種類<select class="plan-type">${typeOptions}</select></label>
+      <label>識別名<input class="plan-name" type="text" maxlength="30" placeholder="例: つみたて枠" value="${plan.name || ""}" /></label>
+      <label>開始月<input class="plan-start-month" type="month" value="${plan.startMonth || todayISO().slice(0, 7)}" /></label>
+      <label>月額(円)<input class="plan-base-amount" type="number" min="0" step="1" value="${plan.baseAmount ?? ""}" /></label>
+      <label>引き落とし日<input class="plan-withdrawal-day" type="number" min="1" max="31" step="1" value="${plan.withdrawalDay ?? 1}" /></label>
+      <label>支出カテゴリ<select class="plan-expense-category">${categoryOptions}</select></label>
+      <label>想定利回り(年%)<input class="plan-expected-return" type="number" step="0.1" value="${plan.expectedReturn ?? ""}" /></label>
+      <label>取崩年齢<input class="plan-withdraw-age" type="number" min="0" max="120" step="1" value="${plan.withdrawAge ?? ""}" /></label>
+    </div>
+    <div class="change-wrap">
+      <div class="change-header">
+        <p>金額変更（月から反映）</p>
+        <button type="button" class="small add-change">変更を追加</button>
+      </div>
+      <div class="change-list"></div>
+    </div>
+    <button type="button" class="danger remove-plan">この枠を削除</button>
+  `;
+
+  const changeList = wrap.querySelector(".change-list");
+  const changes = Array.isArray(plan.changes) && plan.changes.length > 0 ? plan.changes : [];
+  changes.forEach((change) => changeList.appendChild(createChangeRow(change)));
+
+  wrap.querySelector(".add-change").addEventListener("click", () => {
+    changeList.appendChild(createChangeRow());
+  });
+
+  wrap.querySelector(".remove-plan").addEventListener("click", () => {
+    wrap.remove();
+  });
+
+  return wrap;
+}
+
+function collectPlansFromForm() {
+  return Array.from(planList.querySelectorAll(".plan-item"))
+    .map((block) => {
+      const changes = Array.from(block.querySelectorAll(".change-row"))
+        .map((row) => ({
+          month: row.querySelector(".change-month").value,
+          amount: Number(row.querySelector(".change-amount").value),
+        }))
+        .filter((item) => item.month && Number.isFinite(item.amount));
+
+      return {
+        id: block.querySelector(".plan-id").value,
+        type: block.querySelector(".plan-type").value,
+        name: block.querySelector(".plan-name").value.trim(),
+        startMonth: block.querySelector(".plan-start-month").value,
+        baseAmount: Number(block.querySelector(".plan-base-amount").value),
+        withdrawalDay: Number(block.querySelector(".plan-withdrawal-day").value),
+        expenseCategory: block.querySelector(".plan-expense-category").value,
+        expectedReturn: Number(block.querySelector(".plan-expected-return").value),
+        withdrawAge: Number(block.querySelector(".plan-withdraw-age").value),
+        changes,
+      };
+    })
+    .filter((plan) => Number.isFinite(plan.baseAmount) && plan.baseAmount >= 0 && plan.startMonth);
+}
+
+function renderPlans(settings) {
+  planList.innerHTML = "";
+  settings.plans.forEach((plan) => {
+    planList.appendChild(createPlanBlock(plan));
+  });
+}
+
+function saveProfile(event) {
+  event.preventDefault();
+  const settings = {
+    birthDate: birthDateInput.value,
+    plans: collectPlansFromForm(),
+  };
+
+  if (!settings.birthDate) return;
+
+  saveSettings(settings);
+  render();
+}
+
 function render() {
   const transactions = loadTransactions();
+  const settings = loadSettings();
   const currentMonth = monthFilter.value;
-  const summary = calculateMonthlySummary(transactions, currentMonth);
+  const autoTransactions = createAutoExpensesForMonth(settings, currentMonth);
+  const summary = calculateMonthlySummary(transactions, settings, currentMonth);
+
+  birthDateInput.value = settings.birthDate || "";
 
   const filtered = currentMonth
-    ? transactions.filter((item) => monthISO(item.date) === currentMonth)
-    : transactions;
+    ? [...transactions, ...autoTransactions].filter((item) => monthISO(item.date) === currentMonth)
+    : [...transactions, ...autoTransactions];
 
   list.innerHTML = "";
 
@@ -218,11 +490,15 @@ function render() {
       amount.textContent = `${item.type === "income" ? "+" : "-"}${yen.format(item.amount)}`;
       amount.classList.add(item.type);
 
-      del.addEventListener("click", () => {
-        const next = loadTransactions().filter((tx) => tx.id !== item.id);
-        saveTransactions(next);
-        render();
-      });
+      if (item.isAuto) {
+        del.remove();
+      } else {
+        del.addEventListener("click", () => {
+          const next = loadTransactions().filter((tx) => tx.id !== item.id);
+          saveTransactions(next);
+          render();
+        });
+      }
 
       row.dataset.id = item.id;
       list.appendChild(node);
@@ -232,7 +508,9 @@ function render() {
   expenseTotal.textContent = yen.format(summary.expense);
   carryoverTotal.textContent = yen.format(summary.carryover);
   balanceTotal.textContent = yen.format(summary.endingBalance);
-  renderExpenseChart(transactions, currentMonth);
+
+  renderExpenseChart([...transactions, ...autoTransactions], currentMonth);
+  renderAssetForecast(settings);
 }
 
 function addTransaction(event) {
@@ -267,20 +545,32 @@ function addTransaction(event) {
 }
 
 function clearAll() {
-  const ok = window.confirm("すべての取引を削除します。よろしいですか？");
+  const ok = window.confirm("すべての取引・設定を削除します。よろしいですか？");
   if (!ok) return;
   localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(SETTINGS_KEY);
+  planList.innerHTML = "";
   render();
 }
 
 function init() {
+  const settings = loadSettings();
+
   dateInput.value = todayISO();
   monthFilter.value = todayISO().slice(0, 7);
   syncCategoryOptions();
+  renderPlans(settings);
+
   form.addEventListener("submit", addTransaction);
   typeInput.addEventListener("change", syncCategoryOptions);
   monthFilter.addEventListener("change", render);
   clearButton.addEventListener("click", clearAll);
+
+  addPlanButton.addEventListener("click", () => {
+    planList.appendChild(createPlanBlock());
+  });
+  profileForm.addEventListener("submit", saveProfile);
+
   render();
 }
 
