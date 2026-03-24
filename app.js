@@ -13,6 +13,7 @@ const profileForm = document.getElementById("profile-form");
 const entryStartMonthInput = document.getElementById("entry-start-month");
 const birthDateInput = document.getElementById("birth-date");
 const addPlanButton = document.getElementById("add-plan-btn");
+const addPlanBottomButton = document.getElementById("add-plan-bottom-btn");
 const planList = document.getElementById("plan-list");
 const assetForecast = document.getElementById("asset-forecast");
 
@@ -49,6 +50,12 @@ const CATEGORY_OPTIONS = {
   income: ["定期収入", "臨時収入"],
 };
 const PLAN_TYPES = ["NISA", "iDeCo", "貯蓄性保険", "貯金"];
+const PLAN_TYPE_CLASS = {
+  NISA: "is-nisa",
+  iDeCo: "is-ideco",
+  貯蓄性保険: "is-insurance",
+  貯金: "is-savings",
+};
 const ASSET_FORMATION_CATEGORY = "資産形成支出";
 const ASSET_PIE_COLORS = ["#245e8f", "#b85c3f", "#2f7e68", "#7a56ad", "#9b7a2f", "#3c6a9b", "#b04f74", "#4f7f9f"];
 
@@ -880,6 +887,10 @@ function createPlanBlock(plan = {}) {
   const typeOptions = PLAN_TYPES.map((type) => `<option value="${type}" ${normalizedPlan.type === type ? "selected" : ""}>${type}</option>`).join("");
   wrap.innerHTML = `
     <input type="hidden" class="plan-id" value="${normalizedPlan.id}" />
+    <header class="plan-card-header">
+      <p class="plan-card-title">${normalizedPlan.type}｜${normalizedPlan.name || "識別名未設定"}</p>
+      <span class="plan-card-tag">${normalizedPlan.type}</span>
+    </header>
     <div class="plan-grid">
       <label>種類<select class="plan-type">${typeOptions}</select></label>
       <label>識別名<input class="plan-name" type="text" maxlength="30" placeholder="例: つみたて枠" value="${normalizedPlan.name || ""}" /></label>
@@ -901,16 +912,34 @@ function createPlanBlock(plan = {}) {
       </div>
       <div class="monthly-list"></div>
     </div>
+    <button type="button" class="add-plan-inline">＋この下に追加</button>
     <button type="button" class="danger remove-plan">この枠を削除</button>
   `;
 
   const lumpList = wrap.querySelector(".lump-list");
   const monthlyList = wrap.querySelector(".monthly-list");
+  const planTypeField = wrap.querySelector(".plan-type");
+  const planNameField = wrap.querySelector(".plan-name");
+  const title = wrap.querySelector(".plan-card-title");
+  const tag = wrap.querySelector(".plan-card-tag");
 
   normalizedPlan.lumpSums.forEach((history) => lumpList.appendChild(createHistoryRow({ type: "lump", month: history.month, amount: history.amount })));
   normalizedPlan.monthlyContributions.forEach((history) =>
     monthlyList.appendChild(createHistoryRow({ type: "monthly", month: history.startMonth, amount: history.amount }))
   );
+
+  const refreshPlanVisual = () => {
+    const type = planTypeField.value;
+    const name = planNameField.value.trim();
+    wrap.classList.remove(...Object.values(PLAN_TYPE_CLASS));
+    wrap.classList.add(PLAN_TYPE_CLASS[type] || PLAN_TYPE_CLASS.NISA);
+    title.textContent = `${type}｜${name || "識別名未設定"}`;
+    tag.textContent = type;
+  };
+
+  planTypeField.addEventListener("change", refreshPlanVisual);
+  planNameField.addEventListener("input", refreshPlanVisual);
+  refreshPlanVisual();
 
   wrap.querySelector(".add-lump").addEventListener("click", () => {
     lumpList.appendChild(createHistoryRow({ type: "lump" }));
@@ -922,6 +951,12 @@ function createPlanBlock(plan = {}) {
 
   wrap.querySelector(".remove-plan").addEventListener("click", () => {
     wrap.remove();
+  });
+
+  wrap.querySelector(".add-plan-inline").addEventListener("click", () => {
+    const newBlock = createPlanBlock();
+    wrap.insertAdjacentElement("afterend", newBlock);
+    newBlock.scrollIntoView({ behavior: "smooth", block: "center" });
   });
 
   return wrap;
@@ -1167,7 +1202,14 @@ function init() {
   setupFormattedAmountInput(amountInput);
 
   addPlanButton.addEventListener("click", () => {
-    planList.appendChild(createPlanBlock());
+    const newBlock = createPlanBlock();
+    planList.appendChild(newBlock);
+    newBlock.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+  addPlanBottomButton.addEventListener("click", () => {
+    const newBlock = createPlanBlock();
+    planList.appendChild(newBlock);
+    newBlock.scrollIntoView({ behavior: "smooth", block: "center" });
   });
   profileForm.addEventListener("submit", saveProfile);
   setupBottomNavigation();
