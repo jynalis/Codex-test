@@ -57,16 +57,18 @@
         </article>
       </section>
 
-      <section class="card accordion-card accent-card section-tone-profile">
-        <details class="accordion">
-          <summary class="accordion-summary">
-            <span class="accordion-title">基本情報・資産形成設定</span>
-            <span class="accordion-icon" aria-hidden="true"></span>
-          </summary>
-          <div class="accordion-content">
+      <section class="card section-tone-profile accordion-section" data-accordion-section>
+        <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-profile" id="trigger-profile">
+          <div class="section-heading">
+            <h2>基本情報・資産形成設定</h2>
             <p class="section-description">
               記入開始月や生年月日、積立・保有資産の設定を行います。
             </p>
+          </div>
+          <span class="accordion-toggle-icon" aria-hidden="true">＋</span>
+        </button>
+        <div class="accordion-panel" id="panel-profile" role="region" aria-labelledby="trigger-profile">
+          <div class="accordion-panel-inner">
             <form id="profile-form" class="grid">
               <label>
                 記入開始月
@@ -83,19 +85,21 @@
               <button type="submit" class="full">設定を保存</button>
             </form>
           </div>
-        </details>
+        </div>
       </section>
 
-      <section id="section-input" class="card accordion-card section-tone-input" data-nav-section="input">
-        <details class="accordion">
-          <summary class="accordion-summary">
-            <span class="accordion-title">収支を入力</span>
-            <span class="accordion-icon" aria-hidden="true"></span>
-          </summary>
-          <div class="accordion-content">
+      <section id="section-input" class="card section-tone-input accordion-section" data-nav-section="input" data-accordion-section>
+        <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-input" id="trigger-input">
+          <div class="section-heading">
+            <h2>収支を入力</h2>
             <p class="section-description">
               日々の収入・支出を追加して、今月の家計を記録します。
             </p>
+          </div>
+          <span class="accordion-toggle-icon" aria-hidden="true">＋</span>
+        </button>
+        <div class="accordion-panel" id="panel-input" role="region" aria-labelledby="trigger-input">
+          <div class="accordion-panel-inner">
             <form id="transaction-form" class="grid">
               <label>
                 日付
@@ -123,7 +127,7 @@
               <button type="submit">追加する</button>
             </form>
           </div>
-        </details>
+        </div>
       </section>
 
       <section class="card section-tone-summary accordion-section" data-accordion-section>
@@ -137,7 +141,8 @@
           <span class="accordion-toggle-icon" aria-hidden="true">＋</span>
         </button>
         <div class="accordion-panel" id="panel-summary" role="region" aria-labelledby="trigger-summary">
-          <div class="summary">
+          <div class="accordion-panel-inner">
+            <div class="summary">
             <div>
               <span>前月末残高</span>
               <strong id="carryover-total">¥0</strong>
@@ -162,6 +167,7 @@
               <span>当月末残高</span>
               <strong id="balance-total">¥0</strong>
             </div>
+            </div>
           </div>
         </div>
       </section>
@@ -177,7 +183,9 @@
           <span class="accordion-toggle-icon" aria-hidden="true">＋</span>
         </button>
         <div class="accordion-panel" id="panel-assets" role="region" aria-labelledby="trigger-assets">
-          <div id="asset-forecast" class="asset-forecast"></div>
+          <div class="accordion-panel-inner">
+            <div id="asset-forecast" class="asset-forecast"></div>
+          </div>
         </div>
       </section>
 
@@ -192,8 +200,10 @@
           <span class="accordion-toggle-icon" aria-hidden="true">＋</span>
         </button>
         <div class="accordion-panel" id="panel-chart" role="region" aria-labelledby="trigger-chart">
-          <div id="expense-chart" class="chart"></div>
-          <div id="auto-breakdown" class="auto-breakdown"></div>
+          <div class="accordion-panel-inner">
+            <div id="expense-chart" class="chart"></div>
+            <div id="auto-breakdown" class="auto-breakdown"></div>
+          </div>
         </div>
       </section>
 
@@ -208,10 +218,12 @@
           <span class="accordion-toggle-icon" aria-hidden="true">＋</span>
         </button>
         <div class="accordion-panel" id="panel-history" role="region" aria-labelledby="trigger-history">
-          <div class="filters history-filters">
-            <input id="month-filter" type="month" />
+          <div class="accordion-panel-inner">
+            <div class="filters history-filters">
+              <input id="month-filter" type="month" />
+            </div>
+            <ul id="transaction-list" class="list transaction-list"></ul>
           </div>
-          <ul id="transaction-list" class="list transaction-list"></ul>
         </div>
       </section>
     </main>
