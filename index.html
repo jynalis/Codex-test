@@ -127,75 +127,93 @@
         </details>
       </section>
 
-      <section class="card section-tone-summary">
-        <div class="section-heading">
-          <h2>家計診断サマリー</h2>
-          <p class="section-description">
-            今月の収支状況を一覧で確認できます。
-          </p>
-        </div>
-        <div class="summary">
-          <div>
-            <span>前月末残高</span>
-            <strong id="carryover-total">¥0</strong>
+      <section class="card section-tone-summary accordion-section" data-accordion-section>
+        <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-summary" id="trigger-summary">
+          <div class="section-heading">
+            <h2>家計診断サマリー</h2>
+            <p class="section-description">
+              今月の収支状況を一覧で確認できます。
+            </p>
           </div>
-          <div>
-            <span>当月収入</span>
-            <strong id="income-total">¥0</strong>
-          </div>
-          <div>
-            <span>当月通常支出</span>
-            <strong id="regular-expense-total">¥0</strong>
-          </div>
-          <div>
-            <span>当月資産形成支出（自動反映）</span>
-            <strong id="asset-expense-total">¥0</strong>
-          </div>
-          <div class="summary-danger">
-            <span>当月支出合計</span>
-            <strong id="expense-total">¥0</strong>
-          </div>
-          <div class="summary-positive">
-            <span>当月末残高</span>
-            <strong id="balance-total">¥0</strong>
+          <span class="accordion-toggle-icon" aria-hidden="true">＋</span>
+        </button>
+        <div class="accordion-panel" id="panel-summary" role="region" aria-labelledby="trigger-summary">
+          <div class="summary">
+            <div>
+              <span>前月末残高</span>
+              <strong id="carryover-total">¥0</strong>
+            </div>
+            <div>
+              <span>当月収入</span>
+              <strong id="income-total">¥0</strong>
+            </div>
+            <div>
+              <span>当月通常支出</span>
+              <strong id="regular-expense-total">¥0</strong>
+            </div>
+            <div>
+              <span>当月資産形成支出（自動反映）</span>
+              <strong id="asset-expense-total">¥0</strong>
+            </div>
+            <div class="summary-danger">
+              <span>当月支出合計</span>
+              <strong id="expense-total">¥0</strong>
+            </div>
+            <div class="summary-positive">
+              <span>当月末残高</span>
+              <strong id="balance-total">¥0</strong>
+            </div>
           </div>
         </div>
       </section>
 
-      <section id="section-assets" class="card section-tone-assets" data-nav-section="assets">
-        <div class="section-heading">
-          <h2>将来資産シミュレーション</h2>
-          <p class="section-description">
-            現時点の総資産額の構成比と、60歳時点の想定総資産額を確認できます。
-          </p>
+      <section id="section-assets" class="card section-tone-assets accordion-section" data-nav-section="assets" data-accordion-section>
+        <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-assets" id="trigger-assets">
+          <div class="section-heading">
+            <h2>将来資産シミュレーション</h2>
+            <p class="section-description">
+              現時点の総資産額の構成比と、60歳時点の想定総資産額を確認できます。
+            </p>
+          </div>
+          <span class="accordion-toggle-icon" aria-hidden="true">＋</span>
+        </button>
+        <div class="accordion-panel" id="panel-assets" role="region" aria-labelledby="trigger-assets">
+          <div id="asset-forecast" class="asset-forecast"></div>
         </div>
-        <div id="asset-forecast" class="asset-forecast"></div>
       </section>
 
-      <section class="card section-tone-chart">
-        <div class="section-heading">
-          <h2>支出バランス分析</h2>
-          <p class="section-description">
-            どの項目に支出が偏っているかを視覚的に確認できます。
-          </p>
+      <section class="card section-tone-chart accordion-section" data-accordion-section>
+        <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-chart" id="trigger-chart">
+          <div class="section-heading">
+            <h2>支出バランス分析</h2>
+            <p class="section-description">
+              どの項目に支出が偏っているかを視覚的に確認できます。
+            </p>
+          </div>
+          <span class="accordion-toggle-icon" aria-hidden="true">＋</span>
+        </button>
+        <div class="accordion-panel" id="panel-chart" role="region" aria-labelledby="trigger-chart">
+          <div id="expense-chart" class="chart"></div>
+          <div id="auto-breakdown" class="auto-breakdown"></div>
         </div>
-        <div id="expense-chart" class="chart"></div>
-        <div id="auto-breakdown" class="auto-breakdown"></div>
       </section>
 
-      <section id="section-history" class="card section-tone-history" data-nav-section="history">
-        <div class="section-header">
+      <section id="section-history" class="card section-tone-history accordion-section" data-nav-section="history" data-accordion-section>
+        <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-history" id="trigger-history">
           <div class="section-heading">
             <h2>取引履歴</h2>
             <p class="section-description">
               入力済みの取引内容を時系列で確認・削除できます。
             </p>
           </div>
-          <div class="filters">
+          <span class="accordion-toggle-icon" aria-hidden="true">＋</span>
+        </button>
+        <div class="accordion-panel" id="panel-history" role="region" aria-labelledby="trigger-history">
+          <div class="filters history-filters">
             <input id="month-filter" type="month" />
           </div>
+          <ul id="transaction-list" class="list transaction-list"></ul>
         </div>
-        <ul id="transaction-list" class="list transaction-list"></ul>
       </section>
     </main>
 
