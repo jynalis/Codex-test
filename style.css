@@ -249,6 +249,90 @@ header p {
   gap: 4px;
 }
 
+.accordion-section {
+  padding-top: 14px;
+}
+
+.accordion-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  text-align: left;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid #9eb5cd;
+  background: linear-gradient(160deg, #f8fbff 0%, #eaf2fb 100%);
+  min-height: 76px;
+  cursor: pointer;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 72%),
+    0 6px 14px rgb(15 23 42 / 10%);
+}
+
+.accordion-trigger:hover {
+  transform: translateY(-1px);
+}
+
+.accordion-trigger:active {
+  transform: translateY(0);
+}
+
+.accordion-trigger .section-description {
+  margin-top: 2px;
+}
+
+.accordion-toggle-icon {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid #8ea4be;
+  display: grid;
+  place-items: center;
+  font-size: 1.8rem;
+  line-height: 1;
+  font-weight: 700;
+  color: #183b64;
+  background: linear-gradient(160deg, #fff 0%, #e7effa 100%);
+  box-shadow: 0 8px 16px rgb(30 62 98 / 18%);
+}
+
+.accordion-trigger[aria-expanded="true"] .accordion-toggle-icon {
+  font-size: 2rem;
+}
+
+.accordion-trigger[aria-expanded="true"] .accordion-toggle-icon::before {
+  content: "−";
+}
+
+.accordion-trigger[aria-expanded="false"] .accordion-toggle-icon::before {
+  content: "＋";
+}
+
+.accordion-trigger .accordion-toggle-icon {
+  color: transparent;
+}
+
+.accordion-section .accordion-panel {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition:
+    max-height 0.34s ease,
+    opacity 0.24s ease,
+    transform 0.24s ease;
+  pointer-events: none;
+}
+
+.accordion-section.is-expanded .accordion-panel {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
 .section-heading h2,
 .section-header h2,
 .dashboard-header h2 {
@@ -351,6 +435,29 @@ button:active {
   transform: translateY(0);
   filter: brightness(0.98);
   box-shadow: 0 4px 10px rgb(15 23 42 / 16%);
+}
+
+button.accordion-trigger {
+  border: 1px solid #9eb5cd;
+  background: linear-gradient(160deg, #f8fbff 0%, #eaf2fb 100%);
+  color: inherit;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 72%),
+    0 6px 14px rgb(15 23 42 / 10%);
+}
+
+button.accordion-trigger:hover {
+  filter: none;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 76%),
+    0 8px 16px rgb(15 23 42 / 14%);
+}
+
+button.accordion-trigger:active {
+  filter: none;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 72%),
+    0 5px 12px rgb(15 23 42 / 12%);
 }
 
 button.small {
@@ -902,6 +1009,10 @@ button.danger {
 .filters {
   display: flex;
   gap: 8px;
+}
+
+.history-filters {
+  margin-bottom: 8px;
 }
 
 .list {
