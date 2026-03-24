@@ -34,6 +34,7 @@ const expenseChart = document.getElementById("expense-chart");
 const autoBreakdown = document.getElementById("auto-breakdown");
 const bottomNavButtons = Array.from(document.querySelectorAll(".bottom-nav-btn"));
 const navToast = document.getElementById("nav-toast");
+const accordionSections = Array.from(document.querySelectorAll("[data-accordion-section]"));
 
 const NAV_TARGETS = {
   home: "section-home",
@@ -1081,6 +1082,7 @@ function render() {
   renderExpenseChart([...transactions, ...autoTransactions], currentMonth);
   renderAutoBreakdown(autoTransactions, currentMonth);
   renderAssetForecast(settings);
+  syncAccordionPanelHeights();
 }
 
 function addTransaction(event) {
@@ -1136,6 +1138,58 @@ function showNavToast(message) {
   }, 1500);
 }
 
+function updateAccordionPanelHeight(section) {
+  const trigger = section.querySelector(".accordion-trigger");
+  const panel = section.querySelector(".accordion-panel");
+  if (!trigger || !panel) return;
+  if (trigger.getAttribute("aria-expanded") !== "true") return;
+  panel.style.maxHeight = `${panel.scrollHeight}px`;
+}
+
+function syncAccordionPanelHeights() {
+  accordionSections.forEach((section) => updateAccordionPanelHeight(section));
+}
+
+function setAccordionExpanded(section, expanded) {
+  const trigger = section.querySelector(".accordion-trigger");
+  const panel = section.querySelector(".accordion-panel");
+  if (!trigger || !panel) return;
+
+  trigger.setAttribute("aria-expanded", String(expanded));
+  section.classList.toggle("is-expanded", expanded);
+
+  if (expanded) {
+    panel.style.maxHeight = `${panel.scrollHeight}px`;
+    return;
+  }
+
+  panel.style.maxHeight = `${panel.scrollHeight}px`;
+  window.requestAnimationFrame(() => {
+    panel.style.maxHeight = "0px";
+  });
+}
+
+function setupSectionAccordions() {
+  accordionSections.forEach((section) => {
+    const trigger = section.querySelector(".accordion-trigger");
+    if (!trigger) return;
+
+    section.classList.remove("is-expanded");
+    trigger.setAttribute("aria-expanded", "false");
+    const panel = section.querySelector(".accordion-panel");
+    if (panel) {
+      panel.style.maxHeight = "0px";
+    }
+
+    trigger.addEventListener("click", () => {
+      const expanded = trigger.getAttribute("aria-expanded") === "true";
+      setAccordionExpanded(section, !expanded);
+    });
+  });
+
+  window.addEventListener("resize", syncAccordionPanelHeights);
+}
+
 function scrollToNavSection(target) {
   if (target === "schedule") {
     showNavToast("ライフイベント表は今後追加予定です。");
@@ -1149,6 +1203,9 @@ function scrollToNavSection(target) {
   const accordion = targetSection.querySelector("details.accordion");
   if (accordion) {
     accordion.open = true;
+  }
+  if (targetSection.dataset.accordionSection !== undefined) {
+    setAccordionExpanded(targetSection, true);
   }
 
   targetSection.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1200,6 +1257,7 @@ function init() {
   setupFormattedAmountInput(amountInput);
 
   profileForm.addEventListener("submit", saveProfile);
+  setupSectionAccordions();
   setupBottomNavigation();
 
   render();
