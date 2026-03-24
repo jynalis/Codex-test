@@ -1141,9 +1141,10 @@ function showNavToast(message) {
 function updateAccordionPanelHeight(section) {
   const trigger = section.querySelector(".accordion-trigger");
   const panel = section.querySelector(".accordion-panel");
-  if (!trigger || !panel) return;
+  const panelInner = panel?.querySelector(".accordion-panel-inner");
+  if (!trigger || !panel || !panelInner) return;
   if (trigger.getAttribute("aria-expanded") !== "true") return;
-  panel.style.maxHeight = `${panel.scrollHeight}px`;
+  panel.style.maxHeight = `${panelInner.scrollHeight}px`;
 }
 
 function syncAccordionPanelHeights() {
@@ -1153,17 +1154,19 @@ function syncAccordionPanelHeights() {
 function setAccordionExpanded(section, expanded) {
   const trigger = section.querySelector(".accordion-trigger");
   const panel = section.querySelector(".accordion-panel");
-  if (!trigger || !panel) return;
+  const panelInner = panel?.querySelector(".accordion-panel-inner");
+  if (!trigger || !panel || !panelInner) return;
 
   trigger.setAttribute("aria-expanded", String(expanded));
+  panel.setAttribute("aria-hidden", String(!expanded));
   section.classList.toggle("is-expanded", expanded);
 
   if (expanded) {
-    panel.style.maxHeight = `${panel.scrollHeight}px`;
+    panel.style.maxHeight = `${panelInner.scrollHeight}px`;
     return;
   }
 
-  panel.style.maxHeight = `${panel.scrollHeight}px`;
+  panel.style.maxHeight = `${panelInner.scrollHeight}px`;
   window.requestAnimationFrame(() => {
     panel.style.maxHeight = "0px";
   });
@@ -1179,6 +1182,7 @@ function setupSectionAccordions() {
     const panel = section.querySelector(".accordion-panel");
     if (panel) {
       panel.style.maxHeight = "0px";
+      panel.setAttribute("aria-hidden", "true");
     }
 
     trigger.addEventListener("click", () => {
@@ -1200,10 +1204,6 @@ function scrollToNavSection(target) {
   const targetSection = sectionId ? document.getElementById(sectionId) : null;
   if (!targetSection) return;
 
-  const accordion = targetSection.querySelector("details.accordion");
-  if (accordion) {
-    accordion.open = true;
-  }
   if (targetSection.dataset.accordionSection !== undefined) {
     setAccordionExpanded(targetSection, true);
   }
