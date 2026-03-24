@@ -11,7 +11,8 @@
       <header class="page-header card">
         <p class="eyebrow">FP家計診断ツール</p>
         <h1>かんたん家計簿</h1>
-        <p>収入・支出・積立資産をまとめて管理できます。</p>
+        <p class="hero-subtitle">収入・支出・積立資産をまとめて管理できます。</p>
+        <p class="hero-note">毎月の動きと将来資産を、トップ画面で即確認。</p>
       </header>
 
       <section id="section-home" class="card dashboard-section section-tone-home" data-nav-section="home">
@@ -20,27 +21,27 @@
           <p class="section-description">毎月の収支と資産形成の進捗を一目で確認できます。</p>
         </div>
         <div class="dashboard-grid">
-          <article class="dashboard-card">
+          <article class="dashboard-card dashboard-card-carryover">
             <span>前月末残高</span>
             <strong id="dashboard-carryover-total">¥0</strong>
           </article>
-          <article class="dashboard-card">
+          <article class="dashboard-card dashboard-card-income">
             <span>当月収入</span>
             <strong id="dashboard-income-total">¥0</strong>
           </article>
-          <article class="dashboard-card">
+          <article class="dashboard-card dashboard-card-expense">
             <span>当月支出</span>
             <strong id="dashboard-expense-total">¥0</strong>
           </article>
-          <article class="dashboard-card is-accent">
+          <article class="dashboard-card dashboard-card-balance is-accent">
             <span>当月末残高</span>
             <strong id="dashboard-balance-total">¥0</strong>
           </article>
-          <article class="dashboard-card">
+          <article class="dashboard-card dashboard-card-saving">
             <span>毎月の積立額</span>
             <strong id="dashboard-monthly-saving-total">¥0</strong>
           </article>
-          <article class="dashboard-card is-accent">
+          <article class="dashboard-card dashboard-card-future is-accent">
             <span>60歳時点の想定総資産額</span>
             <strong id="dashboard-age60-total">¥0</strong>
           </article>
@@ -77,9 +78,6 @@
               </div>
               <div id="plan-list" class="full plan-list"></div>
               <button type="submit" class="full">設定を保存</button>
-              <div class="full plan-add-footer">
-                <button id="add-plan-bottom-btn" type="button" class="add-plan-btn add-plan-bottom-btn">＋資産プランを追加</button>
-              </div>
             </form>
           </div>
         </details>

@@ -1,7 +1,7 @@
 :root {
   color-scheme: light;
   font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", system-ui, sans-serif;
-  --bg: #f3f6fa;
+  --bg: #e9eff7;
   --card: #ffffff;
   --text: #162133;
   --muted: #556377;
@@ -16,7 +16,7 @@
   --shadow-soft: 0 20px 40px rgb(15 23 42 / 12%);
   --shadow-card: 0 12px 28px rgb(15 23 42 / 10%);
   --ring: rgb(27 54 95 / 18%);
-  --hero-bg: linear-gradient(170deg, #ffffff 0%, #f4f9ff 100%);
+  --hero-bg: linear-gradient(165deg, #f5f9ff 0%, #dfefff 52%, #f7fbff 100%);
   --profile-bg: linear-gradient(180deg, #fafdff 0%, #f2f7ff 100%);
   --input-bg: linear-gradient(180deg, #fffef8 0%, #fff8e9 100%);
   --summary-bg: linear-gradient(180deg, #f7fffb 0%, #eefcf6 100%);
@@ -70,24 +70,55 @@ header p {
 }
 
 .page-header {
-  padding: 22px 20px;
+  padding: 28px 24px;
   border-radius: 18px;
-  border: 1px solid #d2deee;
-  box-shadow: var(--shadow-card);
-  background: linear-gradient(150deg, #ffffff 0%, #f8fbff 100%);
+  border: 1px solid #96b7de;
+  border-top: 7px solid #1f4f86;
+  box-shadow: 0 24px 40px rgb(23 53 88 / 20%);
+  background:
+    radial-gradient(circle at 88% 16%, rgb(255 255 255 / 84%) 0%, transparent 42%),
+    linear-gradient(138deg, #0f3b66 0%, #2e69a6 54%, #74a8d8 100%);
 }
 
 .eyebrow {
   width: fit-content;
-  border: 1px solid #d6e2f0;
-  background: #f5f9ff;
-  color: #2c4f76;
+  border: 1px solid rgb(255 255 255 / 66%);
+  background: rgb(11 35 62 / 32%);
+  color: #f3f8ff;
   border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 0.79rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  font-weight: 800;
+  padding: 7px 14px;
+  backdrop-filter: blur(2px);
+}
+
+.page-header h1 {
+  color: #fff;
+  font-size: clamp(2rem, 4.6vw, 2.7rem);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: 0.015em;
+  text-shadow: 0 5px 16px rgb(4 17 35 / 38%);
+}
+
+.hero-subtitle {
+  color: #eaf4ff;
+  font-size: clamp(1rem, 2vw, 1.18rem);
   font-weight: 700;
-  padding: 5px 10px;
+  line-height: 1.55;
+}
+
+.hero-note {
+  width: fit-content;
+  border-radius: 10px;
+  border: 1px solid rgb(255 255 255 / 52%);
+  background: rgb(242 248 255 / 90%);
+  color: #123a64;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 8px 12px;
 }
 
 .card {
@@ -240,8 +271,9 @@ header p {
 
 .section-description {
   color: var(--support-text);
-  font-size: 0.9rem;
-  line-height: 1.6;
+  font-size: 0.95rem;
+  line-height: 1.68;
+  font-weight: 500;
 }
 
 .grid {
@@ -503,78 +535,56 @@ button.danger {
 }
 
 .add-plan-inline {
-  margin-top: 10px;
-  min-height: 58px;
+  margin-top: 18px;
+  min-height: 68px;
   border-radius: 14px;
-  border: 2px solid #2d76b8;
-  background: linear-gradient(165deg, #e8f5ff 0%, #b9dcff 100%);
-  color: #0c3861;
+  border: 2px solid #16508a;
+  background: linear-gradient(162deg, #0f4d8a 0%, #2770b7 58%, #4092d8 100%);
+  color: #fff;
   font-weight: 900;
-  font-size: 1.02rem;
+  font-size: 1.08rem;
   letter-spacing: 0.015em;
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
-  padding: 0 14px;
+  padding: 0 16px;
   box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / 75%),
-    0 12px 20px rgb(27 92 156 / 24%);
+    inset 0 0 0 1px rgb(255 255 255 / 22%),
+    0 14px 26px rgb(11 57 104 / 34%);
 }
 
 .add-plan-inline:hover {
-  filter: brightness(1.06) saturate(1.1);
+  filter: brightness(1.08) saturate(1.14);
   transform: translateY(-2px);
+  border-color: #0f457a;
   box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / 80%),
-    0 14px 22px rgb(27 92 156 / 30%);
+    inset 0 0 0 1px rgb(255 255 255 / 28%),
+    0 18px 30px rgb(11 57 104 / 40%);
 }
 
 .add-plan-inline:active {
   transform: translateY(0);
-  filter: brightness(0.97);
+  filter: brightness(0.95);
   box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / 65%),
-    0 6px 12px rgb(27 92 156 / 20%);
+    inset 0 0 0 1px rgb(255 255 255 / 18%),
+    0 7px 14px rgb(11 57 104 / 28%);
 }
 
 .add-plan-inline-icon {
   display: inline-grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   border-radius: 999px;
-  background: #1971c2;
-  color: #fff;
-  font-size: 1.2rem;
+  border: 1px solid rgb(255 255 255 / 32%);
+  background: linear-gradient(165deg, #ffffff 0%, #d9ecff 100%);
+  color: #0c406f;
+  font-size: 1.38rem;
+  font-weight: 900;
   line-height: 1;
-  box-shadow: 0 4px 10px rgb(25 113 194 / 38%);
-}
-
-.plan-add-footer {
-  margin-top: 14px;
-  display: flex;
-  padding: 14px 0 4px;
-  border-top: 2px dashed #9bb8d6;
-}
-
-.add-plan-btn,
-.add-plan-bottom-btn {
-  min-height: 50px;
-  border-radius: 12px;
-  border: 1px solid #7ba4d1;
-  background: linear-gradient(160deg, #2f78b8 0%, #23588f 100%);
-  color: #fff;
-  padding: 0 18px;
-  font-size: 0.96rem;
-  box-shadow: 0 8px 16px rgb(37 94 149 / 26%);
-}
-
-.add-plan-bottom-btn {
-  width: 100%;
-  min-height: 54px;
-  font-size: 1rem;
+  box-shadow: 0 8px 14px rgb(7 34 63 / 30%);
 }
 
 .section-header {
@@ -598,66 +608,134 @@ button.danger {
 
 .remove-plan {
   min-height: 46px;
+  margin-top: 8px;
 }
 
 .dashboard-section {
-  padding-top: 18px;
-  padding-bottom: 18px;
-  box-shadow: var(--shadow-soft);
+  padding: 20px;
+  box-shadow: 0 24px 40px rgb(16 39 67 / 18%);
+  background:
+    radial-gradient(circle at 100% 0%, rgb(255 255 255 / 75%) 0%, transparent 36%),
+    linear-gradient(155deg, #eff5ff 0%, #deebfb 60%, #f4f8ff 100%);
 }
 
 .dashboard-header {
   align-items: end;
-}
-
-.dashboard-grid {
-  margin-top: 14px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
-.dashboard-card {
-  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
-  border: 1px solid #d0deee;
-  border-radius: 14px;
-  padding: 14px;
+.dashboard-header h2 {
+  background: linear-gradient(145deg, #0f345b 0%, #1f4d7d 100%);
+  color: #fff;
+  border: 1px solid #163f6a;
+  border-left: 10px solid #66b2ff;
+  border-radius: 12px;
+  box-shadow: 0 16px 24px rgb(15 44 75 / 24%);
+  font-size: clamp(1.34rem, 3vw, 1.62rem);
+  padding: 12px 16px;
+}
+
+.dashboard-header .section-description {
+  color: #1f3e63;
+  font-size: 0.94rem;
+  font-weight: 600;
+}
+
+.dashboard-grid {
+  margin-top: 16px;
   display: grid;
-  gap: 7px;
-  box-shadow: 0 6px 16px rgb(15 23 42 / 5%);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dashboard-card {
+  background: linear-gradient(180deg, #ffffff 0%, #f0f5fc 100%);
+  border: 1px solid #bdd0e5;
+  border-radius: 16px;
+  padding: 15px 14px;
+  display: grid;
+  gap: 6px;
+  box-shadow: 0 10px 20px rgb(15 23 42 / 10%);
 }
 
 .dashboard-card span {
-  color: var(--muted);
-  font-size: 0.82rem;
+  color: #456082;
+  font-size: 0.79rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
 }
 
 .dashboard-card strong {
-  color: var(--primary-strong);
-  font-size: 1.18rem;
+  color: #0f2e52;
+  font-size: clamp(1.34rem, 2vw, 1.64rem);
   line-height: 1.2;
   letter-spacing: 0.01em;
   font-variant-numeric: tabular-nums;
+  font-weight: 900;
+}
+
+.dashboard-card-carryover,
+.dashboard-card-income,
+.dashboard-card-expense,
+.dashboard-card-saving {
+  min-height: 110px;
+}
+
+.dashboard-card-income strong {
+  color: #0b8a68;
+}
+
+.dashboard-card-expense strong {
+  color: #b33b3b;
+}
+
+.dashboard-card-saving {
+  border-style: dashed;
+  background: linear-gradient(180deg, #f6fbff 0%, #edf6ff 100%);
 }
 
 .dashboard-card.is-accent {
-  background: linear-gradient(160deg, #1b365f 0%, #355c8c 100%);
-  border-color: #36577f;
+  border-color: #214f7f;
 }
 
-.dashboard-card.is-accent span {
+.dashboard-card-balance {
+  grid-column: span 2;
+  grid-row: span 2;
+  min-height: 232px;
+  padding: 20px;
+  background: linear-gradient(160deg, #0d2f52 0%, #1f5588 56%, #2f7cb9 100%);
+}
+
+.dashboard-card-balance span {
+  color: #d3e7ff;
+  font-size: 0.92rem;
+}
+
+.dashboard-card-balance strong {
+  color: #fff;
+  font-size: clamp(2rem, 4vw, 2.6rem);
+  text-shadow: 0 10px 18px rgb(3 13 28 / 34%);
+}
+
+.dashboard-card-future {
+  grid-column: span 2;
+  min-height: 110px;
+  background: linear-gradient(160deg, #1b365f 0%, #355c8c 100%);
+}
+
+.dashboard-card-future span {
   color: #d9e6f7;
 }
 
-.dashboard-card.is-accent strong {
+.dashboard-card-future strong {
   color: #fff;
-  font-size: 1.26rem;
+  font-size: clamp(1.45rem, 2.2vw, 1.78rem);
 }
 
 .diagnosis-card {
-  margin-top: 12px;
-  border: 1px solid #c6d8ed;
-  background: linear-gradient(145deg, #f8fbff 0%, #edf4fd 100%);
+  margin-top: 14px;
+  border: 1px solid #b9d1ec;
+  background: linear-gradient(145deg, #f8fbff 0%, #e4eef9 100%);
   border-radius: 14px;
   padding: 14px 14px 14px 16px;
   display: grid;
@@ -677,16 +755,17 @@ button.danger {
 }
 
 .diagnosis-label {
-  font-size: 0.75rem;
-  color: #35557e;
-  letter-spacing: 0.06em;
-  font-weight: 700;
+  font-size: 0.76rem;
+  color: #244d79;
+  letter-spacing: 0.08em;
+  font-weight: 800;
 }
 
 .diagnosis-text {
-  color: var(--text);
-  line-height: 1.65;
-  font-size: 0.92rem;
+  color: #0f2946;
+  line-height: 1.72;
+  font-size: 0.98rem;
+  font-weight: 500;
 }
 
 .summary {
@@ -1042,11 +1121,20 @@ button.danger {
   }
 
   .page-header {
-    padding: 18px 16px;
+    padding: 20px 16px;
   }
 
-  header h1 {
-    font-size: 1.45rem;
+  .page-header h1 {
+    font-size: 1.84rem;
+  }
+
+  .hero-subtitle {
+    font-size: 0.94rem;
+  }
+
+  .hero-note {
+    font-size: 0.82rem;
+    padding: 7px 10px;
   }
 
   .accordion-card {
@@ -1090,15 +1178,11 @@ button.danger {
     gap: 6px;
   }
 
-  .add-plan-inline,
-  .add-plan-btn,
-  .add-plan-bottom-btn {
-    min-height: 54px;
-    font-size: 0.98rem;
-  }
-
   .add-plan-inline {
     width: 100%;
+    min-height: 62px;
+    font-size: 1.02rem;
+    margin-top: 14px;
   }
 
   .dashboard-grid {
@@ -1106,16 +1190,30 @@ button.danger {
     gap: 9px;
   }
 
+  .dashboard-card-balance {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    min-height: 156px;
+  }
+
+  .dashboard-card-future {
+    grid-column: 1 / -1;
+  }
+
   .dashboard-card {
     padding: 13px 12px;
   }
 
   .dashboard-card strong {
-    font-size: 1.09rem;
+    font-size: 1.17rem;
   }
 
-  .dashboard-card.is-accent strong {
-    font-size: 1.16rem;
+  .dashboard-card-balance strong {
+    font-size: 2rem;
+  }
+
+  .dashboard-card-future strong {
+    font-size: 1.46rem;
   }
 
   .diagnosis-card {
