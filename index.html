@@ -14,7 +14,7 @@
         <p>収入・支出・積立資産をまとめて管理できます。</p>
       </header>
 
-      <section id="section-home" class="card dashboard-section" data-nav-section="home">
+      <section id="section-home" class="card dashboard-section section-tone-home" data-nav-section="home">
         <div class="section-header dashboard-header">
           <h2>家計診断ダッシュボード</h2>
           <p class="section-description">毎月の収支と資産形成の進捗を一目で確認できます。</p>
@@ -53,7 +53,7 @@
         </article>
       </section>
 
-      <section class="card accordion-card accent-card">
+      <section class="card accordion-card accent-card section-tone-profile">
         <details class="accordion">
           <summary class="accordion-summary">
             <span class="accordion-title">基本情報・資産形成設定</span>
@@ -74,11 +74,11 @@
               </label>
               <div class="full split-title">
                 <h3>積立・保有資産（NISA / iDeCo / 貯蓄性保険 / 貯金）</h3>
-                <button id="add-plan-btn" type="button">＋追加</button>
+                <button id="add-plan-btn" type="button" class="add-plan-btn">＋追加</button>
               </div>
               <div id="plan-list" class="full plan-list"></div>
               <div class="full plan-add-footer">
-                <button id="add-plan-bottom-btn" type="button" class="add-plan-bottom-btn">＋積立設定を追加</button>
+                <button id="add-plan-bottom-btn" type="button" class="add-plan-btn add-plan-bottom-btn">＋追加</button>
               </div>
               <button type="submit" class="full">設定を保存</button>
             </form>
@@ -86,7 +86,7 @@
         </details>
       </section>
 
-      <section id="section-input" class="card accordion-card" data-nav-section="input">
+      <section id="section-input" class="card accordion-card section-tone-input" data-nav-section="input">
         <details class="accordion">
           <summary class="accordion-summary">
             <span class="accordion-title">収支を入力</span>
@@ -126,7 +126,7 @@
         </details>
       </section>
 
-      <section class="card">
+      <section class="card section-tone-summary">
         <div class="section-heading">
           <h2>家計診断サマリー</h2>
           <p class="section-description">
@@ -161,7 +161,7 @@
         </div>
       </section>
 
-      <section id="section-assets" class="card" data-nav-section="assets">
+      <section id="section-assets" class="card section-tone-assets" data-nav-section="assets">
         <div class="section-heading">
           <h2>将来資産シミュレーション</h2>
           <p class="section-description">
@@ -171,7 +171,7 @@
         <div id="asset-forecast" class="asset-forecast"></div>
       </section>
 
-      <section class="card">
+      <section class="card section-tone-chart">
         <div class="section-heading">
           <h2>支出バランス分析</h2>
           <p class="section-description">
@@ -182,7 +182,7 @@
         <div id="auto-breakdown" class="auto-breakdown"></div>
       </section>
 
-      <section id="section-history" class="card" data-nav-section="history">
+      <section id="section-history" class="card section-tone-history" data-nav-section="history">
         <div class="section-header">
           <div class="section-heading">
             <h2>取引履歴</h2>
