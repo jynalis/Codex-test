@@ -886,14 +886,14 @@ function createPlanBlock(plan = {}) {
 
   const typeOptions = PLAN_TYPES.map((type) => `<option value="${type}" ${normalizedPlan.type === type ? "selected" : ""}>${type}</option>`).join("");
   wrap.innerHTML = `
-    <input type="hidden" class="plan-id" value="${normalizedPlan.id}" />
+    <input type="hidden" class="plan-id" value="" />
     <header class="plan-card-header">
-      <p class="plan-card-title">${normalizedPlan.type}｜${normalizedPlan.name || "識別名未設定"}</p>
-      <span class="plan-card-tag">${normalizedPlan.type}</span>
+      <p class="plan-card-title"></p>
+      <span class="plan-card-tag"></span>
     </header>
     <div class="plan-grid">
       <label>種類<select class="plan-type">${typeOptions}</select></label>
-      <label>識別名<input class="plan-name" type="text" maxlength="30" placeholder="例: つみたて枠" value="${normalizedPlan.name || ""}" /></label>
+      <label>識別名<input class="plan-name" type="text" maxlength="30" placeholder="例: つみたて枠" value="" /></label>
       <label>想定利回り(年%)<input class="plan-expected-return" type="number" step="0.1" value="${normalizedPlan.expectedReturn ?? ""}" /></label>
       <label>取崩年齢<input class="plan-withdraw-age" type="number" min="0" max="120" step="1" value="${normalizedPlan.withdrawAge ?? ""}" /></label>
       <label>引き落とし日<input class="plan-withdrawal-day" type="number" min="1" max="31" step="1" value="${normalizedPlan.withdrawalDay ?? 1}" /></label>
@@ -922,6 +922,10 @@ function createPlanBlock(plan = {}) {
   const planNameField = wrap.querySelector(".plan-name");
   const title = wrap.querySelector(".plan-card-title");
   const tag = wrap.querySelector(".plan-card-tag");
+  const planIdField = wrap.querySelector(".plan-id");
+
+  planIdField.value = normalizedPlan.id;
+  planNameField.value = normalizedPlan.name || "";
 
   normalizedPlan.lumpSums.forEach((history) => lumpList.appendChild(createHistoryRow({ type: "lump", month: history.month, amount: history.amount })));
   normalizedPlan.monthlyContributions.forEach((history) =>
