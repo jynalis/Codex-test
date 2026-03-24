@@ -71,23 +71,22 @@ header p {
 }
 
 .page-header {
-  padding: 30px 28px;
+  padding: 32px 30px;
   border-radius: 24px;
-  border: 1px solid #17385f;
-  border-top: 8px solid #79c2ff;
-  box-shadow: 0 28px 46px rgb(8 29 55 / 42%);
+  border: 1px solid #295989;
+  border-top: 6px solid #8fd2ff;
+  box-shadow: 0 24px 42px rgb(8 29 55 / 30%);
   background:
-    radial-gradient(circle at 82% 18%, rgb(178 220 255 / 36%) 0%, transparent 40%),
-    radial-gradient(circle at 10% 100%, rgb(18 52 93 / 68%) 0%, transparent 64%),
-    linear-gradient(135deg, #071a34 0%, #123965 45%, #1f5f97 100%);
+    radial-gradient(circle at 88% 8%, rgb(162 216 255 / 30%) 0%, transparent 40%),
+    radial-gradient(circle at 0% 100%, rgb(7 38 73 / 55%) 0%, transparent 60%),
+    linear-gradient(140deg, #0b2c52 0%, #17497b 50%, #2f6ea0 100%);
 }
 
 .hero-topline {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   gap: 12px;
-  flex-wrap: wrap;
 }
 
 .hero-copy {
@@ -98,16 +97,16 @@ header p {
 
 .eyebrow {
   width: fit-content;
-  border: 1px solid rgb(162 215 255 / 62%);
-  background: linear-gradient(135deg, rgb(17 65 112 / 85%) 0%, rgb(36 113 184 / 84%) 100%);
-  color: #f5fbff;
+  border: 1px solid rgb(183 223 255 / 70%);
+  background: linear-gradient(145deg, rgb(224 241 255 / 96%) 0%, rgb(188 220 249 / 92%) 100%);
+  color: #11365f;
   border-radius: 999px;
   font-size: 0.82rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   font-weight: 800;
   padding: 8px 15px;
-  box-shadow: 0 8px 18px rgb(3 17 35 / 35%);
+  box-shadow: 0 8px 18px rgb(3 17 35 / 20%);
 }
 
 .page-header h1 {
@@ -120,22 +119,11 @@ header p {
 }
 
 .hero-subtitle {
-  color: #deedff;
+  color: #e6f2ff;
   font-size: clamp(1.02rem, 2vw, 1.2rem);
   font-weight: 700;
   line-height: 1.58;
   max-width: 760px;
-}
-
-.hero-note {
-  width: fit-content;
-  border-radius: 999px;
-  border: 1px solid rgb(149 203 255 / 58%);
-  background: rgb(8 32 58 / 44%);
-  color: #f3f8ff;
-  font-size: 0.82rem;
-  font-weight: 700;
-  padding: 8px 14px;
 }
 
 .card {
@@ -1279,20 +1267,17 @@ button.danger {
   }
 
   .page-header {
-    padding: 22px 18px;
+    padding: 26px 20px;
+    border-radius: 20px;
   }
 
   .page-header h1 {
-    font-size: 2rem;
+    font-size: clamp(1.9rem, 9.5vw, 2.35rem);
   }
 
   .hero-subtitle {
-    font-size: 0.94rem;
-  }
-
-  .hero-note {
-    font-size: 0.82rem;
-    padding: 7px 10px;
+    font-size: 0.98rem;
+    line-height: 1.52;
   }
 
   .accordion-card {
