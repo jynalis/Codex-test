@@ -12,7 +12,6 @@ const monthFilter = document.getElementById("month-filter");
 const profileForm = document.getElementById("profile-form");
 const entryStartMonthInput = document.getElementById("entry-start-month");
 const birthDateInput = document.getElementById("birth-date");
-const addPlanButton = document.getElementById("add-plan-btn");
 const addPlanBottomButton = document.getElementById("add-plan-bottom-btn");
 const planList = document.getElementById("plan-list");
 const assetForecast = document.getElementById("asset-forecast");
@@ -1201,16 +1200,13 @@ function init() {
   monthFilter.addEventListener("change", render);
   setupFormattedAmountInput(amountInput);
 
-  addPlanButton.addEventListener("click", () => {
-    const newBlock = createPlanBlock();
-    planList.appendChild(newBlock);
-    newBlock.scrollIntoView({ behavior: "smooth", block: "center" });
-  });
-  addPlanBottomButton.addEventListener("click", () => {
-    const newBlock = createPlanBlock();
-    planList.appendChild(newBlock);
-    newBlock.scrollIntoView({ behavior: "smooth", block: "center" });
-  });
+  if (addPlanBottomButton) {
+    addPlanBottomButton.addEventListener("click", () => {
+      const newBlock = createPlanBlock();
+      planList.appendChild(newBlock);
+      newBlock.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }
   profileForm.addEventListener("submit", saveProfile);
   setupBottomNavigation();
 
