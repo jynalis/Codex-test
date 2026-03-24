@@ -3,15 +3,18 @@
   font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", system-ui, sans-serif;
   --bg: #f3f6fa;
   --card: #ffffff;
-  --text: #1f2937;
+  --text: #162133;
   --muted: #556377;
+  --heading-strong: #081a34;
+  --label-strong: #24364d;
+  --support-text: #5c6f85;
   --income: #0ca678;
   --expense: #c92a2a;
   --primary: #1b365f;
   --primary-strong: #10243f;
   --border: #d6e0ec;
-  --shadow-soft: 0 14px 34px rgb(15 23 42 / 8%);
-  --shadow-card: 0 8px 20px rgb(15 23 42 / 6%);
+  --shadow-soft: 0 20px 40px rgb(15 23 42 / 12%);
+  --shadow-card: 0 12px 28px rgb(15 23 42 / 10%);
   --ring: rgb(27 54 95 / 18%);
   --hero-bg: linear-gradient(170deg, #ffffff 0%, #f4f9ff 100%);
   --profile-bg: linear-gradient(180deg, #fafdff 0%, #f2f7ff 100%);
@@ -90,8 +93,8 @@ header p {
 .card {
   background: var(--card);
   border-radius: 18px;
-  padding: 20px;
-  border: 1px solid var(--border);
+  padding: 22px;
+  border: 1px solid #c5d3e4;
   box-shadow: var(--shadow-card);
   position: relative;
   overflow: hidden;
@@ -108,36 +111,38 @@ header p {
 }
 
 .section-tone-profile {
+  background: linear-gradient(180deg, #fafdff 0%, #edf6ff 100%);
+  border-color: #9abce2;
   border-top: 5px solid #2b78b8;
 }
 
 .section-tone-input {
   background: var(--input-bg);
-  border-color: #ead8b3;
-  border-top: 5px solid #c0841a;
+  border-color: #e6c27b;
+  border-top: 5px solid #bf7f19;
 }
 
 .section-tone-summary {
   background: var(--summary-bg);
-  border-color: #c6e6d8;
+  border-color: #97d7be;
   border-top: 5px solid #1f8a68;
 }
 
 .section-tone-assets {
   background: var(--assets-bg);
-  border-color: #d4d6f6;
+  border-color: #b8bcf3;
   border-top: 5px solid #5d59c9;
 }
 
 .section-tone-chart {
   background: var(--chart-bg);
-  border-color: #f0cbdd;
+  border-color: #ef9ec2;
   border-top: 5px solid #c04984;
 }
 
 .section-tone-history {
   background: var(--history-bg);
-  border-color: #cedcf0;
+  border-color: #a8c2e3;
   border-top: 5px solid #37649c;
 }
 
@@ -200,15 +205,16 @@ header p {
 .section-header h2,
 .dashboard-header h2 {
   width: fit-content;
-  background: rgb(255 255 255 / 84%);
-  border: 1px solid rgb(15 23 42 / 10%);
-  border-left: 6px solid #2f4f75;
+  background: rgb(255 255 255 / 95%);
+  border: 1px solid rgb(15 23 42 / 14%);
+  border-left: 8px solid #2f4f75;
   border-radius: 10px;
-  padding: 7px 12px;
+  padding: 9px 14px;
   letter-spacing: 0.01em;
-  font-size: clamp(1.04rem, 2.1vw, 1.2rem);
-  color: #0f2239;
-  font-weight: 800;
+  font-size: clamp(1.16rem, 2.5vw, 1.38rem);
+  color: var(--heading-strong);
+  font-weight: 900;
+  box-shadow: 0 6px 14px rgb(15 23 42 / 10%);
 }
 
 .section-tone-input .section-heading h2,
@@ -233,8 +239,8 @@ header p {
 }
 
 .section-description {
-  color: #47586e;
-  font-size: 0.86rem;
+  color: var(--support-text);
+  font-size: 0.9rem;
   line-height: 1.6;
 }
 
@@ -248,9 +254,9 @@ header p {
 label {
   display: grid;
   gap: 6px;
-  font-size: 0.88rem;
-  font-weight: 650;
-  color: #24364d;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--label-strong);
 }
 
 input,
@@ -325,24 +331,26 @@ button.danger {
 }
 
 .split-title h3 {
-  background: #fff;
-  border: 1px solid #b8cee6;
-  border-left: 6px solid #2b78b8;
+  background: linear-gradient(90deg, #ffffff 0%, #f3f8ff 100%);
+  border: 1px solid #9dbad9;
+  border-left: 8px solid #2b78b8;
   border-radius: 12px;
-  padding: 10px 14px;
-  color: #102a46;
-  font-size: clamp(1rem, 2vw, 1.08rem);
+  padding: 12px 16px;
+  color: #0d2947;
+  font-size: clamp(1.03rem, 2vw, 1.15rem);
+  font-weight: 900;
   letter-spacing: 0.01em;
+  box-shadow: 0 8px 18px rgb(32 94 155 / 12%);
 }
 
 .plan-item {
-  border: 1px solid #d2deec;
-  border-radius: 14px;
+  border: 1px solid #b4cae1;
+  border-radius: 16px;
   background: #fafdff;
-  padding: 15px;
+  padding: 16px;
   display: grid;
   gap: 14px;
-  box-shadow: 0 8px 18px rgb(15 23 42 / 6%);
+  box-shadow: 0 12px 24px rgb(15 23 42 / 10%);
   position: relative;
 }
 
@@ -399,9 +407,9 @@ button.danger {
 
 .plan-card-title {
   margin: 0;
-  font-weight: 700;
+  font-weight: 900;
   color: #122f4d;
-  font-size: 1.02rem;
+  font-size: 1.08rem;
 }
 
 .plan-card-tag {
@@ -463,9 +471,9 @@ button.danger {
 }
 
 .change-wrap p {
-  color: #344960;
-  font-size: 0.84rem;
-  font-weight: 650;
+  color: #2a3f57;
+  font-size: 0.88rem;
+  font-weight: 700;
 }
 
 .change-header {
@@ -495,39 +503,60 @@ button.danger {
 }
 
 .add-plan-inline {
-  margin-top: 4px;
-  min-height: 48px;
-  border-radius: 12px;
-  border: 1px solid #7da8d8;
-  background: linear-gradient(160deg, #e5f2ff 0%, #cce4ff 100%);
-  color: #0f4679;
-  font-weight: 700;
-  font-size: 0.95rem;
-  letter-spacing: 0.01em;
+  margin-top: 10px;
+  min-height: 58px;
+  border-radius: 14px;
+  border: 2px solid #2d76b8;
+  background: linear-gradient(165deg, #e8f5ff 0%, #b9dcff 100%);
+  color: #0c3861;
+  font-weight: 900;
+  font-size: 1.02rem;
+  letter-spacing: 0.015em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 0 14px;
   box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / 72%),
-    0 6px 14px rgb(27 92 156 / 16%);
+    inset 0 0 0 1px rgb(255 255 255 / 75%),
+    0 12px 20px rgb(27 92 156 / 24%);
 }
 
 .add-plan-inline:hover {
-  filter: brightness(1.05) saturate(1.08);
+  filter: brightness(1.06) saturate(1.1);
+  transform: translateY(-2px);
   box-shadow:
     inset 0 0 0 1px rgb(255 255 255 / 80%),
-    0 10px 18px rgb(27 92 156 / 24%);
+    0 14px 22px rgb(27 92 156 / 30%);
 }
 
 .add-plan-inline:active {
-  filter: brightness(0.98);
+  transform: translateY(0);
+  filter: brightness(0.97);
   box-shadow:
     inset 0 0 0 1px rgb(255 255 255 / 65%),
-    0 4px 10px rgb(27 92 156 / 18%);
+    0 6px 12px rgb(27 92 156 / 20%);
+}
+
+.add-plan-inline-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #1971c2;
+  color: #fff;
+  font-size: 1.2rem;
+  line-height: 1;
+  box-shadow: 0 4px 10px rgb(25 113 194 / 38%);
 }
 
 .plan-add-footer {
-  margin-top: 8px;
+  margin-top: 14px;
   display: flex;
-  padding: 10px 0 2px;
-  border-top: 1px dashed #bfd2e6;
+  padding: 14px 0 4px;
+  border-top: 2px dashed #9bb8d6;
 }
 
 .add-plan-btn,
@@ -544,6 +573,8 @@ button.danger {
 
 .add-plan-bottom-btn {
   width: 100%;
+  min-height: 54px;
+  font-size: 1rem;
 }
 
 .section-header {
@@ -555,7 +586,9 @@ button.danger {
 }
 
 #profile-form > button[type="submit"] {
-  margin-top: 8px;
+  margin-top: 12px;
+  min-height: 54px;
+  font-size: 1rem;
 }
 
 #profile-form > button[type="submit"],
@@ -665,22 +698,26 @@ button.danger {
 
 .summary > div {
   background: linear-gradient(180deg, #ffffff 0%, #f7fffc 100%);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 11px 12px;
+  border: 1px solid #bfd0e5;
+  border-radius: 14px;
+  padding: 13px 14px;
   display: grid;
   gap: 4px;
+  box-shadow: 0 6px 12px rgb(15 23 42 / 8%);
 }
 
 .summary span {
-  color: var(--muted);
-  font-size: 0.84rem;
+  color: #41566f;
+  font-size: 0.86rem;
+  font-weight: 700;
 }
 
 .summary strong {
-  font-size: 1.05rem;
+  color: #0d2342;
+  font-size: 1.14rem;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.01em;
+  font-weight: 800;
 }
 
 .summary-positive {
@@ -750,9 +787,9 @@ button.danger {
 }
 
 .item {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 12px;
+  border: 1px solid #bfd0e3;
+  border-radius: 14px;
+  padding: 13px;
   display: flex;
   justify-content: space-between;
   gap: 12px;
@@ -761,13 +798,14 @@ button.danger {
 }
 
 .meta {
-  font-size: 0.92rem;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #102743;
 }
 
 .memo {
   margin-top: 4px;
-  color: var(--muted);
+  color: var(--support-text);
   font-size: 0.84rem;
 }
 
@@ -792,8 +830,9 @@ button.danger {
 .delete {
   margin-top: 6px;
   background: linear-gradient(160deg, #d84444 0%, #bc3333 100%);
-  padding: 7px 11px;
-  font-size: 0.78rem;
+  padding: 8px 13px;
+  font-size: 0.82rem;
+  font-weight: 800;
 }
 
 .chart {
@@ -998,7 +1037,7 @@ button.danger {
   }
 
   .card {
-    padding: 15px;
+    padding: 16px;
     border-radius: 16px;
   }
 
@@ -1054,8 +1093,12 @@ button.danger {
   .add-plan-inline,
   .add-plan-btn,
   .add-plan-bottom-btn {
-    min-height: 50px;
-    font-size: 0.95rem;
+    min-height: 54px;
+    font-size: 0.98rem;
+  }
+
+  .add-plan-inline {
+    width: 100%;
   }
 
   .dashboard-grid {

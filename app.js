@@ -911,7 +911,7 @@ function createPlanBlock(plan = {}) {
       </div>
       <div class="monthly-list"></div>
     </div>
-    <button type="button" class="add-plan-inline">＋この下に追加</button>
+    <button type="button" class="add-plan-inline"><span aria-hidden="true" class="add-plan-inline-icon">＋</span><span>この下に追加</span></button>
     <button type="button" class="danger remove-plan">この枠を削除</button>
   `;
 
