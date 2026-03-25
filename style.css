@@ -498,6 +498,11 @@ button.danger {
   min-width: 0;
 }
 
+#panel-chart > .accordion-panel-inner {
+  display: grid;
+  gap: 14px;
+}
+
 #panel-chart .chart,
 #panel-chart .auto-breakdown,
 #panel-chart .auto-card,
