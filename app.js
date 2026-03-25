@@ -35,7 +35,6 @@ const autoBreakdown = document.getElementById("auto-breakdown");
 const bottomNavButtons = Array.from(document.querySelectorAll(".bottom-nav-btn"));
 const navToast = document.getElementById("nav-toast");
 const accordionSections = Array.from(document.querySelectorAll("[data-accordion-section]"));
-const childAccordions = Array.from(document.querySelectorAll("[data-child-accordion]"));
 const assetsSection = document.getElementById("section-assets");
 
 let latestAssetForecastSettings = null;
@@ -823,24 +822,80 @@ function renderAssetForecast(settings) {
   const typeTotalsHtml = typeTotals
     .map((item) => `<li><span>${item.type} 合計</span><strong>${yen.format(item.amount)}</strong></li>`)
     .join("");
+
+  const outlookPanelId = "panel-assets-outlook";
+  const outlookTriggerId = "trigger-assets-outlook";
+  const compositionPanelId = "panel-assets-composition";
+  const compositionTriggerId = "trigger-assets-composition";
+
   assetForecast.innerHTML = `
-    <section class="chart asset-outlook">
-      <h3>将来の資産見通し（60歳時点）</h3>
-      <p class="section-description">現在年齢: <strong>${currentAge}歳</strong> / 60歳までの積立・運用をもとに試算しています。</p>
-      <h4>契約別の想定資産額</h4>
-      <ul class="asset-list">${rows}</ul>
-      <h4>種別別の想定資産額</h4>
-      <ul class="asset-list">${typeTotalsHtml}</ul>
-      <div class="asset-total">60歳時点の想定総資産額: <strong>${yen.format(totalAt60)}</strong></div>
+    <section class="child-accordion" data-child-accordion>
+      <button
+        type="button"
+        class="child-accordion-trigger"
+        aria-expanded="false"
+        aria-controls="${outlookPanelId}"
+        id="${outlookTriggerId}"
+      >
+        <h3>将来の資産見通し（60歳時点）</h3>
+        <span class="child-accordion-toggle" aria-hidden="true">+</span>
+      </button>
+      <div
+        class="child-accordion-panel"
+        id="${outlookPanelId}"
+        role="region"
+        aria-labelledby="${outlookTriggerId}"
+        aria-hidden="true"
+      >
+        <div class="child-accordion-panel-inner">
+          <section class="chart asset-outlook">
+            <p class="section-description">現在年齢: <strong>${currentAge}歳</strong> / 60歳までの積立・運用をもとに試算しています。</p>
+            <h4>契約別の想定資産額</h4>
+            <ul class="asset-list">${rows}</ul>
+            <h4>種別別の想定資産額</h4>
+            <ul class="asset-list">${typeTotalsHtml}</ul>
+            <div class="asset-total">60歳時点の想定総資産額: <strong>${yen.format(totalAt60)}</strong></div>
+          </section>
+        </div>
+      </div>
     </section>
   `;
 
-  const chartSection = document.createElement("section");
-  chartSection.className = "chart asset-composition";
-  chartSection.innerHTML = `
-    <h3>現時点の総資産額の構成比（契約別）</h3>
-    <p class="section-description">現在入力されている積立・一括入金の実績をもとに算出しています（基準月: ${currentAssetTargetMonth}）。</p>
+  const compositionAccordion = document.createElement("section");
+  compositionAccordion.className = "child-accordion";
+  compositionAccordion.dataset.childAccordion = "";
+  compositionAccordion.innerHTML = `
+    <button
+      type="button"
+      class="child-accordion-trigger"
+      aria-expanded="false"
+      aria-controls="${compositionPanelId}"
+      id="${compositionTriggerId}"
+    >
+      <h3>現時点の総資産額の構成比（契約別）</h3>
+      <span class="child-accordion-toggle" aria-hidden="true">+</span>
+    </button>
+    <div
+      class="child-accordion-panel"
+      id="${compositionPanelId}"
+      role="region"
+      aria-labelledby="${compositionTriggerId}"
+      aria-hidden="true"
+    >
+      <div class="child-accordion-panel-inner">
+        <section class="chart asset-composition">
+          <p class="section-description">現在入力されている積立・一括入金の実績をもとに算出しています（基準月: ${currentAssetTargetMonth}）。</p>
+        </section>
+      </div>
+    </div>
   `;
+
+  const chartSection = compositionAccordion.querySelector(".asset-composition");
+  if (!chartSection) {
+    assetForecast.appendChild(compositionAccordion);
+    setupChildAccordions(assetForecast);
+    return;
+  }
 
   const currentTotal = currentRows.reduce((sum, plan) => sum + plan.currentAmount, 0);
   if (currentRows.length === 0 || currentTotal === 0) {
@@ -848,7 +903,8 @@ function renderAssetForecast(settings) {
     empty.className = "chart-empty";
     empty.textContent = "データがありません";
     chartSection.appendChild(empty);
-    assetForecast.appendChild(chartSection);
+    assetForecast.appendChild(compositionAccordion);
+    setupChildAccordions(assetForecast);
     return;
   }
 
@@ -862,7 +918,8 @@ function renderAssetForecast(settings) {
   chartSection.appendChild(pieWrap);
   chartSection.appendChild(legend);
 
-  assetForecast.appendChild(chartSection);
+  assetForecast.appendChild(compositionAccordion);
+  setupChildAccordions(assetForecast);
 }
 
 function createHistoryRow({ type, month = "", amount = "" } = {}) {
@@ -1272,25 +1329,30 @@ function setChildAccordionExpanded(childAccordion, expanded) {
   toggle.textContent = expanded ? "-" : "+";
 }
 
-function setupChildAccordions() {
-  childAccordions.forEach((childAccordion) => {
-    const trigger = childAccordion.querySelector(".child-accordion-trigger");
-    if (!trigger) return;
+function setupChildAccordion(childAccordion) {
+  const trigger = childAccordion.querySelector(".child-accordion-trigger");
+  if (!trigger || childAccordion.dataset.childAccordionBound === "true") return;
 
-    setChildAccordionExpanded(childAccordion, false);
+  setChildAccordionExpanded(childAccordion, false);
 
-    const toggleChildAccordion = () => {
-      if (childAccordion.dataset.toggleLocked === "true") return;
-      childAccordion.dataset.toggleLocked = "true";
-      window.setTimeout(() => {
-        childAccordion.dataset.toggleLocked = "false";
-      }, 180);
-      const expanded = trigger.getAttribute("aria-expanded") === "true";
-      setChildAccordionExpanded(childAccordion, !expanded);
-    };
+  const toggleChildAccordion = (event) => {
+    event.stopPropagation();
+    if (childAccordion.dataset.toggleLocked === "true") return;
+    childAccordion.dataset.toggleLocked = "true";
+    window.setTimeout(() => {
+      childAccordion.dataset.toggleLocked = "false";
+    }, 180);
+    const expanded = trigger.getAttribute("aria-expanded") === "true";
+    setChildAccordionExpanded(childAccordion, !expanded);
+  };
 
-    trigger.addEventListener("click", toggleChildAccordion);
-  });
+  trigger.addEventListener("click", toggleChildAccordion);
+  childAccordion.dataset.childAccordionBound = "true";
+}
+
+function setupChildAccordions(root = document) {
+  const scopedChildAccordions = Array.from(root.querySelectorAll("[data-child-accordion]"));
+  scopedChildAccordions.forEach(setupChildAccordion);
 }
 
 function scrollToNavSection(target) {
