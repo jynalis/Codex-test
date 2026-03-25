@@ -1292,16 +1292,21 @@ function closeDescendantPlanCards(root) {
   planItems.forEach((planItem) => setPlanCardExpanded(planItem, false));
 }
 
+function resetProfileChildAndGrandchildAccordions(section) {
+  if (!section) return;
+  const descendantChildAccordions = section.querySelectorAll("[data-child-accordion]");
+  descendantChildAccordions.forEach((childAccordion) => setChildAccordionExpanded(childAccordion, false));
+  closeDescendantPlanCards(section);
+}
+
 function setAccordionExpanded(section, expanded) {
   const trigger = section.querySelector(".accordion-trigger");
   const panel = section.querySelector(".accordion-panel");
   if (!trigger || !panel) return;
   const wasExpanded = trigger.getAttribute("aria-expanded") === "true";
 
-  if (!expanded && trigger.id === "trigger-profile") {
-    const descendantChildAccordions = section.querySelectorAll("[data-child-accordion]");
-    descendantChildAccordions.forEach((childAccordion) => setChildAccordionExpanded(childAccordion, false));
-    closeDescendantPlanCards(section);
+  if (trigger.id === "trigger-profile") {
+    resetProfileChildAndGrandchildAccordions(section);
   }
 
   trigger.setAttribute("aria-expanded", String(expanded));
@@ -1342,9 +1347,7 @@ function setChildAccordionExpanded(childAccordion, expanded) {
   const toggle = childAccordion.querySelector(".child-accordion-toggle");
   if (!trigger || !panel || !toggle) return;
 
-  if (!expanded) {
-    closeDescendantPlanCards(childAccordion);
-  }
+  closeDescendantPlanCards(childAccordion);
 
   trigger.setAttribute("aria-expanded", String(expanded));
   panel.hidden = !expanded;
