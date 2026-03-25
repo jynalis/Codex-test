@@ -1005,8 +1005,6 @@ function createPlanBlock(plan = {}) {
   const tag = wrap.querySelector(".plan-card-tag");
   const cardTrigger = wrap.querySelector(".plan-card-trigger");
   const cardToggleButton = wrap.querySelector(".plan-card-toggle-button");
-  const cardPanel = wrap.querySelector(".plan-card-panel");
-  const cardToggleIcon = wrap.querySelector(".plan-card-toggle-icon");
 
   normalizedPlan.lumpSums.forEach((history) => lumpList.appendChild(createHistoryRow({ type: "lump", month: history.month, amount: history.amount })));
   normalizedPlan.monthlyContributions.forEach((history) =>
@@ -1026,12 +1024,7 @@ function createPlanBlock(plan = {}) {
   planNameField.addEventListener("input", refreshPlanVisual);
 
   const setPlanExpanded = (expanded) => {
-    wrap.dataset.planExpanded = String(expanded);
-    cardTrigger.setAttribute("aria-expanded", String(expanded));
-    cardToggleButton.setAttribute("aria-expanded", String(expanded));
-    cardPanel.setAttribute("aria-hidden", String(!expanded));
-    cardToggleIcon.textContent = expanded ? "-" : "+";
-    wrap.classList.toggle("is-expanded", expanded);
+    setPlanCardExpanded(wrap, expanded);
   };
 
   setPlanExpanded(false);
@@ -1278,11 +1271,38 @@ function queueAssetForecastRender(force = false) {
   });
 }
 
+function setPlanCardExpanded(planItem, expanded) {
+  const cardTrigger = planItem.querySelector(".plan-card-trigger");
+  const cardToggleButton = planItem.querySelector(".plan-card-toggle-button");
+  const cardPanel = planItem.querySelector(".plan-card-panel");
+  const cardToggleIcon = planItem.querySelector(".plan-card-toggle-icon");
+  if (!cardTrigger || !cardToggleButton || !cardPanel || !cardToggleIcon) return;
+
+  planItem.dataset.planExpanded = String(expanded);
+  cardTrigger.setAttribute("aria-expanded", String(expanded));
+  cardToggleButton.setAttribute("aria-expanded", String(expanded));
+  cardPanel.setAttribute("aria-hidden", String(!expanded));
+  cardToggleIcon.textContent = expanded ? "-" : "+";
+  planItem.classList.toggle("is-expanded", expanded);
+}
+
+function closeDescendantPlanCards(root) {
+  if (!root) return;
+  const planItems = root.querySelectorAll(".plan-item");
+  planItems.forEach((planItem) => setPlanCardExpanded(planItem, false));
+}
+
 function setAccordionExpanded(section, expanded) {
   const trigger = section.querySelector(".accordion-trigger");
   const panel = section.querySelector(".accordion-panel");
   if (!trigger || !panel) return;
   const wasExpanded = trigger.getAttribute("aria-expanded") === "true";
+
+  if (!expanded && trigger.id === "trigger-profile") {
+    const descendantChildAccordions = section.querySelectorAll("[data-child-accordion]");
+    descendantChildAccordions.forEach((childAccordion) => setChildAccordionExpanded(childAccordion, false));
+    closeDescendantPlanCards(section);
+  }
 
   trigger.setAttribute("aria-expanded", String(expanded));
   panel.setAttribute("aria-hidden", String(!expanded));
@@ -1321,6 +1341,10 @@ function setChildAccordionExpanded(childAccordion, expanded) {
   const panel = childAccordion.querySelector(".child-accordion-panel");
   const toggle = childAccordion.querySelector(".child-accordion-toggle");
   if (!trigger || !panel || !toggle) return;
+
+  if (!expanded) {
+    closeDescendantPlanCards(childAccordion);
+  }
 
   trigger.setAttribute("aria-expanded", String(expanded));
   panel.hidden = !expanded;
