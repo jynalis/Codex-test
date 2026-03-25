@@ -23,6 +23,8 @@
   --assets-bg: linear-gradient(180deg, #f7f8ff 0%, #f0f2ff 100%);
   --chart-bg: linear-gradient(180deg, #fff8fb 0%, #fff1f7 100%);
   --history-bg: linear-gradient(180deg, #fbfcff 0%, #f4f7fd 100%);
+  --accordion-duration: 180ms;
+  --accordion-fade-duration: 120ms;
 }
 
 * {
@@ -254,35 +256,32 @@ header p {
 }
 
 .accordion-section .accordion-panel {
-  max-height: 0;
+  display: grid;
+  grid-template-rows: 0fr;
   opacity: 0;
   overflow: hidden;
   visibility: hidden;
   pointer-events: none;
   transition:
-    max-height 0.34s ease,
-    opacity 0.2s ease,
-    visibility 0s linear 0.34s;
+    grid-template-rows var(--accordion-duration) ease,
+    opacity var(--accordion-fade-duration) linear,
+    visibility 0s linear var(--accordion-duration);
 }
 
 .accordion-panel-inner {
+  min-height: 0;
   padding: 14px 2px 6px;
-  transform: translateY(-4px);
-  transition: transform 0.24s ease;
 }
 
 .accordion-section.is-expanded .accordion-panel {
+  grid-template-rows: 1fr;
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
   transition:
-    max-height 0.34s ease,
-    opacity 0.2s ease,
+    grid-template-rows var(--accordion-duration) ease,
+    opacity var(--accordion-fade-duration) linear,
     visibility 0s linear 0s;
-}
-
-.accordion-section.is-expanded .accordion-panel-inner {
-  transform: translateY(0);
 }
 
 .section-heading h2,
@@ -623,29 +622,33 @@ button.plan-card-trigger {
 }
 
 .plan-card-panel {
-  max-height: 0;
+  display: grid;
+  grid-template-rows: 0fr;
   opacity: 0;
   visibility: hidden;
   overflow: hidden;
   pointer-events: none;
   transition:
-    max-height 260ms ease,
-    opacity 180ms ease,
-    visibility 0s linear 220ms;
+    grid-template-rows var(--accordion-duration) ease,
+    opacity var(--accordion-fade-duration) linear,
+    visibility 0s linear var(--accordion-duration);
 }
 
 .plan-card-panel-inner {
+  min-height: 0;
   display: grid;
   gap: 14px;
 }
 
 .plan-item.is-expanded .plan-card-panel {
+  grid-template-rows: 1fr;
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
   transition:
-    max-height 280ms ease,
-    opacity 200ms ease;
+    grid-template-rows var(--accordion-duration) ease,
+    opacity var(--accordion-fade-duration) linear,
+    visibility 0s linear 0s;
 }
 
 .plan-card-title {
@@ -1355,6 +1358,11 @@ button.plan-card-trigger {
 }
 
 @media (max-width: 640px) {
+  :root {
+    --accordion-duration: 120ms;
+    --accordion-fade-duration: 80ms;
+  }
+
   .container {
     padding: 14px 12px 112px;
     gap: 14px;

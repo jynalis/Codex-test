@@ -971,26 +971,6 @@ function createPlanBlock(plan = {}) {
     cardPanel.setAttribute("aria-hidden", String(!expanded));
     cardToggleIcon.textContent = expanded ? "-" : "+";
     wrap.classList.toggle("is-expanded", expanded);
-    const panelInner = cardPanel.querySelector(".plan-card-panel-inner");
-    if (!panelInner) return;
-    if (expanded) {
-      cardPanel.dataset.openSettled = "false";
-      cardPanel.style.maxHeight = `${panelInner.scrollHeight}px`;
-      syncAccordionPanelHeights();
-      window.requestAnimationFrame(() => {
-        cardPanel.style.maxHeight = `${panelInner.scrollHeight}px`;
-        syncAccordionPanelHeights();
-      });
-      return;
-    }
-
-    cardPanel.dataset.openSettled = "false";
-    cardPanel.style.maxHeight = `${panelInner.scrollHeight}px`;
-    window.requestAnimationFrame(() => {
-      cardPanel.style.maxHeight = "0px";
-      syncAccordionPanelHeights();
-      window.requestAnimationFrame(syncAccordionPanelHeights);
-    });
   };
 
   setPlanExpanded(false);
@@ -1004,14 +984,6 @@ function createPlanBlock(plan = {}) {
     togglePlanExpanded();
   });
   refreshPlanVisual();
-
-  cardPanel.addEventListener("transitionend", (event) => {
-    if (event.propertyName !== "max-height") return;
-    if (wrap.dataset.planExpanded !== "true") return;
-    cardPanel.dataset.openSettled = "true";
-    cardPanel.style.maxHeight = "none";
-    syncAccordionPanelHeights();
-  });
 
   wrap.querySelector(".add-lump").addEventListener("click", () => {
     lumpList.appendChild(createHistoryRow({ type: "lump" }));
@@ -1155,7 +1127,6 @@ function render() {
   renderExpenseChart([...transactions, ...autoTransactions], currentMonth);
   renderAutoBreakdown(autoTransactions, currentMonth);
   renderAssetForecast(settings);
-  syncAccordionPanelHeights();
 }
 
 function addTransaction(event) {
@@ -1211,94 +1182,28 @@ function showNavToast(message) {
   }, 1500);
 }
 
-function updateAccordionPanelHeight(section) {
-  const trigger = section.querySelector(".accordion-trigger");
-  const panel = section.querySelector(".accordion-panel");
-  const panelInner = panel?.querySelector(".accordion-panel-inner");
-  if (!trigger || !panel || !panelInner) return;
-  if (trigger.getAttribute("aria-expanded") !== "true") return;
-  if (panel.dataset.openSettled === "true") return;
-  panel.style.maxHeight = `${panelInner.scrollHeight}px`;
-}
-
-function syncAccordionPanelHeights() {
-  accordionSections.forEach((section) => updateAccordionPanelHeight(section));
-}
-
 function setAccordionExpanded(section, expanded) {
   const trigger = section.querySelector(".accordion-trigger");
   const panel = section.querySelector(".accordion-panel");
-  const panelInner = panel?.querySelector(".accordion-panel-inner");
-  if (!trigger || !panel || !panelInner) return;
+  if (!trigger || !panel) return;
 
   trigger.setAttribute("aria-expanded", String(expanded));
   panel.setAttribute("aria-hidden", String(!expanded));
   section.classList.toggle("is-expanded", expanded);
-
-  if (expanded) {
-    panel.dataset.openSettled = "false";
-    panel.style.maxHeight = `${panelInner.scrollHeight}px`;
-    window.requestAnimationFrame(() => {
-      panel.style.maxHeight = `${panelInner.scrollHeight}px`;
-    });
-    return;
-  }
-
-  panel.dataset.openSettled = "false";
-  panel.style.maxHeight = `${panelInner.scrollHeight}px`;
-  window.requestAnimationFrame(() => {
-    panel.style.maxHeight = "0px";
-  });
 }
 
 function setupSectionAccordions() {
   accordionSections.forEach((section) => {
     const trigger = section.querySelector(".accordion-trigger");
-    if (!trigger) return;
-
-    section.classList.remove("is-expanded");
-    trigger.setAttribute("aria-expanded", "false");
     const panel = section.querySelector(".accordion-panel");
-    if (panel) {
-      panel.style.maxHeight = "0px";
-      panel.setAttribute("aria-hidden", "true");
-      panel.dataset.openSettled = "false";
-      panel.addEventListener("transitionend", (event) => {
-        if (event.propertyName !== "max-height") return;
-        if (trigger.getAttribute("aria-expanded") !== "true") return;
-        panel.dataset.openSettled = "true";
-        panel.style.maxHeight = "none";
-      });
-    }
+    if (!trigger || !panel) return;
 
+    setAccordionExpanded(section, false);
     trigger.addEventListener("click", () => {
       const expanded = trigger.getAttribute("aria-expanded") === "true";
       setAccordionExpanded(section, !expanded);
     });
   });
-
-  window.addEventListener("resize", syncAccordionPanelHeights);
-
-  if ("ResizeObserver" in window) {
-    const observer = new ResizeObserver((entries) => {
-      entries.forEach((entry) => {
-        const section = entry.target.closest("[data-accordion-section]");
-        if (!section) return;
-        const panel = section.querySelector(".accordion-panel");
-        const trigger = section.querySelector(".accordion-trigger");
-        if (!panel || !trigger) return;
-        if (trigger.getAttribute("aria-expanded") !== "true") return;
-        if (panel.dataset.openSettled === "true") return;
-        panel.style.maxHeight = `${entry.target.scrollHeight}px`;
-      });
-      syncAccordionPanelHeights();
-    });
-
-    accordionSections.forEach((section) => {
-      const panelInner = section.querySelector(".accordion-panel-inner");
-      if (panelInner) observer.observe(panelInner);
-    });
-  }
 }
 
 function setChildAccordionExpanded(childAccordion, expanded) {
@@ -1331,8 +1236,6 @@ function setupChildAccordions() {
 
       const expanded = trigger.getAttribute("aria-expanded") === "true";
       setChildAccordionExpanded(childAccordion, !expanded);
-      syncAccordionPanelHeights();
-      window.requestAnimationFrame(syncAccordionPanelHeights);
     };
 
     trigger.addEventListener("click", toggleChildAccordion);
