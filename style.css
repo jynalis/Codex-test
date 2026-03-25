@@ -75,13 +75,13 @@ header p {
 .page-header.card {
   padding: 32px 30px;
   border-radius: 24px;
-  border: 1px solid #c7d8eb;
-  border-top: 6px solid #94b7de;
-  box-shadow: 0 18px 34px rgb(15 23 42 / 14%);
+  border: 1px solid #d7d5cc;
+  border-top: 6px solid #c9c4b2;
+  box-shadow: 0 14px 28px rgb(40 44 53 / 10%);
   background:
-    radial-gradient(circle at 88% 8%, rgb(188 220 249 / 38%) 0%, transparent 44%),
-    radial-gradient(circle at 0% 100%, rgb(133 172 212 / 18%) 0%, transparent 60%),
-    linear-gradient(145deg, #f7fbff 0%, #eaf4ff 54%, #f4f9ff 100%);
+    radial-gradient(circle at 86% 10%, rgb(247 243 230 / 62%) 0%, transparent 42%),
+    radial-gradient(circle at 0% 100%, rgb(228 223 205 / 30%) 0%, transparent 58%),
+    linear-gradient(148deg, #fffdf8 0%, #f8f4e9 55%, #fffcf4 100%);
 }
 
 .hero-topline {
@@ -99,29 +99,29 @@ header p {
 
 .eyebrow {
   width: fit-content;
-  border: 1px solid #a8c3df;
-  background: linear-gradient(145deg, #f7fbff 0%, #deebfb 100%);
-  color: #0f2c4d;
+  border: 1px solid #d3cdbb;
+  background: linear-gradient(145deg, #fffdf6 0%, #f5efdd 100%);
+  color: #2d3c53;
   border-radius: 999px;
   font-size: 0.82rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   font-weight: 800;
   padding: 8px 15px;
-  box-shadow: 0 8px 18px rgb(3 17 35 / 20%);
+  box-shadow: 0 6px 14px rgb(25 31 39 / 12%);
 }
 
 .page-header.card h1 {
-  color: #102a4a;
+  color: #0d2442;
   font-size: clamp(2.15rem, 4.8vw, 3rem);
-  font-weight: 900;
+  font-weight: 950;
   line-height: 1.05;
   letter-spacing: 0.02em;
   text-shadow: none;
 }
 
 .hero-subtitle {
-  color: #354e68;
+  color: #425369;
   font-size: clamp(1.02rem, 2vw, 1.2rem);
   font-weight: 600;
   line-height: 1.58;
