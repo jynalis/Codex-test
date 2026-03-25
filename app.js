@@ -35,6 +35,7 @@ const autoBreakdown = document.getElementById("auto-breakdown");
 const bottomNavButtons = Array.from(document.querySelectorAll(".bottom-nav-btn"));
 const navToast = document.getElementById("nav-toast");
 const accordionSections = Array.from(document.querySelectorAll("[data-accordion-section]"));
+const childAccordions = Array.from(document.querySelectorAll("[data-child-accordion]"));
 
 const NAV_TARGETS = {
   home: "section-home",
@@ -1194,6 +1195,32 @@ function setupSectionAccordions() {
   window.addEventListener("resize", syncAccordionPanelHeights);
 }
 
+function setChildAccordionExpanded(childAccordion, expanded) {
+  const trigger = childAccordion.querySelector(".child-accordion-trigger");
+  const panel = childAccordion.querySelector(".child-accordion-panel");
+  const toggle = childAccordion.querySelector(".child-accordion-toggle");
+  if (!trigger || !panel || !toggle) return;
+
+  trigger.setAttribute("aria-expanded", String(expanded));
+  panel.hidden = !expanded;
+  panel.setAttribute("aria-hidden", String(!expanded));
+  toggle.textContent = expanded ? "-" : "+";
+}
+
+function setupChildAccordions() {
+  childAccordions.forEach((childAccordion) => {
+    const trigger = childAccordion.querySelector(".child-accordion-trigger");
+    if (!trigger) return;
+
+    setChildAccordionExpanded(childAccordion, false);
+    trigger.addEventListener("click", () => {
+      const expanded = trigger.getAttribute("aria-expanded") === "true";
+      setChildAccordionExpanded(childAccordion, !expanded);
+      syncAccordionPanelHeights();
+    });
+  });
+}
+
 function scrollToNavSection(target) {
   if (target === "schedule") {
     showNavToast("ライフイベント表は今後追加予定です。");
@@ -1258,6 +1285,7 @@ function init() {
 
   profileForm.addEventListener("submit", saveProfile);
   setupSectionAccordions();
+  setupChildAccordions();
   setupBottomNavigation();
 
   render();
