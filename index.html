@@ -78,10 +78,29 @@
                 生年月日
                 <input type="date" id="birth-date" required />
               </label>
-              <div class="full split-title">
-                <h3>積立・保有資産（NISA / iDeCo / 貯蓄性保険 / 貯金）</h3>
+              <div class="full child-accordion" data-child-accordion>
+                <button
+                  type="button"
+                  class="child-accordion-trigger"
+                  aria-expanded="false"
+                  aria-controls="panel-profile-plan-assets"
+                  id="trigger-profile-plan-assets"
+                >
+                  <h3>積立・保有資産（NISA / iDeCo / 貯蓄性保険 / 貯金）</h3>
+                  <span class="child-accordion-toggle" aria-hidden="true">+</span>
+                </button>
+                <div
+                  class="child-accordion-panel"
+                  id="panel-profile-plan-assets"
+                  role="region"
+                  aria-labelledby="trigger-profile-plan-assets"
+                  aria-hidden="true"
+                >
+                  <div class="child-accordion-panel-inner">
+                    <div id="plan-list" class="full plan-list"></div>
+                  </div>
+                </div>
               </div>
-              <div id="plan-list" class="full plan-list"></div>
               <button type="submit" class="full">設定を保存</button>
             </form>
           </div>

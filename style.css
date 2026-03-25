@@ -451,6 +451,50 @@ button.danger {
   box-shadow: 0 8px 18px rgb(32 94 155 / 12%);
 }
 
+.child-accordion {
+  border: 1px solid #9dbad9;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #f3f8ff 100%);
+  overflow: hidden;
+}
+
+.child-accordion-trigger {
+  width: 100%;
+  min-height: 56px;
+  padding: 12px 16px;
+  border: 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.child-accordion-trigger h3 {
+  margin: 0;
+  color: #0d2947;
+  font-size: clamp(1.03rem, 2vw, 1.15rem);
+  font-weight: 900;
+  letter-spacing: 0.01em;
+}
+
+.child-accordion-toggle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #173f66;
+}
+
+.child-accordion-panel {
+  padding: 0 12px 12px;
+}
+
+.child-accordion-panel[hidden] {
+  display: none;
+}
+
 .plan-item {
   border: 1px solid #b4cae1;
   border-radius: 16px;
@@ -1274,6 +1318,11 @@ button.danger {
   .plan-item {
     padding: 14px 12px;
     gap: 10px;
+  }
+
+  .child-accordion-trigger {
+    min-height: 60px;
+    padding: 12px 14px;
   }
 
   .plan-grid {
