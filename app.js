@@ -974,12 +974,17 @@ function createPlanBlock(plan = {}) {
     const panelInner = cardPanel.querySelector(".plan-card-panel-inner");
     if (!panelInner) return;
     if (expanded) {
+      cardPanel.dataset.openSettled = "false";
       cardPanel.style.maxHeight = `${panelInner.scrollHeight}px`;
       syncAccordionPanelHeights();
-      window.requestAnimationFrame(syncAccordionPanelHeights);
+      window.requestAnimationFrame(() => {
+        cardPanel.style.maxHeight = `${panelInner.scrollHeight}px`;
+        syncAccordionPanelHeights();
+      });
       return;
     }
 
+    cardPanel.dataset.openSettled = "false";
     cardPanel.style.maxHeight = `${panelInner.scrollHeight}px`;
     window.requestAnimationFrame(() => {
       cardPanel.style.maxHeight = "0px";
@@ -999,6 +1004,14 @@ function createPlanBlock(plan = {}) {
     togglePlanExpanded();
   });
   refreshPlanVisual();
+
+  cardPanel.addEventListener("transitionend", (event) => {
+    if (event.propertyName !== "max-height") return;
+    if (wrap.dataset.planExpanded !== "true") return;
+    cardPanel.dataset.openSettled = "true";
+    cardPanel.style.maxHeight = "none";
+    syncAccordionPanelHeights();
+  });
 
   wrap.querySelector(".add-lump").addEventListener("click", () => {
     lumpList.appendChild(createHistoryRow({ type: "lump" }));
@@ -1204,6 +1217,7 @@ function updateAccordionPanelHeight(section) {
   const panelInner = panel?.querySelector(".accordion-panel-inner");
   if (!trigger || !panel || !panelInner) return;
   if (trigger.getAttribute("aria-expanded") !== "true") return;
+  if (panel.dataset.openSettled === "true") return;
   panel.style.maxHeight = `${panelInner.scrollHeight}px`;
 }
 
@@ -1222,10 +1236,15 @@ function setAccordionExpanded(section, expanded) {
   section.classList.toggle("is-expanded", expanded);
 
   if (expanded) {
+    panel.dataset.openSettled = "false";
     panel.style.maxHeight = `${panelInner.scrollHeight}px`;
+    window.requestAnimationFrame(() => {
+      panel.style.maxHeight = `${panelInner.scrollHeight}px`;
+    });
     return;
   }
 
+  panel.dataset.openSettled = "false";
   panel.style.maxHeight = `${panelInner.scrollHeight}px`;
   window.requestAnimationFrame(() => {
     panel.style.maxHeight = "0px";
@@ -1243,6 +1262,13 @@ function setupSectionAccordions() {
     if (panel) {
       panel.style.maxHeight = "0px";
       panel.setAttribute("aria-hidden", "true");
+      panel.dataset.openSettled = "false";
+      panel.addEventListener("transitionend", (event) => {
+        if (event.propertyName !== "max-height") return;
+        if (trigger.getAttribute("aria-expanded") !== "true") return;
+        panel.dataset.openSettled = "true";
+        panel.style.maxHeight = "none";
+      });
     }
 
     trigger.addEventListener("click", () => {
@@ -1252,6 +1278,27 @@ function setupSectionAccordions() {
   });
 
   window.addEventListener("resize", syncAccordionPanelHeights);
+
+  if ("ResizeObserver" in window) {
+    const observer = new ResizeObserver((entries) => {
+      entries.forEach((entry) => {
+        const section = entry.target.closest("[data-accordion-section]");
+        if (!section) return;
+        const panel = section.querySelector(".accordion-panel");
+        const trigger = section.querySelector(".accordion-trigger");
+        if (!panel || !trigger) return;
+        if (trigger.getAttribute("aria-expanded") !== "true") return;
+        if (panel.dataset.openSettled === "true") return;
+        panel.style.maxHeight = `${entry.target.scrollHeight}px`;
+      });
+      syncAccordionPanelHeights();
+    });
+
+    accordionSections.forEach((section) => {
+      const panelInner = section.querySelector(".accordion-panel-inner");
+      if (panelInner) observer.observe(panelInner);
+    });
+  }
 }
 
 function setChildAccordionExpanded(childAccordion, expanded) {
