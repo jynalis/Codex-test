@@ -1303,6 +1303,14 @@ function isExpenseBalanceSection(section, trigger) {
   return section?.id === "section-chart" || trigger?.id === "trigger-chart";
 }
 
+function resetExpenseBalanceChildAccordions(section) {
+  if (!section) return;
+  const compositionAccordion = section.querySelector("#trigger-chart-composition")?.closest("[data-child-accordion]");
+  const autoBreakdownAccordion = section.querySelector("#trigger-chart-auto-breakdown")?.closest("[data-child-accordion]");
+  if (compositionAccordion) setChildAccordionExpanded(compositionAccordion, false);
+  if (autoBreakdownAccordion) setChildAccordionExpanded(autoBreakdownAccordion, false);
+}
+
 function setAccordionExpanded(section, expanded) {
   const trigger = section.querySelector(".accordion-trigger");
   const panel = section.querySelector(".accordion-panel");
@@ -1311,12 +1319,6 @@ function setAccordionExpanded(section, expanded) {
 
   if (trigger.id === "trigger-profile") {
     resetProfileChildAndGrandchildAccordions(section);
-  }
-  if (isExpenseBalanceSection(section, trigger) && !expanded) {
-    const compositionAccordion = section.querySelector("#trigger-chart-composition")?.closest("[data-child-accordion]");
-    const autoBreakdownAccordion = section.querySelector("#trigger-chart-auto-breakdown")?.closest("[data-child-accordion]");
-    if (compositionAccordion) setChildAccordionExpanded(compositionAccordion, false);
-    if (autoBreakdownAccordion) setChildAccordionExpanded(autoBreakdownAccordion, false);
   }
 
   trigger.setAttribute("aria-expanded", String(expanded));
@@ -1338,16 +1340,37 @@ function setupSectionAccordions() {
     const panel = section.querySelector(".accordion-panel");
     if (!trigger || !panel) return;
 
-    setAccordionExpanded(section, false);
-    trigger.addEventListener("click", () => {
+    const toggleSection = () => {
       if (section.dataset.toggleLocked === "true") return;
       section.dataset.toggleLocked = "true";
       window.setTimeout(() => {
         section.dataset.toggleLocked = "false";
       }, 220);
       const expanded = trigger.getAttribute("aria-expanded") === "true";
-      setAccordionExpanded(section, !expanded);
-    });
+      const nextExpanded = !expanded;
+
+      if (!nextExpanded && isExpenseBalanceSection(section, trigger)) {
+        resetExpenseBalanceChildAccordions(section);
+      }
+
+      setAccordionExpanded(section, nextExpanded);
+    };
+
+    setAccordionExpanded(section, false);
+
+    if (isExpenseBalanceSection(section, trigger)) {
+      trigger.addEventListener("pointerup", (event) => {
+        if (event.pointerType !== "mouse" && event.pointerType !== "touch" && event.pointerType !== "pen") return;
+        event.preventDefault();
+        toggleSection();
+      });
+      trigger.addEventListener("click", (event) => {
+        if (event.detail !== 0) return;
+        toggleSection();
+      });
+    } else {
+      trigger.addEventListener("click", toggleSection);
+    }
   });
 }
 
