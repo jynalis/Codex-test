@@ -494,6 +494,37 @@ button.danger {
   display: none;
 }
 
+#panel-chart .child-accordion-panel-inner {
+  min-width: 0;
+}
+
+#panel-chart .chart,
+#panel-chart .auto-breakdown,
+#panel-chart .auto-card,
+#panel-chart .asset-list,
+#panel-chart .pie-legend,
+#panel-chart .pie-legend-item {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+#panel-chart .pie-chart {
+  width: min(300px, 100%);
+  max-width: 100%;
+}
+
+#panel-chart .pie-legend-item > *,
+#panel-chart .asset-list li > span {
+  min-width: 0;
+}
+
+#panel-chart .pie-legend-item .category,
+#panel-chart .asset-list li > span {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .plan-item {
   border: 1px solid #b4cae1;
   border-radius: 16px;
