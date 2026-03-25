@@ -931,10 +931,9 @@ function createPlanBlock(plan = {}) {
   wrap.innerHTML = `
     <input type="hidden" class="plan-id" value="${normalizedPlan.id}" />
     <div class="plan-card-heading">
-      <div
+      <button
+        type="button"
         class="plan-card-trigger"
-        role="button"
-        tabindex="0"
         aria-expanded="false"
         aria-controls="${planPanelId}"
         id="${planTriggerId}"
@@ -943,7 +942,7 @@ function createPlanBlock(plan = {}) {
           <p class="plan-card-title">${normalizedPlan.type}｜${normalizedPlan.name || "識別名未設定"}</p>
           <span class="plan-card-tag">${normalizedPlan.type}</span>
         </div>
-      </div>
+      </button>
       <button type="button" class="plan-card-toggle-button" aria-expanded="false" aria-controls="${planPanelId}" aria-label="資産枠の開閉">
         <span class="plan-card-toggle-icon" aria-hidden="true">+</span>
       </button>
@@ -1006,25 +1005,35 @@ function createPlanBlock(plan = {}) {
   planNameField.addEventListener("input", refreshPlanVisual);
 
   const setPlanExpanded = (expanded) => {
+    wrap.dataset.planExpanded = String(expanded);
     cardTrigger.setAttribute("aria-expanded", String(expanded));
     cardToggleButton.setAttribute("aria-expanded", String(expanded));
     cardPanel.setAttribute("aria-hidden", String(!expanded));
     cardToggleIcon.textContent = expanded ? "-" : "+";
     wrap.classList.toggle("is-expanded", expanded);
-    syncAccordionPanelHeights();
+    const panelInner = cardPanel.querySelector(".plan-card-panel-inner");
+    if (!panelInner) return;
+    if (expanded) {
+      cardPanel.style.maxHeight = `${panelInner.scrollHeight}px`;
+      syncAccordionPanelHeights();
+      window.requestAnimationFrame(syncAccordionPanelHeights);
+      return;
+    }
+
+    cardPanel.style.maxHeight = `${panelInner.scrollHeight}px`;
+    window.requestAnimationFrame(() => {
+      cardPanel.style.maxHeight = "0px";
+      syncAccordionPanelHeights();
+      window.requestAnimationFrame(syncAccordionPanelHeights);
+    });
   };
 
   setPlanExpanded(false);
   const togglePlanExpanded = () => {
-    const expanded = cardTrigger.getAttribute("aria-expanded") === "true";
+    const expanded = wrap.dataset.planExpanded === "true";
     setPlanExpanded(!expanded);
   };
   cardTrigger.addEventListener("click", togglePlanExpanded);
-  cardTrigger.addEventListener("keydown", (event) => {
-    if (event.key !== "Enter" && event.key !== " ") return;
-    event.preventDefault();
-    togglePlanExpanded();
-  });
   cardToggleButton.addEventListener("click", (event) => {
     event.stopPropagation();
     togglePlanExpanded();

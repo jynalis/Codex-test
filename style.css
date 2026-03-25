@@ -609,6 +609,11 @@ button.danger {
   cursor: pointer;
 }
 
+button.plan-card-trigger {
+  appearance: none;
+  font: inherit;
+}
+
 .plan-card-trigger:focus-visible {
   outline: 3px solid rgb(43 120 184 / 35%);
   outline-offset: 2px;
@@ -646,31 +651,28 @@ button.danger {
 }
 
 .plan-card-panel {
-  display: grid;
-  grid-template-rows: 0fr;
+  max-height: 0;
   opacity: 0;
   visibility: hidden;
+  overflow: hidden;
   pointer-events: none;
   transition:
-    grid-template-rows 220ms ease,
+    max-height 260ms ease,
     opacity 180ms ease,
     visibility 0s linear 220ms;
 }
 
 .plan-card-panel-inner {
-  min-height: 0;
-  overflow: hidden;
   display: grid;
   gap: 14px;
 }
 
 .plan-item.is-expanded .plan-card-panel {
-  grid-template-rows: 1fr;
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
   transition:
-    grid-template-rows 260ms ease,
+    max-height 280ms ease,
     opacity 200ms ease;
 }
 
