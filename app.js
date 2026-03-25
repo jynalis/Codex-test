@@ -885,35 +885,42 @@ function createPlanBlock(plan = {}) {
   wrap.className = "plan-item";
 
   const typeOptions = PLAN_TYPES.map((type) => `<option value="${type}" ${normalizedPlan.type === type ? "selected" : ""}>${type}</option>`).join("");
+  const planPanelId = `plan-detail-${normalizedPlan.id}`;
+
   wrap.innerHTML = `
     <input type="hidden" class="plan-id" value="${normalizedPlan.id}" />
-    <header class="plan-card-header">
-      <p class="plan-card-title">${normalizedPlan.type}｜${normalizedPlan.name || "識別名未設定"}</p>
-      <span class="plan-card-tag">${normalizedPlan.type}</span>
-    </header>
-    <div class="plan-grid">
-      <label>種類<select class="plan-type">${typeOptions}</select></label>
-      <label>識別名<input class="plan-name" type="text" maxlength="30" placeholder="例: つみたて枠" value="${normalizedPlan.name || ""}" /></label>
-      <label>想定利回り(年%)<input class="plan-expected-return" type="number" step="0.1" value="${normalizedPlan.expectedReturn ?? ""}" /></label>
-      <label>取崩年齢<input class="plan-withdraw-age" type="number" min="0" max="120" step="1" value="${normalizedPlan.withdrawAge ?? ""}" /></label>
-      <label>引き落とし日<input class="plan-withdrawal-day" type="number" min="1" max="31" step="1" value="${normalizedPlan.withdrawalDay ?? 1}" /></label>
-    </div>
-    <div class="change-wrap">
-      <div class="change-header">
-        <p>一括入金履歴（登録月に1回のみ反映）</p>
-        <button type="button" class="small add-lump">一括入金を追加</button>
+    <button type="button" class="plan-card-toggle" aria-expanded="false" aria-controls="${planPanelId}">
+      <div class="plan-card-header">
+        <p class="plan-card-title">${normalizedPlan.type}｜${normalizedPlan.name || "識別名未設定"}</p>
+        <span class="plan-card-tag">${normalizedPlan.type}</span>
       </div>
-      <div class="lump-list"></div>
-    </div>
-    <div class="change-wrap">
-      <div class="change-header">
-        <p>月額積立履歴（開始年月以降で有効）</p>
-        <button type="button" class="small add-monthly">月額履歴を追加</button>
+      <span class="plan-card-toggle-icon" aria-hidden="true">+</span>
+    </button>
+    <div class="plan-card-panel" id="${planPanelId}" hidden>
+      <div class="plan-grid">
+        <label>種類<select class="plan-type">${typeOptions}</select></label>
+        <label>識別名<input class="plan-name" type="text" maxlength="30" placeholder="例: つみたて枠" value="${normalizedPlan.name || ""}" /></label>
+        <label>想定利回り(年%)<input class="plan-expected-return" type="number" step="0.1" value="${normalizedPlan.expectedReturn ?? ""}" /></label>
+        <label>取崩年齢<input class="plan-withdraw-age" type="number" min="0" max="120" step="1" value="${normalizedPlan.withdrawAge ?? ""}" /></label>
+        <label>引き落とし日<input class="plan-withdrawal-day" type="number" min="1" max="31" step="1" value="${normalizedPlan.withdrawalDay ?? 1}" /></label>
       </div>
-      <div class="monthly-list"></div>
+      <div class="change-wrap">
+        <div class="change-header">
+          <p>一括入金履歴（登録月に1回のみ反映）</p>
+          <button type="button" class="small add-lump">一括入金を追加</button>
+        </div>
+        <div class="lump-list"></div>
+      </div>
+      <div class="change-wrap">
+        <div class="change-header">
+          <p>月額積立履歴（開始年月以降で有効）</p>
+          <button type="button" class="small add-monthly">月額履歴を追加</button>
+        </div>
+        <div class="monthly-list"></div>
+      </div>
+      <button type="button" class="add-plan-inline"><span aria-hidden="true" class="add-plan-inline-icon">＋</span><span>この下に追加</span></button>
+      <button type="button" class="danger remove-plan">この枠を削除</button>
     </div>
-    <button type="button" class="add-plan-inline"><span aria-hidden="true" class="add-plan-inline-icon">＋</span><span>この下に追加</span></button>
-    <button type="button" class="danger remove-plan">この枠を削除</button>
   `;
 
   const lumpList = wrap.querySelector(".lump-list");
@@ -922,6 +929,9 @@ function createPlanBlock(plan = {}) {
   const planNameField = wrap.querySelector(".plan-name");
   const title = wrap.querySelector(".plan-card-title");
   const tag = wrap.querySelector(".plan-card-tag");
+  const cardToggle = wrap.querySelector(".plan-card-toggle");
+  const cardPanel = wrap.querySelector(".plan-card-panel");
+  const cardToggleIcon = wrap.querySelector(".plan-card-toggle-icon");
 
   normalizedPlan.lumpSums.forEach((history) => lumpList.appendChild(createHistoryRow({ type: "lump", month: history.month, amount: history.amount })));
   normalizedPlan.monthlyContributions.forEach((history) =>
@@ -939,6 +949,20 @@ function createPlanBlock(plan = {}) {
 
   planTypeField.addEventListener("change", refreshPlanVisual);
   planNameField.addEventListener("input", refreshPlanVisual);
+
+  const setPlanExpanded = (expanded) => {
+    cardToggle.setAttribute("aria-expanded", String(expanded));
+    cardPanel.hidden = !expanded;
+    cardToggleIcon.textContent = expanded ? "-" : "+";
+    wrap.classList.toggle("is-expanded", expanded);
+    syncAccordionPanelHeights();
+  };
+
+  setPlanExpanded(false);
+  cardToggle.addEventListener("click", () => {
+    const expanded = cardToggle.getAttribute("aria-expanded") === "true";
+    setPlanExpanded(!expanded);
+  });
   refreshPlanVisual();
 
   wrap.querySelector(".add-lump").addEventListener("click", () => {
