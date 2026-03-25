@@ -36,6 +36,11 @@ const bottomNavButtons = Array.from(document.querySelectorAll(".bottom-nav-btn")
 const navToast = document.getElementById("nav-toast");
 const accordionSections = Array.from(document.querySelectorAll("[data-accordion-section]"));
 const childAccordions = Array.from(document.querySelectorAll("[data-child-accordion]"));
+const assetsSection = document.getElementById("section-assets");
+
+let latestAssetForecastSettings = null;
+let assetForecastDirty = true;
+let assetForecastRenderRafId = 0;
 
 const NAV_TARGETS = {
   home: "section-home",
@@ -1126,7 +1131,12 @@ function render() {
 
   renderExpenseChart([...transactions, ...autoTransactions], currentMonth);
   renderAutoBreakdown(autoTransactions, currentMonth);
-  renderAssetForecast(settings);
+  markAssetForecastDirty(settings);
+  if (isAssetsSectionExpanded()) {
+    queueAssetForecastRender();
+  } else {
+    clearAssetForecastDOM();
+  }
 }
 
 function addTransaction(event) {
@@ -1182,14 +1192,53 @@ function showNavToast(message) {
   }, 1500);
 }
 
+function isAssetsSectionExpanded() {
+  return assetsSection?.classList.contains("is-expanded");
+}
+
+function markAssetForecastDirty(settings) {
+  latestAssetForecastSettings = settings;
+  assetForecastDirty = true;
+}
+
+function clearAssetForecastDOM() {
+  assetForecastRenderRafId = 0;
+  if (assetForecast?.childNodes.length) {
+    assetForecast.replaceChildren();
+  }
+}
+
+function queueAssetForecastRender(force = false) {
+  if (!assetForecast || !latestAssetForecastSettings) return;
+  if (!force && !assetForecastDirty) return;
+  if (!isAssetsSectionExpanded()) return;
+  if (assetForecastRenderRafId) return;
+
+  assetForecastRenderRafId = window.requestAnimationFrame(() => {
+    assetForecastRenderRafId = 0;
+    if (!isAssetsSectionExpanded()) return;
+    renderAssetForecast(latestAssetForecastSettings);
+    assetForecastDirty = false;
+  });
+}
+
 function setAccordionExpanded(section, expanded) {
   const trigger = section.querySelector(".accordion-trigger");
   const panel = section.querySelector(".accordion-panel");
   if (!trigger || !panel) return;
+  const wasExpanded = trigger.getAttribute("aria-expanded") === "true";
 
   trigger.setAttribute("aria-expanded", String(expanded));
   panel.setAttribute("aria-hidden", String(!expanded));
   section.classList.toggle("is-expanded", expanded);
+
+  if (section.id === "section-assets" && wasExpanded !== expanded) {
+    if (expanded) {
+      queueAssetForecastRender(true);
+    } else {
+      clearAssetForecastDOM();
+    }
+  }
 }
 
 function setupSectionAccordions() {
@@ -1200,6 +1249,11 @@ function setupSectionAccordions() {
 
     setAccordionExpanded(section, false);
     trigger.addEventListener("click", () => {
+      if (section.dataset.toggleLocked === "true") return;
+      section.dataset.toggleLocked = "true";
+      window.setTimeout(() => {
+        section.dataset.toggleLocked = "false";
+      }, 220);
       const expanded = trigger.getAttribute("aria-expanded") === "true";
       setAccordionExpanded(section, !expanded);
     });
@@ -1225,15 +1279,12 @@ function setupChildAccordions() {
 
     setChildAccordionExpanded(childAccordion, false);
 
-    const toggleChildAccordion = (event) => {
-      if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-        const stamp = String(event.timeStamp);
-        if (childAccordion.dataset.lastToggleStamp === stamp) return;
-        childAccordion.dataset.lastToggleStamp = stamp;
-      }
-
+    const toggleChildAccordion = () => {
+      if (childAccordion.dataset.toggleLocked === "true") return;
+      childAccordion.dataset.toggleLocked = "true";
+      window.setTimeout(() => {
+        childAccordion.dataset.toggleLocked = "false";
+      }, 180);
       const expanded = trigger.getAttribute("aria-expanded") === "true";
       setChildAccordionExpanded(childAccordion, !expanded);
     };
