@@ -1359,8 +1359,17 @@ button.plan-card-trigger {
 
 @media (max-width: 640px) {
   :root {
-    --accordion-duration: 120ms;
-    --accordion-fade-duration: 80ms;
+    --accordion-duration: 90ms;
+    --accordion-fade-duration: 40ms;
+  }
+
+  .accordion-section .accordion-panel,
+  .accordion-section.is-expanded .accordion-panel,
+  .plan-card-panel,
+  .plan-item.is-expanded .plan-card-panel {
+    transition:
+      grid-template-rows var(--accordion-duration) linear,
+      opacity var(--accordion-fade-duration) linear;
   }
 
   .container {
