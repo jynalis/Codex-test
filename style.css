@@ -603,6 +603,10 @@ button.danger {
   gap: 14px;
 }
 
+.plan-card-panel[hidden] {
+  display: none;
+}
+
 .plan-card-title {
   margin: 0;
   font-weight: 900;
