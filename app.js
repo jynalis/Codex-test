@@ -563,7 +563,6 @@ function renderAutoBreakdown(autoTransactions, month) {
   const hasAny = Object.values(totals).some((amount) => amount > 0);
   const wrap = document.createElement("div");
   wrap.className = "auto-card";
-  wrap.innerHTML = `<h3>資産形成支出（自動反映）の内訳（${month}）</h3>`;
 
   if (!hasAny) {
     const empty = document.createElement("p");
@@ -1326,7 +1325,7 @@ function setChildAccordionExpanded(childAccordion, expanded) {
   trigger.setAttribute("aria-expanded", String(expanded));
   panel.hidden = !expanded;
   panel.setAttribute("aria-hidden", String(!expanded));
-  toggle.textContent = expanded ? "-" : "+";
+  toggle.textContent = expanded ? "－" : "＋";
 }
 
 function setupChildAccordion(childAccordion) {
