@@ -1301,8 +1301,15 @@ function resetProfileChildAndGrandchildAccordions(section) {
 
 function resetExpenseBalanceChildAccordions(section) {
   if (!section) return;
-  const descendantChildAccordions = section.querySelectorAll("[data-child-accordion]");
-  descendantChildAccordions.forEach((childAccordion) => setChildAccordionExpanded(childAccordion, false));
+  const compositionAccordion = section.querySelector("#trigger-chart-composition")?.closest("[data-child-accordion]");
+  const autoBreakdownAccordion = section.querySelector("#trigger-chart-auto-breakdown")?.closest("[data-child-accordion]");
+  [compositionAccordion, autoBreakdownAccordion].forEach((childAccordion) => {
+    if (childAccordion) setChildAccordionExpanded(childAccordion, false);
+  });
+}
+
+function isExpenseBalanceSection(section, trigger) {
+  return section?.id === "section-chart" || trigger?.id === "trigger-chart";
 }
 
 function setAccordionExpanded(section, expanded) {
@@ -1314,7 +1321,7 @@ function setAccordionExpanded(section, expanded) {
   if (trigger.id === "trigger-profile") {
     resetProfileChildAndGrandchildAccordions(section);
   }
-  if (section.id === "section-chart" && !expanded) {
+  if (isExpenseBalanceSection(section, trigger) && !expanded) {
     resetExpenseBalanceChildAccordions(section);
   }
 
