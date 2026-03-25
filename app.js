@@ -1317,11 +1317,23 @@ function setupChildAccordions(root = document) {
     if (childAccordion.dataset.childAccordionReady === "true") return;
     childAccordion.dataset.childAccordionReady = "true";
     setChildAccordionExpanded(childAccordion, false);
-    trigger.addEventListener("click", () => {
+
+    const toggleChildAccordion = (event) => {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        const stamp = String(event.timeStamp);
+        if (childAccordion.dataset.lastToggleStamp === stamp) return;
+        childAccordion.dataset.lastToggleStamp = stamp;
+      }
+
       const expanded = trigger.getAttribute("aria-expanded") === "true";
       setChildAccordionExpanded(childAccordion, !expanded);
       syncAccordionPanelHeights();
-    });
+      window.requestAnimationFrame(syncAccordionPanelHeights);
+    };
+
+    trigger.addEventListener("click", toggleChildAccordion);
   });
 }
 
