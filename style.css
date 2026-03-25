@@ -557,6 +557,52 @@ button.danger {
   flex-wrap: wrap;
 }
 
+.plan-card-toggle {
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 12px;
+  border: 1px solid #c7d6e8;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 76%);
+  color: inherit;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+}
+
+.plan-card-toggle:hover {
+  transform: none;
+}
+
+.plan-card-toggle:active {
+  transform: none;
+}
+
+.plan-card-header {
+  flex: 1;
+  min-width: 0;
+}
+
+.plan-card-title {
+  overflow-wrap: anywhere;
+}
+
+.plan-card-toggle-icon {
+  font-size: 1.45rem;
+  line-height: 1;
+  font-weight: 700;
+  color: #173f66;
+  flex-shrink: 0;
+}
+
+.plan-card-panel {
+  display: grid;
+  gap: 14px;
+}
+
 .plan-card-title {
   margin: 0;
   font-weight: 900;
