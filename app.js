@@ -1299,15 +1299,6 @@ function resetProfileChildAndGrandchildAccordions(section) {
   closeDescendantPlanCards(section);
 }
 
-function resetExpenseBalanceChildAccordions(section) {
-  if (!section) return;
-  const compositionAccordion = section.querySelector("#trigger-chart-composition")?.closest("[data-child-accordion]");
-  const autoBreakdownAccordion = section.querySelector("#trigger-chart-auto-breakdown")?.closest("[data-child-accordion]");
-  [compositionAccordion, autoBreakdownAccordion].forEach((childAccordion) => {
-    if (childAccordion) setChildAccordionExpanded(childAccordion, false);
-  });
-}
-
 function isExpenseBalanceSection(section, trigger) {
   return section?.id === "section-chart" || trigger?.id === "trigger-chart";
 }
@@ -1322,7 +1313,10 @@ function setAccordionExpanded(section, expanded) {
     resetProfileChildAndGrandchildAccordions(section);
   }
   if (isExpenseBalanceSection(section, trigger) && !expanded) {
-    resetExpenseBalanceChildAccordions(section);
+    const compositionAccordion = section.querySelector("#trigger-chart-composition")?.closest("[data-child-accordion]");
+    const autoBreakdownAccordion = section.querySelector("#trigger-chart-auto-breakdown")?.closest("[data-child-accordion]");
+    if (compositionAccordion) setChildAccordionExpanded(compositionAccordion, false);
+    if (autoBreakdownAccordion) setChildAccordionExpanded(autoBreakdownAccordion, false);
   }
 
   trigger.setAttribute("aria-expanded", String(expanded));
