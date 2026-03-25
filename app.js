@@ -1299,6 +1299,12 @@ function resetProfileChildAndGrandchildAccordions(section) {
   closeDescendantPlanCards(section);
 }
 
+function resetExpenseBalanceChildAccordions(section) {
+  if (!section) return;
+  const descendantChildAccordions = section.querySelectorAll("[data-child-accordion]");
+  descendantChildAccordions.forEach((childAccordion) => setChildAccordionExpanded(childAccordion, false));
+}
+
 function setAccordionExpanded(section, expanded) {
   const trigger = section.querySelector(".accordion-trigger");
   const panel = section.querySelector(".accordion-panel");
@@ -1307,6 +1313,9 @@ function setAccordionExpanded(section, expanded) {
 
   if (trigger.id === "trigger-profile") {
     resetProfileChildAndGrandchildAccordions(section);
+  }
+  if (section.id === "section-chart" && !expanded) {
+    resetExpenseBalanceChildAccordions(section);
   }
 
   trigger.setAttribute("aria-expanded", String(expanded));
