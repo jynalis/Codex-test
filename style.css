@@ -19,6 +19,7 @@
   --hero-bg: linear-gradient(165deg, #f5f9ff 0%, #dfefff 52%, #f7fbff 100%);
   --profile-bg: linear-gradient(180deg, #fafdff 0%, #f2f7ff 100%);
   --input-bg: linear-gradient(180deg, #fffef8 0%, #fff8e9 100%);
+  --recurring-bg: linear-gradient(180deg, #f8fcff 0%, #eef7ff 100%);
   --summary-bg: linear-gradient(180deg, #f7fffb 0%, #eefcf6 100%);
   --assets-bg: linear-gradient(180deg, #f7f8ff 0%, #f0f2ff 100%);
   --chart-bg: linear-gradient(180deg, #fff8fb 0%, #fff1f7 100%);
@@ -158,6 +159,12 @@ header p {
   background: var(--input-bg);
   border-color: #e6c27b;
   border-top: 5px solid #bf7f19;
+}
+
+.section-tone-recurring {
+  background: var(--recurring-bg);
+  border-color: #99c8de;
+  border-top: 5px solid #2d87ad;
 }
 
 .section-tone-summary {
@@ -307,6 +314,10 @@ header p {
 
 .section-tone-summary .section-heading h2 {
   border-left-color: #1f8a68;
+}
+
+.section-tone-recurring .section-heading h2 {
+  border-left-color: #2d87ad;
 }
 
 .section-tone-assets .section-heading h2 {
@@ -1132,6 +1143,75 @@ button.plan-card-trigger {
   font-size: 1.02rem;
 }
 
+.recurring-form {
+  gap: 12px;
+}
+
+.recurring-list {
+  display: grid;
+  gap: 10px;
+}
+
+.recurring-card {
+  border: 1px solid #bdd5e5;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fff 0%, #f5faff 100%);
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.recurring-card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.recurring-card-header h4 {
+  margin: 0;
+  color: #123e63;
+}
+
+.recurring-amount {
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #0e3658;
+}
+
+.recurring-meta-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.recurring-meta-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.88rem;
+}
+
+.recurring-meta-list span {
+  color: #4b627b;
+  font-weight: 600;
+}
+
+.recurring-meta-list strong {
+  color: #163853;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.recurring-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .filters {
   display: flex;
   gap: 8px;
@@ -1561,6 +1641,10 @@ button.plan-card-trigger {
 
   .pie-legend-item .value {
     grid-column: 2 / -1;
+  }
+
+  .recurring-actions button {
+    min-height: 44px;
   }
 }
 

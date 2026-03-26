@@ -1,5 +1,6 @@
 const STORAGE_KEY = "kakeibo_transactions_v1";
 const SETTINGS_KEY = "kakeibo_settings_v1";
+const RECURRING_EXPENSES_KEY = "kakeibo_recurring_expenses_v1";
 
 const form = document.getElementById("transaction-form");
 const dateInput = document.getElementById("date");
@@ -14,6 +15,15 @@ const entryStartMonthInput = document.getElementById("entry-start-month");
 const birthDateInput = document.getElementById("birth-date");
 const planList = document.getElementById("plan-list");
 const assetForecast = document.getElementById("asset-forecast");
+const recurringForm = document.getElementById("recurring-form");
+const recurringCategoryInput = document.getElementById("recurring-category");
+const recurringAmountInput = document.getElementById("recurring-amount");
+const recurringDayInput = document.getElementById("recurring-day");
+const recurringStartMonthInput = document.getElementById("recurring-start-month");
+const recurringEndMonthInput = document.getElementById("recurring-end-month");
+const recurringMemoInput = document.getElementById("recurring-memo");
+const recurringActiveInput = document.getElementById("recurring-active");
+const recurringList = document.getElementById("recurring-list");
 
 const list = document.getElementById("transaction-list");
 const template = document.getElementById("transaction-item-template");
@@ -49,6 +59,7 @@ const NAV_TARGETS = {
 };
 
 const EXPENSE_CATEGORIES = ["日常費", "趣味・レジャー費", "雑費・予備費", "家賃・マイホーム費", "生命保険"];
+const RECURRING_EXPENSE_CATEGORIES = ["家賃", "通信費", "保険料", "その他固定費"];
 const CATEGORY_OPTIONS = {
   expense: EXPENSE_CATEGORIES,
   income: ["定期収入", "臨時収入"],
@@ -61,6 +72,7 @@ const PLAN_TYPE_CLASS = {
   貯金: "is-savings",
 };
 const ASSET_FORMATION_CATEGORY = "資産形成支出";
+const ALLOWED_EXPENSE_CATEGORIES = [...EXPENSE_CATEGORIES, ASSET_FORMATION_CATEGORY, ...RECURRING_EXPENSE_CATEGORIES];
 const ASSET_PIE_COLORS = ["#245e8f", "#b85c3f", "#2f7e68", "#7a56ad", "#9b7a2f", "#3c6a9b", "#b04f74", "#4f7f9f"];
 
 const yen = new Intl.NumberFormat("ja-JP", {
@@ -92,6 +104,90 @@ function syncCategoryOptions() {
   });
 }
 
+function syncRecurringCategoryOptions() {
+  if (!recurringCategoryInput) return;
+  recurringCategoryInput.innerHTML = "";
+  RECURRING_EXPENSE_CATEGORIES.forEach((category) => {
+    const option = document.createElement("option");
+    option.value = category;
+    option.textContent = category;
+    recurringCategoryInput.appendChild(option);
+  });
+}
+
+function syncRecurringDayOptions() {
+  if (!recurringDayInput) return;
+  recurringDayInput.innerHTML = "";
+  for (let day = 1; day <= 31; day += 1) {
+    const option = document.createElement("option");
+    option.value = String(day);
+    option.textContent = `${day}日`;
+    recurringDayInput.appendChild(option);
+  }
+}
+
+function renderRecurringExpenses(items) {
+  if (!recurringList) return;
+  recurringList.innerHTML = "";
+  if (items.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "chart-empty";
+    empty.textContent = "登録済みの定期支出はありません。";
+    recurringList.appendChild(empty);
+    return;
+  }
+
+  items
+    .slice()
+    .sort((a, b) => compareMonth(a.startMonth, b.startMonth))
+    .forEach((item) => {
+      const card = document.createElement("article");
+      card.className = "recurring-card";
+      card.innerHTML = `
+        <div class="recurring-card-header">
+          <h4>${item.category}</h4>
+          <p class="recurring-amount">${yen.format(item.amount)}</p>
+        </div>
+        <ul class="recurring-meta-list">
+          <li><span>引落日</span><strong>${item.day}日</strong></li>
+          <li><span>開始月</span><strong>${item.startMonth}</strong></li>
+          <li><span>終了月</span><strong>${item.endMonth || "継続中"}</strong></li>
+          <li><span>状態</span><strong>${item.isActive ? "有効" : "無効"}</strong></li>
+          <li><span>メモ</span><strong>${item.memo || "なし"}</strong></li>
+        </ul>
+      `;
+      const actionRow = document.createElement("div");
+      actionRow.className = "recurring-actions";
+
+      const toggleButton = document.createElement("button");
+      toggleButton.type = "button";
+      toggleButton.className = "small";
+      toggleButton.textContent = item.isActive ? "無効にする" : "有効にする";
+      toggleButton.addEventListener("click", () => {
+        const next = loadRecurringExpenses().map((target) => {
+          if (target.id !== item.id) return target;
+          return { ...target, isActive: !target.isActive };
+        });
+        saveRecurringExpenses(next);
+        render();
+      });
+
+      const deleteButton = document.createElement("button");
+      deleteButton.type = "button";
+      deleteButton.className = "small danger";
+      deleteButton.textContent = "削除";
+      deleteButton.addEventListener("click", () => {
+        const next = loadRecurringExpenses().filter((target) => target.id !== item.id);
+        saveRecurringExpenses(next);
+        render();
+      });
+
+      actionRow.append(toggleButton, deleteButton);
+      card.appendChild(actionRow);
+      recurringList.appendChild(card);
+    });
+}
+
 function loadTransactions() {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return [];
@@ -106,7 +202,7 @@ function loadTransactions() {
       }))
       .filter((item) => {
         if (!item?.date || !item?.type || !item?.category || item.amount <= 0) return false;
-        if (item.type === "expense") return EXPENSE_CATEGORIES.includes(item.category);
+        if (item.type === "expense") return ALLOWED_EXPENSE_CATEGORIES.includes(item.category);
         return true;
       });
   } catch {
@@ -223,6 +319,105 @@ function loadSettings() {
 
 function saveSettings(settings) {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+}
+
+function normalizeRecurringExpense(item) {
+  return {
+    id: typeof item?.id === "string" ? item.id : crypto.randomUUID(),
+    category: RECURRING_EXPENSE_CATEGORIES.includes(item?.category) ? item.category : RECURRING_EXPENSE_CATEGORIES[0],
+    amount: Math.max(Number(item?.amount) || 0, 0),
+    day: Math.min(Math.max(Number(item?.day) || 1, 1), 31),
+    startMonth: parseMonth(item?.startMonth) ? item.startMonth : "",
+    endMonth: parseMonth(item?.endMonth) ? item.endMonth : "",
+    memo: typeof item?.memo === "string" ? item.memo : "",
+    isActive: item?.isActive !== false,
+    createdAt: typeof item?.createdAt === "string" ? item.createdAt : new Date().toISOString(),
+  };
+}
+
+function loadRecurringExpenses() {
+  const raw = localStorage.getItem(RECURRING_EXPENSES_KEY);
+  if (!raw) return [];
+  try {
+    const data = JSON.parse(raw);
+    if (!Array.isArray(data)) return [];
+    return data
+      .map((item) => normalizeRecurringExpense(item))
+      .filter((item) => item.amount > 0 && parseMonth(item.startMonth));
+  } catch {
+    return [];
+  }
+}
+
+function saveRecurringExpenses(items) {
+  localStorage.setItem(RECURRING_EXPENSES_KEY, JSON.stringify(items));
+}
+
+function isRecurringExpenseApplicable(item, month) {
+  if (!item.isActive || !parseMonth(item.startMonth) || !parseMonth(month)) return false;
+  if (compareMonth(month, item.startMonth) < 0) return false;
+  if (parseMonth(item.endMonth) && compareMonth(month, item.endMonth) > 0) return false;
+  return true;
+}
+
+function createRecurringExpenseAutoTransactions(recurringExpenses, month) {
+  if (!parseMonth(month)) return [];
+  const [yearStr, monthStr] = month.split("-");
+  const year = Number(yearStr);
+  const monthNum = Number(monthStr);
+
+  return recurringExpenses
+    .filter((item) => isRecurringExpenseApplicable(item, month))
+    .map((item) => {
+      const day = clampDay(year, monthNum, item.day);
+      const date = `${month}-${String(day).padStart(2, "0")}`;
+      return {
+        id: `auto-recurring-${item.id}-${month}`,
+        date,
+        type: "expense",
+        category: item.category,
+        amount: item.amount,
+        memo: item.memo || `${item.category}（定期支出）`,
+        isAuto: true,
+        autoKind: "recurring-expense",
+        isAutoGenerated: true,
+        recurringId: item.id,
+        targetMonth: month,
+      };
+    });
+}
+
+function syncRecurringAutoTransactions(transactions, recurringExpenses, month) {
+  if (!parseMonth(month) || recurringExpenses.length === 0) return transactions;
+  const earliestMonth = recurringExpenses
+    .map((item) => item.startMonth)
+    .filter((target) => parseMonth(target))
+    .sort(compareMonth)[0];
+  if (!earliestMonth || compareMonth(earliestMonth, month) > 0) return transactions;
+
+  const nextTransactions = [...transactions];
+  let changed = false;
+  let cursor = earliestMonth;
+  while (compareMonth(cursor, month) <= 0) {
+    const generated = createRecurringExpenseAutoTransactions(recurringExpenses, cursor);
+    generated.forEach((autoTx) => {
+      const exists = nextTransactions.some((item) => item.id === autoTx.id || (
+        item.isAutoGenerated &&
+        item.recurringId === autoTx.recurringId &&
+        item.targetMonth === autoTx.targetMonth
+      ));
+      if (!exists) {
+        nextTransactions.push(autoTx);
+        changed = true;
+      }
+    });
+    cursor = addOneMonth(cursor);
+  }
+
+  if (changed) {
+    saveTransactions(nextTransactions);
+  }
+  return nextTransactions;
 }
 
 function todayISO() {
@@ -1116,11 +1311,13 @@ function saveProfile(event) {
 }
 
 function render() {
-  const transactions = loadTransactions();
+  const recurringExpenses = loadRecurringExpenses();
+  const transactions = syncRecurringAutoTransactions(loadTransactions(), recurringExpenses, monthFilter.value);
   const settings = loadSettings();
   const currentMonth = monthFilter.value;
   const autoTransactions = createEligibleAutoExpensesForMonth(settings, transactions, currentMonth);
   const summary = calculateMonthlySummary(transactions, settings, currentMonth);
+  renderRecurringExpenses(recurringExpenses);
 
   entryStartMonthInput.value = resolveEntryStartMonth(settings, transactions);
   birthDateInput.value = settings.birthDate || "";
@@ -1150,7 +1347,9 @@ function render() {
       const del = node.querySelector(".delete");
 
       meta.textContent = item.isAuto
-        ? `${item.date} / 自動反映 / ${item.sourceType}`
+        ? item.autoKind === "recurring-expense"
+          ? `${item.date} / 自動反映 / 定期支出`
+          : `${item.date} / 自動反映 / ${item.sourceType}`
         : `${item.date} / ${item.category}`;
       memo.textContent = item.memo || "メモなし";
       amount.textContent = `${item.type === "income" ? "+" : "-"}${yen.format(item.amount)}`;
@@ -1217,6 +1416,43 @@ function addTransaction(event) {
   typeInput.value = "expense";
   syncCategoryOptions();
   amountInput.value = "";
+  render();
+}
+
+function addRecurringExpense(event) {
+  event.preventDefault();
+  const category = recurringCategoryInput.value;
+  const amount = parseAmountInput(recurringAmountInput.value);
+  const day = Math.min(Math.max(Number(recurringDayInput.value) || 1, 1), 31);
+  const startMonth = recurringStartMonthInput.value;
+  const endMonth = recurringEndMonthInput.value;
+  const memo = recurringMemoInput.value.trim();
+  const isActive = recurringActiveInput.value === "true";
+
+  if (!RECURRING_EXPENSE_CATEGORIES.includes(category)) return;
+  if (!parseMonth(startMonth) || amount <= 0) return;
+  if (parseMonth(endMonth) && compareMonth(endMonth, startMonth) < 0) return;
+
+  const current = loadRecurringExpenses();
+  current.push(normalizeRecurringExpense({
+    id: crypto.randomUUID(),
+    category,
+    amount,
+    day,
+    startMonth,
+    endMonth,
+    memo,
+    isActive,
+    createdAt: new Date().toISOString(),
+  }));
+  saveRecurringExpenses(current);
+
+  recurringForm.reset();
+  recurringCategoryInput.value = RECURRING_EXPENSE_CATEGORIES[0];
+  recurringDayInput.value = "1";
+  recurringActiveInput.value = "true";
+  recurringAmountInput.value = "";
+  recurringStartMonthInput.value = monthFilter.value || todayISO().slice(0, 7);
   render();
 }
 
@@ -1316,6 +1552,11 @@ function setAccordionExpanded(section, expanded) {
   const panel = section.querySelector(".accordion-panel");
   if (!trigger || !panel) return;
   const wasExpanded = trigger.getAttribute("aria-expanded") === "true";
+
+  if (!expanded) {
+    const descendantChildAccordions = section.querySelectorAll("[data-child-accordion]");
+    descendantChildAccordions.forEach((childAccordion) => setChildAccordionExpanded(childAccordion, false));
+  }
 
   if (trigger.id === "trigger-profile") {
     resetProfileChildAndGrandchildAccordions(section);
@@ -1469,14 +1710,22 @@ function init() {
   monthFilter.value = todayISO().slice(0, 7);
   entryStartMonthInput.value = settings.entryStartMonth || todayISO().slice(0, 7);
   syncCategoryOptions();
+  syncRecurringCategoryOptions();
+  syncRecurringDayOptions();
+  recurringCategoryInput.value = RECURRING_EXPENSE_CATEGORIES[0];
+  recurringDayInput.value = "1";
+  recurringActiveInput.value = "true";
+  recurringStartMonthInput.value = monthFilter.value;
   renderPlans(settings);
 
   form.addEventListener("submit", addTransaction);
   typeInput.addEventListener("change", syncCategoryOptions);
   monthFilter.addEventListener("change", render);
   setupFormattedAmountInput(amountInput);
+  setupFormattedAmountInput(recurringAmountInput);
 
   profileForm.addEventListener("submit", saveProfile);
+  recurringForm.addEventListener("submit", addRecurringExpense);
   setupSectionAccordions();
   setupChildAccordions();
   setupBottomNavigation();
