@@ -515,8 +515,6 @@ button.danger {
 }
 
 #panel-chart .chart,
-#panel-chart .auto-breakdown,
-#panel-chart .auto-card,
 #panel-chart .asset-list,
 #panel-chart .pie-legend,
 #panel-chart .pie-legend-item {
@@ -1378,21 +1376,6 @@ button.plan-card-trigger {
 .chart-empty {
   color: var(--muted);
   font-size: 0.9rem;
-}
-
-.auto-breakdown {
-  margin-top: 14px;
-  display: grid;
-  gap: 10px;
-}
-
-.auto-card {
-  border: 1px solid var(--border);
-  background: #fff;
-  border-radius: 10px;
-  padding: 12px;
-  display: grid;
-  gap: 8px;
 }
 
 .asset-composition h3 {

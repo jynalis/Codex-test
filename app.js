@@ -43,7 +43,6 @@ const dashboardMonthlySavingTotal = document.getElementById("dashboard-monthly-s
 const dashboardAge60Total = document.getElementById("dashboard-age60-total");
 const dashboardDiagnosisComment = document.getElementById("dashboard-diagnosis-comment");
 const expenseChart = document.getElementById("expense-chart");
-const autoBreakdown = document.getElementById("auto-breakdown");
 const bottomNavButtons = Array.from(document.querySelectorAll(".bottom-nav-btn"));
 const navToast = document.getElementById("nav-toast");
 const accordionSections = Array.from(document.querySelectorAll("[data-accordion-section]"));
@@ -810,7 +809,8 @@ function renderExpenseChart(transactions, currentMonth) {
   }
 
   const expenseComposition = buildMonthlyExpenseComposition(transactions, currentMonth);
-  if (expenseComposition.totalExpense === 0) {
+  const drawableEntries = expenseComposition.entries.filter((entry) => entry.amount > 0 && entry.ratio > 0);
+  if (expenseComposition.totalExpense === 0 || drawableEntries.length === 0) {
     const empty = document.createElement("p");
     empty.className = "chart-empty";
     empty.textContent = "この月の支出データはありません。";
@@ -820,7 +820,6 @@ function renderExpenseChart(transactions, currentMonth) {
 
   expenseChart.classList.toggle("has-data", true);
   let currentDegree = 0;
-  const drawableEntries = expenseComposition.entries.filter((entry) => entry.amount > 0);
   const segments = drawableEntries.map((entry, index) => {
     const degree = (entry.amount / expenseComposition.totalExpense) * 360;
     const start = currentDegree;
@@ -847,7 +846,7 @@ function renderExpenseChart(transactions, currentMonth) {
   const legend = document.createElement("ul");
   legend.className = "pie-legend";
 
-  expenseComposition.entries.forEach(({ name, amount, ratio }, index) => {
+  drawableEntries.forEach(({ name, amount, ratio }, index) => {
     const item = document.createElement("li");
     item.className = "pie-legend-item";
     item.innerHTML = `
@@ -860,45 +859,6 @@ function renderExpenseChart(transactions, currentMonth) {
   });
 
   expenseChart.appendChild(legend);
-}
-
-function renderAutoBreakdown(autoTransactions, month) {
-  autoBreakdown.innerHTML = "";
-  if (!month) return;
-
-  const totals = PLAN_TYPES.reduce((acc, type) => ({ ...acc, [type]: 0 }), {});
-  autoTransactions.forEach((item) => {
-    totals[item.sourceType] = (totals[item.sourceType] ?? 0) + item.amount;
-  });
-
-  const hasAny = Object.values(totals).some((amount) => amount > 0);
-  const wrap = document.createElement("div");
-  wrap.className = "auto-card";
-
-  if (!hasAny) {
-    const empty = document.createElement("p");
-    empty.className = "chart-empty";
-    empty.textContent = "この月の資産形成支出はありません。";
-    wrap.appendChild(empty);
-    autoBreakdown.appendChild(wrap);
-    return;
-  }
-
-  const listEl = document.createElement("ul");
-  listEl.className = "asset-list";
-  PLAN_TYPES.forEach((type) => {
-    const li = document.createElement("li");
-    li.innerHTML = `<span>${type}</span><strong>${yen.format(totals[type] || 0)}</strong>`;
-    listEl.appendChild(li);
-  });
-  wrap.appendChild(listEl);
-
-  const total = Object.values(totals).reduce((sum, amount) => sum + amount, 0);
-  const totalEl = document.createElement("div");
-  totalEl.className = "asset-total";
-  totalEl.innerHTML = `資産形成支出合計: <strong>${yen.format(total)}</strong>`;
-  wrap.appendChild(totalEl);
-  autoBreakdown.appendChild(wrap);
 }
 
 function createPieChartElements(entries, total, options = {}) {
@@ -1495,7 +1455,6 @@ function render() {
   renderDashboard(summary, settings, currentMonth, transactions, monthlyExpenseComposition);
 
   renderExpenseChart([...transactions, ...autoTransactions], currentMonth);
-  renderAutoBreakdown(autoTransactions, currentMonth);
   markAssetForecastDirty(settings);
   if (isAssetsSectionExpanded()) {
     queueAssetForecastRender();
@@ -1667,9 +1626,7 @@ function isExpenseBalanceSection(section, trigger) {
 function resetExpenseBalanceChildAccordions(section) {
   if (!section) return;
   const compositionAccordion = section.querySelector("#trigger-chart-composition")?.closest("[data-child-accordion]");
-  const autoBreakdownAccordion = section.querySelector("#trigger-chart-auto-breakdown")?.closest("[data-child-accordion]");
   if (compositionAccordion) setChildAccordionExpanded(compositionAccordion, false);
-  if (autoBreakdownAccordion) setChildAccordionExpanded(autoBreakdownAccordion, false);
 }
 
 function setAccordionExpanded(section, expanded) {
