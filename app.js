@@ -77,6 +77,22 @@ const PLAN_TYPE_CLASS = {
 const ASSET_FORMATION_CATEGORY = "資産形成支出";
 const ALLOWED_EXPENSE_CATEGORIES = [...EXPENSE_CATEGORIES, ASSET_FORMATION_CATEGORY, ...RECURRING_EXPENSE_CATEGORIES];
 const ASSET_PIE_COLORS = ["#245e8f", "#b85c3f", "#2f7e68", "#7a56ad", "#9b7a2f", "#3c6a9b", "#b04f74", "#4f7f9f"];
+const EXPENSE_COMPOSITION_ITEMS = [
+  "日常費",
+  "趣味・レジャー費",
+  "雑費・予備費",
+  "家賃・マイホーム費",
+  "家賃",
+  "通信費",
+  "保険料",
+  "その他固定費",
+  "NISA",
+  "iDeCo",
+  "貯蓄性保険",
+  "貯金",
+  "生命保険",
+];
+const EXPENSE_CHART_COLORS = ["#ff6b6b", "#ff922b", "#ffd43b", "#38d9a9", "#4dabf7", "#9775fa", "#f06595", "#74c0fc", "#2f9e44", "#5c7cfa", "#e64980", "#15aabf"];
 
 const yen = new Intl.NumberFormat("ja-JP", {
   style: "currency",
@@ -680,12 +696,71 @@ function calculateProjectedTotalAtAge(settings, age) {
   }, 0);
 }
 
-function createDashboardDiagnosisComment({ summary, monthlySavingTotal, manualTransactionCount }) {
+function normalizeExpenseCompositionCategory(item) {
+  if (item?.type !== "expense") return "";
+  if (item.category === ASSET_FORMATION_CATEGORY && PLAN_TYPES.includes(item.sourceType)) {
+    return item.sourceType;
+  }
+  return item.category || "";
+}
+
+function buildMonthlyExpenseComposition(transactions, targetMonth) {
+  const baseTotals = EXPENSE_COMPOSITION_ITEMS.reduce((acc, name) => {
+    acc[name] = 0;
+    return acc;
+  }, {});
+
+  if (!targetMonth) {
+    return {
+      totalExpense: 0,
+      entries: EXPENSE_COMPOSITION_ITEMS.map((name) => ({ name, amount: 0, ratio: 0 })),
+      itemRatios: EXPENSE_COMPOSITION_ITEMS.reduce((acc, name) => ({ ...acc, [name]: 0 }), {}),
+    };
+  }
+
+  const totals = transactions.reduce((acc, item) => {
+    if (item.type !== "expense" || monthISO(item.date) !== targetMonth) return acc;
+    const category = normalizeExpenseCompositionCategory(item);
+    if (!category) return acc;
+    if (!(category in acc)) {
+      acc[category] = 0;
+    }
+    acc[category] += item.amount;
+    return acc;
+  }, { ...baseTotals });
+
+  const totalExpense = Object.values(totals).reduce((sum, amount) => sum + amount, 0);
+  const entries = Object.entries(totals)
+    .map(([name, amount]) => ({
+      name,
+      amount,
+      ratio: totalExpense > 0 ? (amount / totalExpense) * 100 : 0,
+    }))
+    .sort((a, b) => {
+      if (b.amount !== a.amount) return b.amount - a.amount;
+      return EXPENSE_COMPOSITION_ITEMS.indexOf(a.name) - EXPENSE_COMPOSITION_ITEMS.indexOf(b.name);
+    });
+
+  const itemRatios = entries.reduce((acc, item) => {
+    acc[item.name] = item.ratio;
+    return acc;
+  }, {});
+
+  return {
+    totalExpense,
+    entries,
+    itemRatios,
+  };
+}
+
+function createDashboardDiagnosisComment({ summary, monthlySavingTotal, manualTransactionCount, expenseComposition }) {
   if (manualTransactionCount < 3) {
     return "取引データが少ないため、簡易診断を表示しています。入力が増えると、より実態に近い診断ができます。";
   }
 
   const balance = summary.endingBalance;
+  const itemRatios = expenseComposition?.itemRatios || {};
+  const fixedExpenseRatio = (itemRatios["家賃"] || 0) + (itemRatios["通信費"] || 0) + (itemRatios["保険料"] || 0) + (itemRatios["その他固定費"] || 0);
   if (balance < 0) {
     return "今月は赤字傾向です。固定費や臨時支出の見直し余地があります。";
   }
@@ -698,14 +773,14 @@ function createDashboardDiagnosisComment({ summary, monthlySavingTotal, manualTr
   }
 
   const hasSavings = monthlySavingTotal > 0;
-  if (hasSavings && reserveRatio >= 0.2) {
+  if (hasSavings && reserveRatio >= 0.2 && fixedExpenseRatio < 60) {
     return "今月は家計が安定しています。この調子で資産形成を継続できそうです。";
   }
 
   return "今月は黒字ですが、月末の余裕はやや小さめです。支出バランスを確認してみましょう。";
 }
 
-function renderDashboard(summary, settings, currentMonth, transactions) {
+function renderDashboard(summary, settings, currentMonth, transactions, expenseComposition) {
   const monthlySavingTotal = calculateMonthlyContributionTotal(settings, currentMonth);
   const manualTransactionCount = transactions.filter((item) => monthISO(item.date) === currentMonth).length;
   dashboardCarryoverTotal.textContent = yen.format(summary.carryover);
@@ -718,6 +793,7 @@ function renderDashboard(summary, settings, currentMonth, transactions) {
     summary,
     monthlySavingTotal,
     manualTransactionCount,
+    expenseComposition,
   });
 }
 
@@ -733,14 +809,8 @@ function renderExpenseChart(transactions, currentMonth) {
     return;
   }
 
-  const categoryTotals = transactions.reduce((acc, item) => {
-    if (item.type !== "expense" || monthISO(item.date) !== currentMonth || item.isAuto) return acc;
-    acc[item.category] = (acc[item.category] ?? 0) + item.amount;
-    return acc;
-  }, {});
-
-  const entries = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1]);
-  if (entries.length === 0) {
+  const expenseComposition = buildMonthlyExpenseComposition(transactions, currentMonth);
+  if (expenseComposition.totalExpense === 0) {
     const empty = document.createElement("p");
     empty.className = "chart-empty";
     empty.textContent = "この月の支出データはありません。";
@@ -749,17 +819,14 @@ function renderExpenseChart(transactions, currentMonth) {
   }
 
   expenseChart.classList.toggle("has-data", true);
-  const totalExpense = entries.reduce((sum, [, amount]) => sum + amount, 0);
-  const chartColors = ["#ff6b6b", "#ff922b", "#ffd43b", "#38d9a9", "#4dabf7", "#9775fa", "#f06595", "#74c0fc"];
-
   let currentDegree = 0;
-  const segments = entries.map(([, amount], index) => {
-    const ratio = amount / totalExpense;
-    const degree = ratio * 360;
+  const drawableEntries = expenseComposition.entries.filter((entry) => entry.amount > 0);
+  const segments = drawableEntries.map((entry, index) => {
+    const degree = (entry.amount / expenseComposition.totalExpense) * 360;
     const start = currentDegree;
     const end = currentDegree + degree;
     currentDegree = end;
-    return `${chartColors[index % chartColors.length]} ${start}deg ${end}deg`;
+    return `${EXPENSE_CHART_COLORS[index % EXPENSE_CHART_COLORS.length]} ${start}deg ${end}deg`;
   });
 
   const pieWrap = document.createElement("div");
@@ -771,7 +838,7 @@ function renderExpenseChart(transactions, currentMonth) {
 
   const pieCenter = document.createElement("div");
   pieCenter.className = "pie-center";
-  pieCenter.innerHTML = `<span>合計</span><strong>${yen.format(totalExpense)}</strong>`;
+  pieCenter.innerHTML = `<span>合計</span><strong>${yen.format(expenseComposition.totalExpense)}</strong>`;
 
   pieChart.appendChild(pieCenter);
   pieWrap.appendChild(pieChart);
@@ -780,15 +847,14 @@ function renderExpenseChart(transactions, currentMonth) {
   const legend = document.createElement("ul");
   legend.className = "pie-legend";
 
-  entries.forEach(([category, amount], index) => {
-    const ratio = (amount / totalExpense) * 100;
+  expenseComposition.entries.forEach(({ name, amount, ratio }, index) => {
     const item = document.createElement("li");
     item.className = "pie-legend-item";
     item.innerHTML = `
-      <span class="dot" style="background:${chartColors[index % chartColors.length]}"></span>
-      <span class="category">${category}</span>
-      <strong class="ratio">${ratio.toFixed(1)}%</strong>
+      <span class="dot" style="background:${EXPENSE_CHART_COLORS[index % EXPENSE_CHART_COLORS.length]}"></span>
+      <span class="category">${name}</span>
       <span class="value">${yen.format(amount)}</span>
+      <strong class="ratio">${ratio.toFixed(1)}%</strong>
     `;
     legend.appendChild(item);
   });
@@ -1425,7 +1491,8 @@ function render() {
   expenseTotal.textContent = yen.format(summary.expense);
   carryoverTotal.textContent = yen.format(summary.carryover);
   balanceTotal.textContent = yen.format(summary.endingBalance);
-  renderDashboard(summary, settings, currentMonth, transactions);
+  const monthlyExpenseComposition = buildMonthlyExpenseComposition([...transactions, ...autoTransactions], currentMonth);
+  renderDashboard(summary, settings, currentMonth, transactions, monthlyExpenseComposition);
 
   renderExpenseChart([...transactions, ...autoTransactions], currentMonth);
   renderAutoBreakdown(autoTransactions, currentMonth);
