@@ -34,7 +34,7 @@ const template = document.getElementById("transaction-item-template");
 const carryoverTotal = document.getElementById("carryover-total");
 const incomeTotal = document.getElementById("income-total");
 const regularExpenseTotal = document.getElementById("regular-expense-total");
-const assetExpenseTotal = document.getElementById("asset-expense-total");
+const recurringExpenseTotal = document.getElementById("recurring-expense-total");
 const expenseTotal = document.getElementById("expense-total");
 const balanceTotal = document.getElementById("balance-total");
 const dashboardCarryoverTotal = document.getElementById("dashboard-carryover-total");
@@ -676,7 +676,15 @@ function calculateCarryover(transactions, settings, targetMonth) {
 
 function calculateMonthlySummary(transactions, settings, targetMonth) {
   if (!targetMonth) {
-    return { carryover: 0, income: 0, regularExpense: 0, assetExpense: 0, expense: 0, endingBalance: 0 };
+    return {
+      carryover: 0,
+      income: 0,
+      regularExpense: 0,
+      recurringExpense: 0,
+      assetFormationExpense: 0,
+      expense: 0,
+      endingBalance: 0,
+    };
   }
 
   const carryover = calculateCarryover(transactions, settings, targetMonth);
@@ -686,22 +694,25 @@ function calculateMonthlySummary(transactions, settings, targetMonth) {
       if (monthISO(item.date) !== targetMonth) return totals;
       if (item.type === "income") {
         totals.income += item.amount;
-      } else if (item.isAuto) {
-        totals.assetExpense += item.amount;
+      } else if (item.autoKind === "recurring-expense") {
+        totals.recurringExpense += item.amount;
+      } else if (item.category === ASSET_FORMATION_CATEGORY) {
+        totals.assetFormationExpense += item.amount;
       } else {
         totals.regularExpense += item.amount;
       }
       return totals;
     },
-    { income: 0, regularExpense: 0, assetExpense: 0 }
+    { income: 0, regularExpense: 0, recurringExpense: 0, assetFormationExpense: 0 }
   );
-  const totalExpense = monthly.regularExpense + monthly.assetExpense;
+  const totalExpense = monthly.regularExpense + monthly.recurringExpense + monthly.assetFormationExpense;
 
   return {
     carryover,
     income: monthly.income,
     regularExpense: monthly.regularExpense,
-    assetExpense: monthly.assetExpense,
+    recurringExpense: monthly.recurringExpense,
+    assetFormationExpense: monthly.assetFormationExpense,
     expense: totalExpense,
     endingBalance: carryover + monthly.income - totalExpense,
   };
@@ -1475,7 +1486,7 @@ function render() {
 
   incomeTotal.textContent = yen.format(summary.income);
   regularExpenseTotal.textContent = yen.format(summary.regularExpense);
-  assetExpenseTotal.textContent = yen.format(summary.assetExpense);
+  recurringExpenseTotal.textContent = yen.format(summary.recurringExpense);
   expenseTotal.textContent = yen.format(summary.expense);
   carryoverTotal.textContent = yen.format(summary.carryover);
   balanceTotal.textContent = yen.format(summary.endingBalance);
