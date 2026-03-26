@@ -353,6 +353,17 @@ function saveRecurringExpenses(items) {
   localStorage.setItem(RECURRING_EXPENSES_KEY, JSON.stringify(items));
 }
 
+function resetRecurringFormFields() {
+  if (!recurringForm) return;
+  recurringCategoryInput.value = RECURRING_EXPENSE_CATEGORIES[0];
+  recurringDayInput.value = "1";
+  recurringActiveInput.value = "true";
+  recurringAmountInput.value = "";
+  recurringEndMonthInput.value = "";
+  recurringMemoInput.value = "";
+  recurringStartMonthInput.value = monthFilter.value || todayISO().slice(0, 7);
+}
+
 function isRecurringExpenseApplicable(item, month) {
   if (!item.isActive || !parseMonth(item.startMonth) || !parseMonth(month)) return false;
   if (compareMonth(month, item.startMonth) < 0) return false;
@@ -1447,12 +1458,7 @@ function addRecurringExpense(event) {
   }));
   saveRecurringExpenses(current);
 
-  recurringForm.reset();
-  recurringCategoryInput.value = RECURRING_EXPENSE_CATEGORIES[0];
-  recurringDayInput.value = "1";
-  recurringActiveInput.value = "true";
-  recurringAmountInput.value = "";
-  recurringStartMonthInput.value = monthFilter.value || todayISO().slice(0, 7);
+  resetRecurringFormFields();
   render();
 }
 
@@ -1712,10 +1718,7 @@ function init() {
   syncCategoryOptions();
   syncRecurringCategoryOptions();
   syncRecurringDayOptions();
-  recurringCategoryInput.value = RECURRING_EXPENSE_CATEGORIES[0];
-  recurringDayInput.value = "1";
-  recurringActiveInput.value = "true";
-  recurringStartMonthInput.value = monthFilter.value;
+  resetRecurringFormFields();
   renderPlans(settings);
 
   form.addEventListener("submit", addTransaction);
