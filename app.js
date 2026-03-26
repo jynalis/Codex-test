@@ -721,7 +721,7 @@ function buildMonthlyExpenseComposition(transactions, targetMonth) {
   if (!targetMonth) {
     return {
       totalExpense: 0,
-      entries: EXPENSE_COMPOSITION_ITEMS.map((name) => ({ name, amount: 0, ratio: 0 })),
+      entries: [],
       itemRatios: EXPENSE_COMPOSITION_ITEMS.reduce((acc, name) => ({ ...acc, [name]: 0 }), {}),
     };
   }
@@ -737,22 +737,26 @@ function buildMonthlyExpenseComposition(transactions, targetMonth) {
     return acc;
   }, { ...baseTotals });
 
-  const totalExpense = Object.values(totals).reduce((sum, amount) => sum + amount, 0);
-  const entries = Object.entries(totals)
-    .map(([name, amount]) => ({
-      name,
-      amount,
-      ratio: totalExpense > 0 ? (amount / totalExpense) * 100 : 0,
-    }))
+  const positiveEntries = Object.entries(totals)
+    .filter(([, amount]) => amount > 0)
+    .map(([name, amount]) => ({ name, amount }))
     .sort((a, b) => {
       if (b.amount !== a.amount) return b.amount - a.amount;
       return EXPENSE_COMPOSITION_ITEMS.indexOf(a.name) - EXPENSE_COMPOSITION_ITEMS.indexOf(b.name);
     });
+  const totalExpense = positiveEntries.reduce((sum, item) => sum + item.amount, 0);
+  const entries = positiveEntries.map((item) => ({
+    ...item,
+    ratio: totalExpense > 0 ? (item.amount / totalExpense) * 100 : 0,
+  }));
 
-  const itemRatios = entries.reduce((acc, item) => {
-    acc[item.name] = item.ratio;
+  const itemRatios = EXPENSE_COMPOSITION_ITEMS.reduce((acc, name) => {
+    acc[name] = 0;
     return acc;
   }, {});
+  entries.forEach((item) => {
+    itemRatios[item.name] = item.ratio;
+  });
 
   return {
     totalExpense,
@@ -818,8 +822,7 @@ function renderExpenseChart(transactions, currentMonth) {
   }
 
   const expenseComposition = buildMonthlyExpenseComposition(transactions, currentMonth);
-  const drawableEntries = expenseComposition.entries.filter((entry) => entry.amount > 0 && entry.ratio > 0);
-  if (expenseComposition.totalExpense === 0 || drawableEntries.length === 0) {
+  if (expenseComposition.totalExpense === 0 || expenseComposition.entries.length === 0) {
     const empty = document.createElement("p");
     empty.className = "chart-empty";
     empty.textContent = "この月の支出データはありません。";
@@ -829,7 +832,7 @@ function renderExpenseChart(transactions, currentMonth) {
 
   expenseChart.classList.toggle("has-data", true);
   let currentDegree = 0;
-  const segments = drawableEntries.map((entry, index) => {
+  const segments = expenseComposition.entries.map((entry, index) => {
     const degree = (entry.amount / expenseComposition.totalExpense) * 360;
     const start = currentDegree;
     const end = currentDegree + degree;
@@ -855,7 +858,7 @@ function renderExpenseChart(transactions, currentMonth) {
   const legend = document.createElement("ul");
   legend.className = "pie-legend";
 
-  drawableEntries.forEach(({ name, amount, ratio }, index) => {
+  expenseComposition.entries.forEach(({ name, amount, ratio }, index) => {
     const item = document.createElement("li");
     item.className = "pie-legend-item";
     item.innerHTML = `
