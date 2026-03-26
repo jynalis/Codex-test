@@ -120,86 +120,88 @@
         </button>
         <div class="accordion-panel" id="panel-recurring" role="region" aria-labelledby="trigger-recurring">
           <div class="accordion-panel-inner">
-            <section class="child-accordion" data-child-accordion>
-              <button
-                type="button"
-                class="child-accordion-trigger"
-                aria-expanded="false"
-                aria-controls="panel-recurring-form"
-                id="trigger-recurring-form"
-              >
-                <h3>定期支出を登録</h3>
-                <span class="child-accordion-toggle" aria-hidden="true">＋</span>
-              </button>
-              <div
-                class="child-accordion-panel"
-                id="panel-recurring-form"
-                role="region"
-                aria-labelledby="trigger-recurring-form"
-                aria-hidden="true"
-              >
-                <div class="child-accordion-panel-inner">
-                  <form id="recurring-form" class="grid recurring-form" autocomplete="off">
-                    <label>
-                      支出項目名
-                      <select id="recurring-category" required></select>
-                    </label>
-                    <label>
-                      金額 (円)
-                      <input id="recurring-amount" type="text" inputmode="numeric" placeholder="例: 68,000" required />
-                    </label>
-                    <label>
-                      引落日
-                      <select id="recurring-day" required></select>
-                    </label>
-                    <label>
-                      開始月
-                      <input id="recurring-start-month" type="month" required />
-                    </label>
-                    <label>
-                      終了月（任意）
-                      <input id="recurring-end-month" type="month" />
-                    </label>
-                    <label>
-                      有効状態
-                      <select id="recurring-active">
-                        <option value="true" selected>有効</option>
-                        <option value="false">無効</option>
-                      </select>
-                    </label>
-                    <label class="full">
-                      メモ（任意）
-                      <input id="recurring-memo" type="text" maxlength="60" placeholder="任意" />
-                    </label>
-                    <button type="submit" class="full">追加する</button>
-                  </form>
+            <div class="recurring-child-accordions">
+              <section class="child-accordion" data-child-accordion>
+                <button
+                  type="button"
+                  class="child-accordion-trigger"
+                  aria-expanded="false"
+                  aria-controls="panel-recurring-form"
+                  id="trigger-recurring-form"
+                >
+                  <h3>定期支出を登録</h3>
+                  <span class="child-accordion-toggle" aria-hidden="true">＋</span>
+                </button>
+                <div
+                  class="child-accordion-panel"
+                  id="panel-recurring-form"
+                  role="region"
+                  aria-labelledby="trigger-recurring-form"
+                  aria-hidden="true"
+                >
+                  <div class="child-accordion-panel-inner">
+                    <form id="recurring-form" class="grid recurring-form" autocomplete="off">
+                      <label>
+                        支出項目名
+                        <select id="recurring-category" required></select>
+                      </label>
+                      <label>
+                        金額 (円)
+                        <input id="recurring-amount" type="text" inputmode="numeric" placeholder="例: 68,000" required />
+                      </label>
+                      <label>
+                        引落日
+                        <select id="recurring-day" required></select>
+                      </label>
+                      <label>
+                        開始月
+                        <input id="recurring-start-month" type="month" required />
+                      </label>
+                      <label>
+                        終了月（任意）
+                        <input id="recurring-end-month" type="month" />
+                      </label>
+                      <label>
+                        有効状態
+                        <select id="recurring-active">
+                          <option value="true" selected>有効</option>
+                          <option value="false">無効</option>
+                        </select>
+                      </label>
+                      <label class="full">
+                        メモ（任意）
+                        <input id="recurring-memo" type="text" maxlength="60" placeholder="任意" />
+                      </label>
+                      <button type="submit" class="full">追加する</button>
+                    </form>
+                  </div>
                 </div>
-              </div>
-            </section>
+              </section>
 
-            <section class="child-accordion" data-child-accordion>
-              <button
-                type="button"
-                class="child-accordion-trigger"
-                aria-expanded="false"
-                aria-controls="panel-recurring-list"
-                id="trigger-recurring-list"
-              >
-                <h3>登録済みの定期支出</h3>
-                <span class="child-accordion-toggle" aria-hidden="true">＋</span>
-              </button>
-              <div
-                class="child-accordion-panel"
-                id="panel-recurring-list"
-                role="region"
-                aria-labelledby="trigger-recurring-list"
-                aria-hidden="true"
-              >
-                <div class="child-accordion-panel-inner">
-                  <div id="recurring-list" class="recurring-list"></div>
+              <section class="child-accordion" data-child-accordion>
+                <button
+                  type="button"
+                  class="child-accordion-trigger"
+                  aria-expanded="false"
+                  aria-controls="panel-recurring-list"
+                  id="trigger-recurring-list"
+                >
+                  <h3>登録済みの定期支出</h3>
+                  <span class="child-accordion-toggle" aria-hidden="true">＋</span>
+                </button>
+                <div
+                  class="child-accordion-panel"
+                  id="panel-recurring-list"
+                  role="region"
+                  aria-labelledby="trigger-recurring-list"
+                  aria-hidden="true"
+                >
+                  <div class="child-accordion-panel-inner">
+                    <div id="recurring-list" class="recurring-list"></div>
+                  </div>
                 </div>
-              </div>
-            </section>
+              </section>
+            </div>
           </div>
         </div>
       </section>

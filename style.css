@@ -1147,6 +1147,12 @@ button.plan-card-trigger {
   gap: 12px;
 }
 
+.recurring-child-accordions {
+  display: grid;
+  gap: 14px;
+  padding: 2px 0 4px;
+}
+
 .recurring-list {
   display: grid;
   gap: 10px;
@@ -1547,6 +1553,11 @@ button.plan-card-trigger {
   .child-accordion-trigger {
     min-height: 60px;
     padding: 12px 14px;
+  }
+
+  .recurring-child-accordions {
+    gap: 16px;
+    padding-bottom: 6px;
   }
 
   .plan-grid {
