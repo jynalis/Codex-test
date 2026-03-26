@@ -505,13 +505,10 @@ button.danger {
   display: none;
 }
 
-#panel-chart .child-accordion-panel-inner {
-  min-width: 0;
-}
-
 #panel-chart > .accordion-panel-inner {
   display: grid;
   gap: 14px;
+  min-width: 0;
 }
 
 #panel-chart .chart,
