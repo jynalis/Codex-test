@@ -24,6 +24,8 @@ const recurringEndMonthInput = document.getElementById("recurring-end-month");
 const recurringMemoInput = document.getElementById("recurring-memo");
 const recurringList = document.getElementById("recurring-list");
 const recurringSubmitButton = recurringForm?.querySelector('button[type="submit"]');
+const recurringSection = document.getElementById("trigger-recurring")?.closest("[data-accordion-section]");
+const recurringFormAccordion = document.getElementById("trigger-recurring-form")?.closest("[data-child-accordion]");
 
 const list = document.getElementById("transaction-list");
 const template = document.getElementById("transaction-item-template");
@@ -450,6 +452,13 @@ function startRecurringExpenseEdit(id) {
   const recurringExpense = loadRecurringExpenses().find((item) => item.id === id);
   if (!recurringExpense) return;
 
+  if (recurringSection) {
+    setAccordionExpanded(recurringSection, true);
+  }
+  if (recurringFormAccordion) {
+    setChildAccordionExpanded(recurringFormAccordion, true);
+  }
+
   recurringEditingId = recurringExpense.id;
   recurringCategoryInput.value = recurringExpense.category;
   recurringAmountInput.value = numberWithComma.format(recurringExpense.amount);
@@ -458,6 +467,7 @@ function startRecurringExpenseEdit(id) {
   recurringEndMonthInput.value = recurringExpense.endMonth || "";
   recurringMemoInput.value = recurringExpense.memo || "";
   setRecurringFormMode(true);
+  recurringCategoryInput.focus();
 }
 
 function todayISO() {
