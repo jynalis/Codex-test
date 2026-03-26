@@ -23,7 +23,9 @@ const recurringStartMonthInput = document.getElementById("recurring-start-month"
 const recurringEndMonthInput = document.getElementById("recurring-end-month");
 const recurringMemoInput = document.getElementById("recurring-memo");
 const recurringList = document.getElementById("recurring-list");
-const recurringSubmitButton = recurringForm?.querySelector('button[type="submit"]');
+const recurringSubmitButton = document.getElementById("recurring-submit-button") || recurringForm?.querySelector('button[type="submit"]');
+const recurringCancelButton = document.getElementById("recurring-cancel-button");
+const recurringEditStatus = document.getElementById("recurring-edit-status");
 const recurringSection = document.getElementById("trigger-recurring")?.closest("[data-accordion-section]");
 const recurringFormAccordion = document.getElementById("trigger-recurring-form")?.closest("[data-child-accordion]");
 
@@ -444,8 +446,15 @@ function syncRecurringAutoTransactions(transactions, recurringExpenses, month) {
 }
 
 function setRecurringFormMode(isEditing) {
-  if (!recurringSubmitButton) return;
-  recurringSubmitButton.textContent = isEditing ? "更新" : "追加する";
+  if (recurringSubmitButton) {
+    recurringSubmitButton.textContent = isEditing ? "更新" : "追加";
+  }
+  if (recurringEditStatus) {
+    recurringEditStatus.hidden = !isEditing;
+  }
+  if (recurringCancelButton) {
+    recurringCancelButton.hidden = !isEditing;
+  }
 }
 
 function startRecurringExpenseEdit(id) {
@@ -1514,6 +1523,10 @@ function addRecurringExpense(event) {
   render();
 }
 
+function cancelRecurringExpenseEdit() {
+  resetRecurringFormFields();
+}
+
 function setBottomNavActive(target) {
   bottomNavButtons.forEach((button) => {
     const isActive = button.dataset.navTarget === target;
@@ -1781,6 +1794,7 @@ function init() {
 
   profileForm.addEventListener("submit", saveProfile);
   recurringForm.addEventListener("submit", addRecurringExpense);
+  recurringCancelButton?.addEventListener("click", cancelRecurringExpenseEdit);
   setupSectionAccordions();
   setupChildAccordions();
   setupBottomNavigation();

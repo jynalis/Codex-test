@@ -1147,6 +1147,32 @@ button.plan-card-trigger {
   gap: 12px;
 }
 
+.recurring-edit-status {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #f1c98a;
+  border-radius: 10px;
+  background: #fff5e8;
+  color: #7c4a00;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.recurring-form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.recurring-form-actions > button {
+  flex: 1;
+}
+
+button.ghost {
+  border: 1px solid #b5c7d9;
+  color: #295377;
+  background: #fff;
+}
+
 .recurring-child-accordions {
   display: grid;
   gap: 14px;

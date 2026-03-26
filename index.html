@@ -141,6 +141,9 @@
                 >
                   <div class="child-accordion-panel-inner">
                     <form id="recurring-form" class="grid recurring-form" autocomplete="off">
+                      <p id="recurring-edit-status" class="recurring-edit-status" aria-live="polite" hidden>
+                        定期支出を編集中
+                      </p>
                       <label>
                         支出項目名
                         <select id="recurring-category" required></select>
@@ -165,7 +168,10 @@
                         メモ（任意）
                         <input id="recurring-memo" type="text" maxlength="60" placeholder="任意" />
                       </label>
-                      <button type="submit" class="full">追加する</button>
+                      <div class="full recurring-form-actions">
+                        <button type="submit" id="recurring-submit-button">追加</button>
+                        <button type="button" id="recurring-cancel-button" class="ghost" hidden>キャンセル</button>
+                      </div>
                     </form>
                   </div>
                 </div>
