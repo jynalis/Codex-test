@@ -725,8 +725,10 @@ function calculateMonthlyContributionTotal(settings, month) {
 
 function calculateProjectedTotalAtAge(settings, age) {
   if (!settings.birthDate || !Array.isArray(settings.plans) || settings.plans.length === 0) return 0;
+  const baseTargetMonth = resolveWithdrawTargetMonth(settings.birthDate, age);
   return settings.plans.reduce((sum, plan) => {
-    const projection = projectPlanAssetDetails(plan, settings.birthDate, resolveWithdrawTargetMonth(settings.birthDate, age));
+    const targetMonth = resolvePlanSimulationTargetMonth(plan, settings.birthDate, baseTargetMonth, age);
+    const projection = projectPlanAssetDetails(plan, settings.birthDate, targetMonth);
     return sum + (projection.amount || 0);
   }, 0);
 }
@@ -1020,6 +1022,19 @@ function resolveProjectionStartMonth(plan, targetMonth) {
   return compareMonth(monthlyStart, lumpStart) <= 0 ? monthlyStart : lumpStart;
 }
 
+function resolvePlanSimulationTargetMonth(plan, birthDate, baseTargetMonth, baseAge = 60) {
+  if (!baseTargetMonth) return null;
+
+  const withdrawAge = Number(plan?.withdrawAge);
+  const hasEarlyWithdrawAge = Number.isFinite(withdrawAge) && withdrawAge > 0 && withdrawAge < baseAge;
+  if (!hasEarlyWithdrawAge) return baseTargetMonth;
+
+  const withdrawTargetMonth = resolveWithdrawTargetMonth(birthDate, withdrawAge);
+  if (!withdrawTargetMonth) return baseTargetMonth;
+
+  return compareMonth(withdrawTargetMonth, baseTargetMonth) <= 0 ? withdrawTargetMonth : baseTargetMonth;
+}
+
 function projectPlanAssetDetails(plan, birthDate, explicitTargetMonth = null) {
   const annualReturn = (Number(plan.expectedReturn) || 0) / 100;
   const monthlyRate = Math.pow(1 + annualReturn, 1 / 12) - 1;
@@ -1092,7 +1107,8 @@ function renderAssetForecast(settings) {
   const currentAssetTargetMonth = resolveCurrentAssetTargetMonth(settings, transactions);
 
   const projectedRowsAt60 = settings.plans.map((plan) => {
-    const projection = projectPlanAssetDetails(plan, settings.birthDate, age60TargetMonth);
+    const planTargetMonth = resolvePlanSimulationTargetMonth(plan, settings.birthDate, age60TargetMonth, 60);
+    const projection = projectPlanAssetDetails(plan, settings.birthDate, planTargetMonth);
     return {
       ...plan,
       projectedAmount: projection.amount,
@@ -1158,7 +1174,7 @@ function renderAssetForecast(settings) {
       >
         <div class="child-accordion-panel-inner">
           <section class="chart asset-outlook">
-            <p class="section-description">現在年齢: <strong>${currentAge}歳</strong> / 60歳までの積立・運用をもとに試算しています。</p>
+            <p class="section-description">現在年齢: <strong>${currentAge}歳</strong> / 契約ごとの終了年齢（原則60歳、60歳未満の取崩年齢があればその年齢）までの積立・運用をもとに試算しています。</p>
             <h4>契約別の想定資産額</h4>
             <ul class="asset-list">${rows}</ul>
             <h4>種別別の想定資産額</h4>
