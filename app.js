@@ -62,7 +62,12 @@ const NAV_TARGETS = {
   history: "section-history",
 };
 
-const EXPENSE_CATEGORIES = ["日常費", "趣味・レジャー費", "雑費・予備費", "家賃・マイホーム費", "生命保険"];
+const EXPENSE_CATEGORIES = ["日常費", "レジャー費", "ガソリン費", "雑費"];
+const LEGACY_EXPENSE_CATEGORY_ALIASES = {
+  "趣味・レジャー費": "レジャー費",
+  "雑費・予備費": "雑費",
+};
+const LEGACY_EXPENSE_CATEGORIES = ["家賃・マイホーム費", "生命保険"];
 const RECURRING_EXPENSE_CATEGORIES = ["家賃", "通信費", "保険料", "その他固定費"];
 const CATEGORY_OPTIONS = {
   expense: EXPENSE_CATEGORIES,
@@ -76,12 +81,18 @@ const PLAN_TYPE_CLASS = {
   貯金: "is-savings",
 };
 const ASSET_FORMATION_CATEGORY = "資産形成支出";
-const ALLOWED_EXPENSE_CATEGORIES = [...EXPENSE_CATEGORIES, ASSET_FORMATION_CATEGORY, ...RECURRING_EXPENSE_CATEGORIES];
+const ALLOWED_EXPENSE_CATEGORIES = [
+  ...EXPENSE_CATEGORIES,
+  ...LEGACY_EXPENSE_CATEGORIES,
+  ASSET_FORMATION_CATEGORY,
+  ...RECURRING_EXPENSE_CATEGORIES,
+];
 const ASSET_PIE_COLORS = ["#245e8f", "#b85c3f", "#2f7e68", "#7a56ad", "#9b7a2f", "#3c6a9b", "#b04f74", "#4f7f9f"];
 const EXPENSE_COMPOSITION_ITEMS = [
   "日常費",
-  "趣味・レジャー費",
-  "雑費・予備費",
+  "レジャー費",
+  "ガソリン費",
+  "雑費",
   "家賃・マイホーム費",
   "家賃",
   "通信費",
@@ -111,6 +122,10 @@ function parseAmountInput(value) {
 function formatAmountInputValue(value) {
   const amount = parseAmountInput(value);
   return amount > 0 ? numberWithComma.format(amount) : "";
+}
+
+function normalizeLegacyExpenseCategory(category) {
+  return LEGACY_EXPENSE_CATEGORY_ALIASES[category] || category;
 }
 
 function syncCategoryOptions() {
@@ -216,6 +231,7 @@ function loadTransactions() {
     return data
       .map((item) => ({
         ...item,
+        category: item?.type === "expense" ? normalizeLegacyExpenseCategory(item.category) : item.category,
         amount: Number(item.amount) || 0,
       }))
       .filter((item) => {
@@ -709,7 +725,7 @@ function normalizeExpenseCompositionCategory(item) {
   if (item.category === ASSET_FORMATION_CATEGORY && PLAN_TYPES.includes(item.sourceType)) {
     return item.sourceType;
   }
-  return item.category || "";
+  return normalizeLegacyExpenseCategory(item.category || "");
 }
 
 function buildMonthlyExpenseComposition(transactions, targetMonth) {
@@ -1485,6 +1501,9 @@ function addTransaction(event) {
   const memo = memoInput.value.trim();
 
   if (!date || !category || !Number.isFinite(amount) || amount <= 0) {
+    return;
+  }
+  if (type === "expense" && !EXPENSE_CATEGORIES.includes(category)) {
     return;
   }
 
