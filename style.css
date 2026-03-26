@@ -1342,7 +1342,7 @@ button.plan-card-trigger {
 
 .pie-legend-item {
   display: grid;
-  grid-template-columns: auto 1fr auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   gap: 8px;
   align-items: center;
   background: #fff;
@@ -1360,12 +1360,19 @@ button.plan-card-trigger {
 
 .ratio {
   font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
 .value {
   color: var(--muted);
   font-size: 0.88rem;
   font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.pie-legend-item .category {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .chart-empty {
@@ -1646,12 +1653,16 @@ button.plan-card-trigger {
   }
 
   .pie-legend-item {
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     gap: 6px;
   }
 
   .pie-legend-item .value {
     grid-column: 2 / -1;
+  }
+
+  .pie-legend-item .ratio {
+    grid-column: 3;
   }
 
   .recurring-actions button {
