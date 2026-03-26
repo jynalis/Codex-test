@@ -1639,12 +1639,6 @@ function isExpenseBalanceSection(section, trigger) {
   return section?.id === "section-chart" || trigger?.id === "trigger-chart";
 }
 
-function resetExpenseBalanceChildAccordions(section) {
-  if (!section) return;
-  const compositionAccordion = section.querySelector("#trigger-chart-composition")?.closest("[data-child-accordion]");
-  if (compositionAccordion) setChildAccordionExpanded(compositionAccordion, false);
-}
-
 function setAccordionExpanded(section, expanded) {
   const trigger = section.querySelector(".accordion-trigger");
   const panel = section.querySelector(".accordion-panel");
@@ -1687,10 +1681,6 @@ function setupSectionAccordions() {
       }, 220);
       const expanded = trigger.getAttribute("aria-expanded") === "true";
       const nextExpanded = !expanded;
-
-      if (!nextExpanded && isExpenseBalanceSection(section, trigger)) {
-        resetExpenseBalanceChildAccordions(section);
-      }
 
       setAccordionExpanded(section, nextExpanded);
     };
