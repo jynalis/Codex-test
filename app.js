@@ -14,6 +14,7 @@ const profileForm = document.getElementById("profile-form");
 const entryStartMonthInput = document.getElementById("entry-start-month");
 const birthDateInput = document.getElementById("birth-date");
 const planList = document.getElementById("plan-list");
+const addPlanButton = document.getElementById("add-plan-button");
 const assetForecast = document.getElementById("asset-forecast");
 const recurringForm = document.getElementById("recurring-form");
 const recurringCategoryInput = document.getElementById("recurring-category");
@@ -1312,7 +1313,6 @@ function createPlanBlock(plan = {}) {
           </div>
           <div class="monthly-list"></div>
         </div>
-        <button type="button" class="add-plan-inline"><span aria-hidden="true" class="add-plan-inline-icon">＋</span><span>この下に追加</span></button>
         <button type="button" class="danger remove-plan">この枠を削除</button>
       </div>
     </div>
@@ -1372,13 +1372,19 @@ function createPlanBlock(plan = {}) {
     wrap.remove();
   });
 
-  wrap.querySelector(".add-plan-inline").addEventListener("click", () => {
-    const newBlock = createPlanBlock();
-    wrap.insertAdjacentElement("afterend", newBlock);
-    newBlock.scrollIntoView({ behavior: "smooth", block: "center" });
-  });
-
   return wrap;
+}
+
+function addPlanBlockFromProfileButton() {
+  if (!planList) return;
+  const planChildAccordion = document.getElementById("trigger-profile-plan-assets")?.closest("[data-child-accordion]");
+  if (planChildAccordion) {
+    setChildAccordionExpanded(planChildAccordion, true);
+  }
+  const newBlock = createPlanBlock();
+  planList.appendChild(newBlock);
+  setPlanCardExpanded(newBlock, true);
+  newBlock.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 function collectPlansFromForm() {
@@ -1897,6 +1903,7 @@ function init() {
   setupFormattedAmountInput(recurringAmountInput);
 
   profileForm.addEventListener("submit", saveProfile);
+  addPlanButton?.addEventListener("click", addPlanBlockFromProfileButton);
   recurringForm.addEventListener("submit", addRecurringExpense);
   recurringCancelButton?.addEventListener("click", cancelRecurringExpenseEdit);
   setupSectionAccordions();
