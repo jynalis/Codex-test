@@ -8,6 +8,9 @@ const typeInput = document.getElementById("type");
 const categoryInput = document.getElementById("category");
 const amountInput = document.getElementById("amount");
 const memoInput = document.getElementById("memo");
+const transactionSubmitButton = document.getElementById("transaction-submit-button") || form?.querySelector('button[type="submit"]');
+const transactionCancelButton = document.getElementById("transaction-cancel-button");
+const transactionEditStatus = document.getElementById("transaction-edit-status");
 const monthFilter = document.getElementById("month-filter");
 
 const profileForm = document.getElementById("profile-form");
@@ -29,6 +32,7 @@ const recurringCancelButton = document.getElementById("recurring-cancel-button")
 const recurringEditStatus = document.getElementById("recurring-edit-status");
 const recurringSection = document.getElementById("trigger-recurring")?.closest("[data-accordion-section]");
 const recurringFormAccordion = document.getElementById("trigger-recurring-form")?.closest("[data-child-accordion]");
+const inputSection = document.getElementById("section-input");
 
 const list = document.getElementById("transaction-list");
 const template = document.getElementById("transaction-item-template");
@@ -50,6 +54,7 @@ let latestAssetForecastSettings = null;
 let assetForecastDirty = true;
 let assetForecastRenderRafId = 0;
 let recurringEditingId = null;
+let transactionEditingId = null;
 
 const NAV_TARGETS = {
   home: "section-home",
@@ -482,6 +487,51 @@ function setRecurringFormMode(isEditing) {
   if (recurringCancelButton) {
     recurringCancelButton.hidden = !isEditing;
   }
+}
+
+function setTransactionFormMode(isEditing) {
+  if (transactionSubmitButton) {
+    transactionSubmitButton.textContent = isEditing ? "更新する" : "追加する";
+  }
+  if (transactionEditStatus) {
+    transactionEditStatus.hidden = !isEditing;
+  }
+  if (transactionCancelButton) {
+    transactionCancelButton.hidden = !isEditing;
+  }
+}
+
+function resetTransactionFormFields(options = {}) {
+  const nextDate = options.date ?? dateInput.value ?? todayISO();
+  transactionEditingId = null;
+  form.reset();
+  dateInput.value = nextDate;
+  typeInput.value = "expense";
+  syncCategoryOptions();
+  amountInput.value = "";
+  setTransactionFormMode(false);
+}
+
+function startTransactionEdit(id) {
+  const transaction = loadTransactions().find((item) => item.id === id);
+  if (!transaction) return;
+
+  transactionEditingId = transaction.id;
+  dateInput.value = transaction.date;
+  typeInput.value = transaction.type;
+  syncCategoryOptions();
+  categoryInput.value = transaction.category;
+  amountInput.value = numberWithComma.format(transaction.amount);
+  memoInput.value = transaction.memo || "";
+  setTransactionFormMode(true);
+
+  if (inputSection) {
+    setAccordionExpanded(inputSection, true);
+    inputSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  } else {
+    form.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+  categoryInput.focus();
 }
 
 function startRecurringExpenseEdit(id) {
@@ -1449,6 +1499,9 @@ function render() {
   const currentMonth = monthFilter.value;
   const autoTransactions = createEligibleAutoExpensesForMonth(settings, transactions, currentMonth);
   const summary = calculateMonthlySummary(transactions, settings, currentMonth);
+  if (transactionEditingId && !transactions.some((item) => item.id === transactionEditingId)) {
+    resetTransactionFormFields();
+  }
   renderRecurringExpenses(recurringExpenses);
 
   entryStartMonthInput.value = resolveEntryStartMonth(settings, transactions);
@@ -1476,6 +1529,7 @@ function render() {
       const meta = node.querySelector(".meta");
       const memo = node.querySelector(".memo");
       const amount = node.querySelector(".amount");
+      const edit = node.querySelector(".edit");
       const del = node.querySelector(".delete");
 
       meta.textContent = item.isAuto
@@ -1488,9 +1542,20 @@ function render() {
       amount.classList.add(item.type);
 
       if (item.isAuto) {
+        edit.remove();
         del.remove();
       } else {
+        if (item.type === "expense") {
+          edit.addEventListener("click", () => {
+            startTransactionEdit(item.id);
+          });
+        } else {
+          edit.remove();
+        }
         del.addEventListener("click", () => {
+          if (transactionEditingId === item.id) {
+            resetTransactionFormFields();
+          }
           const next = loadTransactions().filter((tx) => tx.id !== item.id);
           saveTransactions(next);
           render();
@@ -1530,21 +1595,33 @@ function addTransaction(event) {
   }
 
   const current = loadTransactions();
-  current.push({
-    id: crypto.randomUUID(),
-    date,
-    type,
-    category,
-    amount,
-    memo,
-  });
+  if (transactionEditingId) {
+    const next = current.map((item) => (item.id === transactionEditingId
+      ? {
+          ...item,
+          date,
+          type,
+          category,
+          amount,
+          memo,
+        }
+      : item));
+    saveTransactions(next);
+    resetTransactionFormFields({ date });
+  } else {
+    current.push({
+      id: crypto.randomUUID(),
+      date,
+      type,
+      category,
+      amount,
+      memo,
+    });
 
-  saveTransactions(current);
-  form.reset();
-  dateInput.value = date;
-  typeInput.value = "expense";
-  syncCategoryOptions();
-  amountInput.value = "";
+    saveTransactions(current);
+    resetTransactionFormFields({ date });
+  }
+
   render();
 }
 
@@ -1893,11 +1970,13 @@ function init() {
   syncCategoryOptions();
   syncRecurringCategoryOptions();
   syncRecurringDayOptions();
+  setTransactionFormMode(false);
   resetRecurringFormFields();
   renderPlans(settings);
 
   form.addEventListener("submit", addTransaction);
   typeInput.addEventListener("change", syncCategoryOptions);
+  transactionCancelButton?.addEventListener("click", () => resetTransactionFormFields());
   monthFilter.addEventListener("change", render);
   setupFormattedAmountInput(amountInput);
   setupFormattedAmountInput(recurringAmountInput);
