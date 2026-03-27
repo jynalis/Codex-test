@@ -848,7 +848,19 @@ button.plan-card-trigger {
   gap: 10px;
 }
 
+.dashboard-header .section-heading {
+  flex: 1;
+  min-width: 0;
+}
+
 .dashboard-header h2 {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.2em;
+  row-gap: 0.12em;
+  width: auto;
+  max-width: 100%;
   background: linear-gradient(145deg, #0c2f54 0%, #174f84 100%);
   color: #fff;
   border: 1px solid #163f6a;
@@ -857,6 +869,14 @@ button.plan-card-trigger {
   box-shadow: 0 16px 24px rgb(15 44 75 / 24%);
   font-size: clamp(1.45rem, 3vw, 1.84rem);
   padding: 13px 18px;
+}
+
+.dashboard-title-chunk {
+  white-space: nowrap;
+}
+
+.dashboard-header .accordion-toggle-icon {
+  flex: 0 0 42px;
 }
 
 .dashboard-header .section-description {
@@ -1472,6 +1492,28 @@ button.ghost {
   .accordion-trigger {
     padding: 12px;
     min-height: 70px;
+  }
+
+  .dashboard-header {
+    gap: 8px;
+  }
+
+  .dashboard-header h2 {
+    font-size: clamp(1.2rem, 5.2vw, 1.48rem);
+    line-height: 1.2;
+    padding: 10px 12px;
+    border-left-width: 8px;
+  }
+
+  .dashboard-header .accordion-toggle-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.58rem;
+    flex-basis: 40px;
+  }
+
+  .dashboard-header[aria-expanded="true"] .accordion-toggle-icon {
+    font-size: 1.7rem;
   }
 
   .accordion-panel-inner {
