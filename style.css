@@ -797,6 +797,10 @@ button.plan-card-trigger {
   align-items: center;
   gap: 8px;
   width: 100%;
+  border: 1px solid #2f6ea8;
+  background: linear-gradient(160deg, #ffffff 0%, #eef5ff 100%);
+  color: #1b4f82;
+  box-shadow: 0 4px 10px rgb(33 81 131 / 14%);
 }
 
 .profile-add-plan-button-icon {
@@ -805,18 +809,30 @@ button.plan-card-trigger {
   font-weight: 900;
 }
 
+.profile-add-plan-button:hover {
+  filter: none;
+  background: linear-gradient(160deg, #ffffff 0%, #e4f0ff 100%);
+  box-shadow: 0 8px 14px rgb(33 81 131 / 18%);
+}
+
+.profile-add-plan-button:active {
+  filter: none;
+  background: linear-gradient(160deg, #f8fbff 0%, #dcecff 100%);
+  box-shadow: 0 3px 8px rgb(33 81 131 / 15%);
+}
+
+.profile-save-settings-button {
+  margin-top: 2px;
+  min-height: 54px;
+  font-size: 1rem;
+}
+
 .section-header {
   display: flex;
   justify-content: space-between;
   gap: 10px;
   align-items: flex-start;
   flex-wrap: wrap;
-}
-
-#profile-form > button[type="submit"] {
-  margin-top: 2px;
-  min-height: 54px;
-  font-size: 1rem;
 }
 
 #profile-form > button[type="submit"],
