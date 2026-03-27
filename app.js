@@ -43,6 +43,7 @@ const bottomNavButtons = Array.from(document.querySelectorAll(".bottom-nav-btn")
 const navToast = document.getElementById("nav-toast");
 const accordionSections = Array.from(document.querySelectorAll("[data-accordion-section]"));
 const assetsSection = document.getElementById("section-assets");
+const accordionCloseTimers = new WeakMap();
 
 let latestAssetForecastSettings = null;
 let assetForecastDirty = true;
@@ -1664,13 +1665,51 @@ function closeDescendantPlanCards(root) {
 
 function resetProfileChildAndGrandchildAccordions(section) {
   if (!section) return;
-  const descendantChildAccordions = section.querySelectorAll("[data-child-accordion]");
-  descendantChildAccordions.forEach((childAccordion) => setChildAccordionExpanded(childAccordion, false));
+  const expandedChildTriggers = section.querySelectorAll('[data-child-accordion] .child-accordion-trigger[aria-expanded="true"]');
+  expandedChildTriggers.forEach((trigger) => {
+    const childAccordion = trigger.closest("[data-child-accordion]");
+    if (!childAccordion) return;
+    setChildAccordionExpanded(childAccordion, false);
+  });
   closeDescendantPlanCards(section);
 }
 
 function isExpenseBalanceSection(section, trigger) {
   return section?.id === "section-chart" || trigger?.id === "trigger-chart";
+}
+
+function clearAccordionCloseTimer(panel) {
+  const timerId = accordionCloseTimers.get(panel);
+  if (!timerId) return;
+  window.clearTimeout(timerId);
+  accordionCloseTimers.delete(panel);
+}
+
+function collapseAccordionPanel(panel) {
+  clearAccordionCloseTimer(panel);
+  panel.classList.add("is-collapsing");
+  const timerId = window.setTimeout(() => {
+    panel.hidden = true;
+    panel.classList.remove("is-collapsing");
+    accordionCloseTimers.delete(panel);
+  }, 170);
+  accordionCloseTimers.set(panel, timerId);
+}
+
+function expandAccordionPanel(panel) {
+  clearAccordionCloseTimer(panel);
+  panel.hidden = false;
+  panel.classList.remove("is-collapsing");
+}
+
+function closeExpandedChildAccordions(section) {
+  if (!section) return;
+  const expandedChildTriggers = section.querySelectorAll('[data-child-accordion] .child-accordion-trigger[aria-expanded="true"]');
+  expandedChildTriggers.forEach((trigger) => {
+    const childAccordion = trigger.closest("[data-child-accordion]");
+    if (!childAccordion) return;
+    setChildAccordionExpanded(childAccordion, false);
+  });
 }
 
 function setAccordionExpanded(section, expanded) {
@@ -1680,17 +1719,30 @@ function setAccordionExpanded(section, expanded) {
   const wasExpanded = trigger.getAttribute("aria-expanded") === "true";
 
   if (!expanded) {
-    const descendantChildAccordions = section.querySelectorAll("[data-child-accordion]");
-    descendantChildAccordions.forEach((childAccordion) => setChildAccordionExpanded(childAccordion, false));
+    closeExpandedChildAccordions(section);
   }
 
-  if (trigger.id === "trigger-profile") {
+  if (!expanded && trigger.id === "trigger-profile") {
     resetProfileChildAndGrandchildAccordions(section);
+  }
+
+  if (expanded) {
+    expandAccordionPanel(panel);
   }
 
   trigger.setAttribute("aria-expanded", String(expanded));
   panel.setAttribute("aria-hidden", String(!expanded));
   section.classList.toggle("is-expanded", expanded);
+
+  if (!expanded) {
+    if (wasExpanded) {
+      collapseAccordionPanel(panel);
+    } else {
+      clearAccordionCloseTimer(panel);
+      panel.hidden = true;
+      panel.classList.remove("is-collapsing");
+    }
+  }
 
   if (section.id === "section-assets" && wasExpanded !== expanded) {
     if (expanded) {
@@ -1712,7 +1764,7 @@ function setupSectionAccordions() {
       section.dataset.toggleLocked = "true";
       window.setTimeout(() => {
         section.dataset.toggleLocked = "false";
-      }, 220);
+      }, 180);
       const expanded = trigger.getAttribute("aria-expanded") === "true";
       const nextExpanded = !expanded;
 

@@ -256,15 +256,17 @@ header p {
 }
 
 .accordion-section .accordion-panel {
-  display: grid;
-  grid-template-rows: 0fr;
+  display: block;
   opacity: 0;
-  overflow: hidden;
+  transform: translateY(-4px);
+  overflow: clip;
   visibility: hidden;
   pointer-events: none;
+  content-visibility: hidden;
+  contain: layout style paint;
   transition:
-    grid-template-rows var(--accordion-duration) ease,
     opacity var(--accordion-fade-duration) linear,
+    transform var(--accordion-duration) ease,
     visibility 0s linear var(--accordion-duration);
 }
 
@@ -274,14 +276,19 @@ header p {
 }
 
 .accordion-section.is-expanded .accordion-panel {
-  grid-template-rows: 1fr;
   opacity: 1;
+  transform: translateY(0);
   visibility: visible;
   pointer-events: auto;
+  content-visibility: visible;
   transition:
-    grid-template-rows var(--accordion-duration) ease,
     opacity var(--accordion-fade-duration) linear,
+    transform var(--accordion-duration) ease,
     visibility 0s linear 0s;
+}
+
+.accordion-panel[hidden] {
+  display: none !important;
 }
 
 .section-heading h2,
@@ -1439,7 +1446,12 @@ button.ghost {
   }
 
   .accordion-section .accordion-panel,
-  .accordion-section.is-expanded .accordion-panel,
+  .accordion-section.is-expanded .accordion-panel {
+    transition:
+      opacity var(--accordion-fade-duration) linear,
+      transform var(--accordion-duration) linear;
+  }
+
   .plan-card-panel,
   .plan-item.is-expanded .plan-card-panel {
     transition:
