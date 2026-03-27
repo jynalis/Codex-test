@@ -1771,7 +1771,8 @@ function setupSectionAccordions() {
       setAccordionExpanded(section, nextExpanded);
     };
 
-    setAccordionExpanded(section, false);
+    const initialExpanded = section.dataset.accordionInitialExpanded === "true";
+    setAccordionExpanded(section, initialExpanded);
 
     if (isExpenseBalanceSection(section, trigger)) {
       trigger.addEventListener("pointerup", (event) => {

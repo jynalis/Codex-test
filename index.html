@@ -18,43 +18,56 @@
         </div>
       </header>
 
-      <section id="section-home" class="card dashboard-section section-tone-home" data-nav-section="home">
-        <div class="section-header dashboard-header">
-          <h2>家計診断ダッシュボード</h2>
-          <p class="section-description">毎月の収支と資産形成の進捗を一目で確認できます。</p>
+      <section
+        id="section-home"
+        class="card dashboard-section section-tone-home accordion-section"
+        data-nav-section="home"
+        data-accordion-section
+        data-accordion-initial-expanded="true"
+      >
+        <button type="button" class="accordion-trigger dashboard-header" aria-expanded="true" aria-controls="panel-home" id="trigger-home">
+          <div class="section-heading">
+            <h2>家計診断ダッシュボード</h2>
+            <p class="section-description">毎月の収支と資産形成の進捗を一目で確認できます。</p>
+          </div>
+          <span class="accordion-toggle-icon" aria-hidden="true">＋</span>
+        </button>
+        <div class="accordion-panel" id="panel-home" role="region" aria-labelledby="trigger-home">
+          <div class="accordion-panel-inner dashboard-panel-inner">
+            <div class="dashboard-grid">
+              <article class="dashboard-card dashboard-card-balance is-primary">
+                <span>当月末残高</span>
+                <strong id="dashboard-balance-total">¥0</strong>
+              </article>
+              <article class="dashboard-card dashboard-card-future is-primary">
+                <span>60歳時点の想定総資産額</span>
+                <strong id="dashboard-age60-total">¥0</strong>
+              </article>
+              <article class="dashboard-card dashboard-card-expense is-secondary">
+                <span>当月支出</span>
+                <strong id="dashboard-expense-total">¥0</strong>
+              </article>
+              <article class="dashboard-card dashboard-card-saving is-secondary">
+                <span>毎月の積立額</span>
+                <strong id="dashboard-monthly-saving-total">¥0</strong>
+              </article>
+              <article class="dashboard-card dashboard-card-carryover is-supporting">
+                <span>前月末残高</span>
+                <strong id="dashboard-carryover-total">¥0</strong>
+              </article>
+              <article class="dashboard-card dashboard-card-income is-supporting">
+                <span>当月収入</span>
+                <strong id="dashboard-income-total">¥0</strong>
+              </article>
+            </div>
+            <article class="diagnosis-card" aria-live="polite">
+              <p class="diagnosis-label">FPコメント</p>
+              <p id="dashboard-diagnosis-comment" class="diagnosis-text">
+                取引データを入力すると、今月の家計診断コメントが表示されます。
+              </p>
+            </article>
+          </div>
         </div>
-        <div class="dashboard-grid">
-          <article class="dashboard-card dashboard-card-balance is-primary">
-            <span>当月末残高</span>
-            <strong id="dashboard-balance-total">¥0</strong>
-          </article>
-          <article class="dashboard-card dashboard-card-future is-primary">
-            <span>60歳時点の想定総資産額</span>
-            <strong id="dashboard-age60-total">¥0</strong>
-          </article>
-          <article class="dashboard-card dashboard-card-expense is-secondary">
-            <span>当月支出</span>
-            <strong id="dashboard-expense-total">¥0</strong>
-          </article>
-          <article class="dashboard-card dashboard-card-saving is-secondary">
-            <span>毎月の積立額</span>
-            <strong id="dashboard-monthly-saving-total">¥0</strong>
-          </article>
-          <article class="dashboard-card dashboard-card-carryover is-supporting">
-            <span>前月末残高</span>
-            <strong id="dashboard-carryover-total">¥0</strong>
-          </article>
-          <article class="dashboard-card dashboard-card-income is-supporting">
-            <span>当月収入</span>
-            <strong id="dashboard-income-total">¥0</strong>
-          </article>
-        </div>
-        <article class="diagnosis-card" aria-live="polite">
-          <p class="diagnosis-label">FPコメント</p>
-          <p id="dashboard-diagnosis-comment" class="diagnosis-text">
-            取引データを入力すると、今月の家計診断コメントが表示されます。
-          </p>
-        </article>
       </section>
 
       <section class="card section-tone-profile accordion-section" data-accordion-section>

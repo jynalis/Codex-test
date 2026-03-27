@@ -873,8 +873,12 @@ button.plan-card-trigger {
   border-top: 7px solid #1b4674;
 }
 
+.dashboard-section.accordion-section {
+  padding: 10px 12px;
+}
+
 .dashboard-header {
-  align-items: end;
+  align-items: center;
   gap: 10px;
 }
 
@@ -896,8 +900,16 @@ button.plan-card-trigger {
   max-width: 760px;
 }
 
+.dashboard-section .accordion-panel-inner {
+  padding-inline: 0;
+}
+
+.dashboard-panel-inner {
+  padding-top: 16px;
+  padding-bottom: 4px;
+}
+
 .dashboard-grid {
-  margin-top: 18px;
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 12px;
@@ -1487,6 +1499,10 @@ button.ghost {
     padding: 8px;
   }
 
+  .dashboard-section.accordion-section {
+    padding: 8px;
+  }
+
   .accordion-trigger {
     padding: 12px;
     min-height: 70px;
@@ -1544,6 +1560,10 @@ button.ghost {
   .dashboard-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
+  }
+
+  .dashboard-panel-inner {
+    padding-top: 12px;
   }
 
   .dashboard-card-balance {
