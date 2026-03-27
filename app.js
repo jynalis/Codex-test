@@ -489,11 +489,14 @@ function setRecurringFormMode(isEditing) {
   }
 }
 
-function setTransactionFormMode(isEditing) {
+function setTransactionFormMode(isEditing, editingType = "expense") {
   if (transactionSubmitButton) {
     transactionSubmitButton.textContent = isEditing ? "更新する" : "追加する";
   }
   if (transactionEditStatus) {
+    transactionEditStatus.textContent = editingType === "income"
+      ? "日ごとの収入を編集中"
+      : "日ごとの支出を編集中";
     transactionEditStatus.hidden = !isEditing;
   }
   if (transactionCancelButton) {
@@ -523,7 +526,7 @@ function startTransactionEdit(id) {
   categoryInput.value = transaction.category;
   amountInput.value = numberWithComma.format(transaction.amount);
   memoInput.value = transaction.memo || "";
-  setTransactionFormMode(true);
+  setTransactionFormMode(true, transaction.type);
 
   if (inputSection) {
     setAccordionExpanded(inputSection, true);
@@ -1545,13 +1548,9 @@ function render() {
         edit.remove();
         del.remove();
       } else {
-        if (item.type === "expense") {
-          edit.addEventListener("click", () => {
-            startTransactionEdit(item.id);
-          });
-        } else {
-          edit.remove();
-        }
+        edit.addEventListener("click", () => {
+          startTransactionEdit(item.id);
+        });
         del.addEventListener("click", () => {
           if (transactionEditingId === item.id) {
             resetTransactionFormFields();
