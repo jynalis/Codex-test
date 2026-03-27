@@ -1124,6 +1124,26 @@ button.plan-card-trigger {
   flex: 1;
 }
 
+.transaction-form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.transaction-form-actions > button {
+  flex: 1;
+}
+
+.transaction-edit-status {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #9ac0ea;
+  border-radius: 10px;
+  background: #e7f1ff;
+  color: #123d66;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 button.ghost {
   border: 1px solid #b5c7d9;
   color: #295377;
@@ -1245,6 +1265,25 @@ button.ghost {
   text-align: right;
 }
 
+.transaction-actions {
+  margin-top: 6px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.transaction-actions button {
+  min-height: 40px;
+}
+
+.edit {
+  background: linear-gradient(160deg, #3f7ac6 0%, #2e67af 100%);
+  padding: 8px 13px;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
 .amount {
   font-weight: 700;
   font-size: 1.02rem;
@@ -1260,7 +1299,6 @@ button.ghost {
 }
 
 .delete {
-  margin-top: 6px;
   background: linear-gradient(160deg, #d84444 0%, #bc3333 100%);
   padding: 8px 13px;
   font-size: 0.82rem;
@@ -1644,6 +1682,16 @@ button.ghost {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
+  }
+
+  .transaction-actions {
+    margin-top: 0;
+    justify-content: flex-end;
+  }
+
+  .transaction-actions button {
+    min-height: 44px;
   }
 
   .pie-legend-item {

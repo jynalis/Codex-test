@@ -237,6 +237,9 @@
         <div class="accordion-panel" id="panel-input" role="region" aria-labelledby="trigger-input">
           <div class="accordion-panel-inner">
             <form id="transaction-form" class="grid">
+              <p id="transaction-edit-status" class="transaction-edit-status full" aria-live="polite" hidden>
+                日ごとの支出を編集中
+              </p>
               <label>
                 日付
                 <input type="date" id="date" required />
@@ -260,7 +263,10 @@
                 メモ
                 <input id="memo" type="text" placeholder="任意" maxlength="50" />
               </label>
-              <button type="submit">追加する</button>
+              <div class="full transaction-form-actions">
+                <button type="submit" id="transaction-submit-button">追加する</button>
+                <button type="button" id="transaction-cancel-button" class="ghost" hidden>キャンセル</button>
+              </div>
             </form>
           </div>
         </div>
@@ -354,7 +360,10 @@
         </div>
         <div class="amount-wrap">
           <p class="amount"></p>
-          <button class="delete" type="button">削除</button>
+          <div class="transaction-actions">
+            <button class="edit" type="button">修正</button>
+            <button class="delete" type="button">削除</button>
+          </div>
         </div>
       </li>
     </template>
