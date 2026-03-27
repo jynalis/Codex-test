@@ -797,28 +797,29 @@ button.plan-card-trigger {
   align-items: center;
   gap: 8px;
   width: 100%;
-  border: 1px solid #2f6ea8;
-  background: linear-gradient(160deg, #ffffff 0%, #eef5ff 100%);
-  color: #1b4f82;
-  box-shadow: 0 4px 10px rgb(33 81 131 / 14%);
+  border: 1px solid #78b8b1;
+  background: linear-gradient(160deg, #e7f8f4 0%, #d8f0eb 100%);
+  color: #153454;
+  box-shadow: 0 4px 10px rgb(21 90 118 / 16%);
 }
 
 .profile-add-plan-button-icon {
   font-size: 1.2rem;
   line-height: 1;
   font-weight: 900;
+  color: inherit;
 }
 
 .profile-add-plan-button:hover {
   filter: none;
-  background: linear-gradient(160deg, #ffffff 0%, #e4f0ff 100%);
-  box-shadow: 0 8px 14px rgb(33 81 131 / 18%);
+  background: linear-gradient(160deg, #ddf4ef 0%, #cdebe5 100%);
+  box-shadow: 0 7px 14px rgb(21 90 118 / 20%);
 }
 
 .profile-add-plan-button:active {
   filter: none;
-  background: linear-gradient(160deg, #f8fbff 0%, #dcecff 100%);
-  box-shadow: 0 3px 8px rgb(33 81 131 / 15%);
+  background: linear-gradient(160deg, #d4efe8 0%, #c2e5de 100%);
+  box-shadow: 0 3px 8px rgb(21 90 118 / 16%);
 }
 
 .profile-save-settings-button {
