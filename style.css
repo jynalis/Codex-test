@@ -20,7 +20,6 @@
   --profile-bg: linear-gradient(180deg, #fafdff 0%, #f2f7ff 100%);
   --input-bg: linear-gradient(180deg, #fffef8 0%, #fff8e9 100%);
   --recurring-bg: linear-gradient(180deg, #f8fcff 0%, #eef7ff 100%);
-  --summary-bg: linear-gradient(180deg, #f7fffb 0%, #eefcf6 100%);
   --assets-bg: linear-gradient(180deg, #f7f8ff 0%, #f0f2ff 100%);
   --chart-bg: linear-gradient(180deg, #fff8fb 0%, #fff1f7 100%);
   --history-bg: linear-gradient(180deg, #fbfcff 0%, #f4f7fd 100%);
@@ -167,12 +166,6 @@ header p {
   border-top: 5px solid #2d87ad;
 }
 
-.section-tone-summary {
-  background: var(--summary-bg);
-  border-color: #97d7be;
-  border-top: 5px solid #1f8a68;
-}
-
 .section-tone-assets {
   background: var(--assets-bg);
   border-color: #b8bcf3;
@@ -310,10 +303,6 @@ header p {
 .section-tone-input .section-heading h2,
 .section-tone-input .section-header h2 {
   border-left-color: #be7c15;
-}
-
-.section-tone-summary .section-heading h2 {
-  border-left-color: #1f8a68;
 }
 
 .section-tone-recurring .section-heading h2 {
@@ -1054,55 +1043,6 @@ button.plan-card-trigger {
   font-weight: 500;
 }
 
-.summary {
-  margin-top: 14px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.summary > div {
-  background: linear-gradient(180deg, #ffffff 0%, #f7fffc 100%);
-  border: 1px solid #bfd0e5;
-  border-radius: 14px;
-  padding: 13px 14px;
-  display: grid;
-  gap: 4px;
-  box-shadow: 0 6px 12px rgb(15 23 42 / 8%);
-}
-
-.summary span {
-  color: #41566f;
-  font-size: 0.86rem;
-  font-weight: 700;
-}
-
-.summary strong {
-  color: #0d2342;
-  font-size: 1.14rem;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.01em;
-  font-weight: 800;
-}
-
-.summary-positive {
-  border-color: #c9dfd8 !important;
-  background: linear-gradient(180deg, #f7fcf9 0%, #f0faf5 100%) !important;
-}
-
-.summary-positive strong {
-  color: #176b4f;
-}
-
-.summary-danger {
-  border-color: #e6d1d1 !important;
-  background: linear-gradient(180deg, #fffafa 0%, #fff4f4 100%) !important;
-}
-
-.summary-danger strong {
-  color: #a72f2f;
-}
-
 .asset-forecast {
   margin-top: 14px;
   display: grid;
@@ -1637,14 +1577,6 @@ button.ghost {
 
   .diagnosis-text {
     font-size: 0.9rem;
-  }
-
-  .summary {
-    gap: 8px;
-  }
-
-  .summary strong {
-    font-size: 1rem;
   }
 
   .item {

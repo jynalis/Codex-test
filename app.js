@@ -31,12 +31,6 @@ const recurringFormAccordion = document.getElementById("trigger-recurring-form")
 
 const list = document.getElementById("transaction-list");
 const template = document.getElementById("transaction-item-template");
-const carryoverTotal = document.getElementById("carryover-total");
-const incomeTotal = document.getElementById("income-total");
-const regularExpenseTotal = document.getElementById("regular-expense-total");
-const recurringExpenseTotal = document.getElementById("recurring-expense-total");
-const expenseTotal = document.getElementById("expense-total");
-const balanceTotal = document.getElementById("balance-total");
 const dashboardCarryoverTotal = document.getElementById("dashboard-carryover-total");
 const dashboardIncomeTotal = document.getElementById("dashboard-income-total");
 const dashboardExpenseTotal = document.getElementById("dashboard-expense-total");
@@ -1500,12 +1494,6 @@ function render() {
       list.appendChild(node);
     });
 
-  incomeTotal.textContent = yen.format(summary.income);
-  regularExpenseTotal.textContent = yen.format(summary.regularExpense);
-  recurringExpenseTotal.textContent = yen.format(summary.recurringExpense);
-  expenseTotal.textContent = yen.format(summary.expense);
-  carryoverTotal.textContent = yen.format(summary.carryover);
-  balanceTotal.textContent = yen.format(summary.endingBalance);
   const monthlyExpenseComposition = buildMonthlyExpenseComposition([...transactions, ...autoTransactions], currentMonth);
   renderDashboard(summary, settings, currentMonth, transactions, monthlyExpenseComposition);
 
