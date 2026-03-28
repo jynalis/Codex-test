@@ -768,12 +768,24 @@ function buildTransactionHistoryItems(transactions, autoTransactions, currentMon
 
   return filtered
     .slice()
-    .sort((a, b) => (a.date < b.date ? 1 : -1))
+    .sort(compareTransactionHistoryRecency)
     .map((item) => ({
       ...item,
       source: item.isAuto ? "autoTransaction" : "transaction",
       originalId: item.id,
     }));
+}
+
+function compareTransactionHistoryRecency(a, b) {
+  if (a.date !== b.date) {
+    return a.date < b.date ? 1 : -1;
+  }
+
+  if (a.createdAt && b.createdAt && a.createdAt !== b.createdAt) {
+    return a.createdAt < b.createdAt ? 1 : -1;
+  }
+
+  return 0;
 }
 
 function parseISODateParts(dateString) {
@@ -806,9 +818,9 @@ function formatHistoryMonthLabel(monthKey) {
 
 function getDayRangeDefinitions(lastDay) {
   return [
-    { key: "early", startDay: 1, endDay: 10 },
-    { key: "middle", startDay: 11, endDay: 20 },
     { key: "late", startDay: 21, endDay: lastDay },
+    { key: "middle", startDay: 11, endDay: 20 },
+    { key: "early", startDay: 1, endDay: 10 },
   ];
 }
 
@@ -2416,7 +2428,6 @@ function expandAccordionPanel(panel) {
 
 function closeExpandedChildAccordions(section) {
   if (!section) return;
-  if (section.dataset.hasChildAccordion !== "true") return;
   const expandedChildTriggers = section.querySelectorAll('[data-child-accordion] .child-accordion-trigger[aria-expanded="true"]');
   expandedChildTriggers.forEach((trigger) => {
     const childAccordion = trigger.closest("[data-child-accordion]");
