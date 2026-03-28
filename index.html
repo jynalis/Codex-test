@@ -423,8 +423,30 @@
               <ul id="transaction-list" class="list transaction-list"></ul>
             </section>
             <section class="history-block">
-              <h3 class="history-block-title">予定の取引履歴（ライフイベント）</h3>
-              <ul id="planned-transaction-list" class="list transaction-list planned-transaction-list"></ul>
+              <section class="child-accordion history-planned-accordion" data-child-accordion>
+                <button
+                  type="button"
+                  class="child-accordion-trigger history-planned-trigger"
+                  aria-expanded="false"
+                  aria-controls="panel-history-planned"
+                  id="trigger-history-planned"
+                >
+                  <h3 id="planned-history-title">予定の取引履歴（ライフイベント）</h3>
+                  <span class="child-accordion-toggle" aria-hidden="true">＋</span>
+                </button>
+                <div
+                  class="child-accordion-panel history-planned-panel"
+                  id="panel-history-planned"
+                  role="region"
+                  aria-labelledby="trigger-history-planned"
+                  aria-hidden="true"
+                  hidden
+                >
+                  <div class="child-accordion-panel-inner history-planned-panel-inner">
+                    <div id="planned-transaction-list" class="planned-transaction-list"></div>
+                  </div>
+                </div>
+              </section>
             </section>
           </div>
         </div>
