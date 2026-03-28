@@ -2248,6 +2248,7 @@ function renderCashflowTable({ settings, transactions, recurringExpenses, lifeEv
         <th>臨時支出</th>
         <th>収支</th>
         <th>残高</th>
+        <th>資産形成額</th>
         <th>金融資産合計</th>
       </tr>
     </thead>
@@ -2265,6 +2266,7 @@ function renderCashflowTable({ settings, transactions, recurringExpenses, lifeEv
           <td class="is-amount">${yen.format(row.annualExtraExpense)}</td>
           <td class="is-amount is-annual-balance ${row.annualBalance >= 0 ? 'is-positive' : 'is-negative'}">${yen.format(row.annualBalance)}</td>
           <td class="is-amount is-ending-balance ${row.endingBalance >= 0 ? 'is-positive' : 'is-negative'}">${yen.format(row.endingBalance)}</td>
+          <td class="is-amount is-asset-formation-balance">${yen.format(row.assetFormationBalance)}</td>
           <td class="is-amount is-financial-asset-total">${yen.format(row.financialAssetTotal)}</td>
         </tr>
       `).join('')}
@@ -2298,6 +2300,7 @@ function downloadCashflowPdf() {
       <td>${yen.format(row.annualExtraExpense)}</td>
       <td>${yen.format(row.annualBalance)}</td>
       <td>${yen.format(row.endingBalance)}</td>
+      <td>${yen.format(row.assetFormationBalance)}</td>
       <td>${yen.format(row.financialAssetTotal)}</td>
     </tr>
   `).join('');
@@ -2318,7 +2321,7 @@ function downloadCashflowPdf() {
     <h1>キャッシュフロー表</h1>
     <p class="meta">作成日時: ${generatedAt}</p>
     <table>
-      <thead><tr><th>年</th><th>年齢</th><th>年収</th><th>資産取崩金</th><th>通常支出</th><th>定期支出</th><th>積立支出</th><th>臨時収入</th><th>臨時支出</th><th>収支</th><th>残高</th><th>金融資産合計</th></tr></thead>
+      <thead><tr><th>年</th><th>年齢</th><th>年収</th><th>資産取崩金</th><th>通常支出</th><th>定期支出</th><th>積立支出</th><th>臨時収入</th><th>臨時支出</th><th>収支</th><th>残高</th><th>資産形成額</th><th>金融資産合計</th></tr></thead>
       <tbody>${bodyRows}</tbody>
     </table></body></html>`);
   win.document.close();

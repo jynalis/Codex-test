@@ -2172,7 +2172,7 @@ button.ghost {
 
 .cashflow-table {
   width: 100%;
-  min-width: 1020px;
+  min-width: 1110px;
   border-collapse: collapse;
   font-size: 0.86rem;
 }
@@ -2233,6 +2233,12 @@ button.ghost {
   font-weight: 600;
 }
 
+.cashflow-table .is-asset-formation-balance {
+  color: #215a88;
+  font-weight: 600;
+  background: #f4f8ff;
+}
+
 .cashflow-table .is-financial-asset-total {
   color: #1f3f67;
   font-weight: 650;
@@ -2255,7 +2261,7 @@ button.ghost {
   }
 
   .cashflow-table {
-    min-width: 960px;
+    min-width: 1030px;
     font-size: 0.82rem;
   }
 
