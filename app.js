@@ -1631,10 +1631,17 @@ function calculateProjectedTotalAtAge(settings, age) {
   if (!settings.birthDate || !Array.isArray(settings.plans) || settings.plans.length === 0) return 0;
   const baseTargetMonth = resolveWithdrawTargetMonth(settings.birthDate, age);
   return settings.plans.reduce((sum, plan) => {
+    if (!isPlanHeldUntilAge(plan, age)) return sum;
     const targetMonth = resolvePlanSimulationTargetMonth(plan, settings.birthDate, baseTargetMonth, age);
     const projection = projectPlanAssetDetails(plan, settings.birthDate, targetMonth);
     return sum + (projection.amount || 0);
   }, 0);
+}
+
+function isPlanHeldUntilAge(plan, age) {
+  const withdrawAge = Number(plan?.withdrawAge);
+  if (!Number.isFinite(withdrawAge) || withdrawAge <= 0) return true;
+  return withdrawAge >= age;
 }
 
 function calculateLifeEventTotalsThroughAge(lifeEvents, maxAge = 60) {
@@ -2369,10 +2376,13 @@ function renderAssetForecast(settings) {
     const projection = projectPlanAssetDetails(plan, settings.birthDate, planTargetMonth);
     return {
       ...plan,
+      isHeldUntil60: isPlanHeldUntilAge(plan, 60),
       projectedAmount: projection.amount,
       projection,
     };
   });
+  const plansHeldUntil60 = projectedRowsAt60.filter((plan) => plan.isHeldUntil60);
+  const earlyWithdrawPlans = projectedRowsAt60.filter((plan) => !plan.isHeldUntil60 && plan.projectedAmount > 0);
 
   const currentRows = settings.plans.map((plan) => {
     const currentProjection = projectPlanAssetDetails(plan, settings.birthDate, currentAssetTargetMonth);
@@ -2383,11 +2393,11 @@ function renderAssetForecast(settings) {
     };
   });
 
-  const rows = projectedRowsAt60
+  const rows = plansHeldUntil60
     .map(
       (plan) => `
       <li>
-        <span>${plan.type}${plan.name ? `（${plan.name}）` : ""} / 60歳時点</span>
+        <span>${plan.type}${plan.name ? `（${plan.name}）` : ""}</span>
         <strong>${yen.format(plan.projectedAmount)}</strong>
       </li>
     `
@@ -2395,11 +2405,26 @@ function renderAssetForecast(settings) {
     .join("");
 
   const typeTotals = PLAN_TYPES.map((type) => {
-    const amount = projectedRowsAt60
+    const amount = plansHeldUntil60
       .filter((plan) => plan.type === type)
       .reduce((sum, plan) => sum + plan.projectedAmount, 0);
     return { type, amount };
-  });
+  }).filter((item) => item.amount > 0);
+  const earlyWithdrawHtml = earlyWithdrawPlans
+    .map((plan) => {
+      const withdrawAge = Number(plan.withdrawAge);
+      const withdrawLabel = Number.isFinite(withdrawAge) && withdrawAge > 0 ? `${withdrawAge}歳` : "取崩し時";
+      return `
+        <li>
+          <div class="asset-withdraw-item-main">
+            <span class="asset-withdraw-contract">${plan.type}${plan.name ? `（${plan.name}）` : ""}</span>
+            <span class="asset-withdraw-age">取崩し: ${withdrawLabel}</span>
+          </div>
+          <strong>${yen.format(plan.projectedAmount)}</strong>
+        </li>
+      `;
+    })
+    .join("");
 
   const age60Summary = calculateAge60FinancialSummary(settings, lifeEvents);
   const totalAt60 = age60Summary.total;
@@ -2450,13 +2475,19 @@ function renderAssetForecast(settings) {
       >
         <div class="child-accordion-panel-inner">
           <section class="chart asset-outlook">
-            <p class="section-description">現在年齢: <strong>${currentAge}歳</strong> / 契約ごとの終了年齢（原則60歳、60歳未満の取崩年齢があればその年齢）までの積立・運用をもとに試算しています。</p>
-            <h4>契約別の想定資産額</h4>
-            <ul class="asset-list">${rows}</ul>
-            <h4>種別別の想定資産額</h4>
-            <ul class="asset-list">${typeTotalsHtml}</ul>
+            <p class="section-description">現在年齢: <strong>${currentAge}歳</strong> / 60歳時点の一覧は、60歳まで継続する契約のみを表示しています。</p>
+            <h4>60歳時点の想定資産額（契約別）</h4>
+            ${rows ? `<ul class="asset-list">${rows}</ul>` : '<p class="chart-empty">60歳時点まで継続する契約はありません。</p>'}
+            <h4>60歳時点の想定資産額（種別別）</h4>
+            ${typeTotalsHtml ? `<ul class="asset-list">${typeTotalsHtml}</ul>` : '<p class="chart-empty">60歳時点まで継続する契約はありません。</p>'}
             <div class="asset-total">60歳時点の想定総資産額: <strong>${yen.format(totalAt60)}</strong></div>
             ${breakdownHtml}
+            <section class="asset-withdraw-card" aria-label="60歳前に取崩す予定の資産">
+              <h4>60歳前に取崩す予定の資産</h4>
+              ${earlyWithdrawHtml
+    ? `<ul class="asset-list asset-withdraw-list">${earlyWithdrawHtml}</ul>`
+    : '<p class="chart-empty">60歳前に取崩す予定の契約はありません。</p>'}
+            </section>
           </section>
         </div>
       </div>
