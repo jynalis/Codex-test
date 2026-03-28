@@ -2342,16 +2342,8 @@ function projectPlanAssetDetails(plan, birthDate, explicitTargetMonth = null) {
   };
 }
 
-function resolveCurrentAssetTargetMonth(settings, transactions) {
-  const months = [
-    todayISO().slice(0, 7),
-    parseMonth(monthFilter.value) ? monthFilter.value : "",
-    resolveEntryStartMonth(settings, transactions),
-    ...transactions.map((item) => monthISO(item.date)),
-  ].filter((month) => parseMonth(month));
-
-  if (months.length === 0) return todayISO().slice(0, 7);
-  return months.sort(compareMonth).at(-1);
+function resolveCurrentAssetTargetMonth() {
+  return todayISO().slice(0, 7);
 }
 
 function renderAssetForecast(settings) {
@@ -2365,7 +2357,8 @@ function renderAssetForecast(settings) {
   const lifeEvents = loadLifeEvents();
   const currentAge = calculateAge(settings.birthDate);
   const age60TargetMonth = resolveWithdrawTargetMonth(settings.birthDate, 60);
-  const currentAssetTargetMonth = resolveCurrentAssetTargetMonth(settings, transactions);
+  const currentAssetTargetMonth = resolveCurrentAssetTargetMonth();
+  const currentAssetBaseDate = todayISO();
 
   const projectedRowsAt60 = settings.plans.map((plan) => {
     const planTargetMonth = resolvePlanSimulationTargetMonth(plan, settings.birthDate, age60TargetMonth, 60);
@@ -2477,7 +2470,7 @@ function renderAssetForecast(settings) {
       aria-controls="${compositionPanelId}"
       id="${compositionTriggerId}"
     >
-      <h3>現在総資産の構成比(契約別)</h3>
+      <h3>現時点の総資産額の構成比（契約別）</h3>
       <span class="child-accordion-toggle" aria-hidden="true">+</span>
     </button>
     <div
@@ -2489,7 +2482,7 @@ function renderAssetForecast(settings) {
     >
       <div class="child-accordion-panel-inner">
         <section class="chart asset-composition">
-          <p class="section-description">現在入力されている積立・一括入金の実績をもとに算出しています（基準月: ${currentAssetTargetMonth}）。</p>
+          <p class="section-description">現在入力されている積立・一括入金の実績をもとに算出しています（基準日: ${currentAssetBaseDate}）。</p>
         </section>
       </div>
     </div>
