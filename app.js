@@ -51,6 +51,7 @@ const lifeEventFormAccordion = document.getElementById("trigger-life-event-form"
 
 const list = document.getElementById("transaction-list");
 const plannedList = document.getElementById("planned-transaction-list");
+const plannedHistoryTitle = document.getElementById("planned-history-title");
 const template = document.getElementById("transaction-item-template");
 const dashboardCarryoverTotal = document.getElementById("dashboard-carryover-total");
 const dashboardIncomeTotal = document.getElementById("dashboard-income-total");
@@ -760,6 +761,38 @@ function buildLifeEventHistoryItems(lifeEvents, settings) {
     }));
 }
 
+const PLANNED_HISTORY_AGE_BRACKETS = [
+  { key: "20s", label: "20代", minAge: 20, maxAge: 29 },
+  { key: "30s", label: "30代", minAge: 30, maxAge: 39 },
+  { key: "40s", label: "40代", minAge: 40, maxAge: 49 },
+  { key: "50plus", label: "50代以降", minAge: 50, maxAge: Number.POSITIVE_INFINITY },
+];
+
+function resolvePlannedHistoryAgeBracket(age) {
+  const numericAge = Number(age);
+  if (!Number.isFinite(numericAge)) return null;
+  const normalizedAge = Math.floor(numericAge);
+  return PLANNED_HISTORY_AGE_BRACKETS.find((bracket) => normalizedAge >= bracket.minAge && normalizedAge <= bracket.maxAge) || null;
+}
+
+function groupPlannedHistoryItemsByAgeBracket(items) {
+  const grouped = new Map();
+  PLANNED_HISTORY_AGE_BRACKETS.forEach((bracket) => grouped.set(bracket.key, []));
+  items.forEach((item) => {
+    const bracket = resolvePlannedHistoryAgeBracket(item.age);
+    if (!bracket) return;
+    grouped.get(bracket.key).push(item);
+  });
+  return PLANNED_HISTORY_AGE_BRACKETS
+    .map((bracket) => ({
+      ...bracket,
+      items: grouped.get(bracket.key)
+        .slice()
+        .sort((a, b) => (a.age !== b.age ? a.age - b.age : a.order - b.order)),
+    }))
+    .filter((group) => group.items.length > 0);
+}
+
 function buildTransactionHistoryItems(transactions, autoTransactions, currentMonth) {
   const allTransactions = [...transactions, ...autoTransactions];
   const filtered = currentMonth
@@ -889,6 +922,133 @@ function createTransactionItemNode(item) {
   row.dataset.source = item.source;
   row.dataset.originalId = item.originalId;
   return node;
+}
+
+function createPlannedTransactionItemNode(item) {
+  const node = template.content.cloneNode(true);
+  const row = node.querySelector(".item");
+  const meta = node.querySelector(".meta");
+  const memo = node.querySelector(".memo");
+  const amount = node.querySelector(".amount");
+  const edit = node.querySelector(".edit");
+  const del = node.querySelector(".delete");
+
+  row.classList.add("is-planned-transaction");
+
+  meta.textContent = "";
+  const plannedLabel = document.createElement("span");
+  plannedLabel.className = "transaction-source-badge";
+  plannedLabel.textContent = "予定";
+  const plannedMetaText = document.createElement("span");
+  plannedMetaText.className = "planned-meta-text";
+  plannedMetaText.textContent = `${item.classificationLabel} / ${item.category} / ${item.scheduledLabel}`;
+  meta.append(plannedLabel, plannedMetaText);
+
+  memo.textContent = item.memo
+    ? `発生年齢: ${item.age}歳 / メモ: ${item.memo}`
+    : `発生年齢: ${item.age}歳`;
+  amount.textContent = `${item.type === "income" ? "+" : "-"}${yen.format(item.amount)}`;
+  amount.classList.add(item.type);
+
+  edit.addEventListener("click", () => {
+    startLifeEventEdit(item.originalId);
+  });
+  del.addEventListener("click", () => {
+    if (!window.confirm("この予定取引（ライフイベント）を削除しますか？")) return;
+    const next = loadLifeEvents().filter((target) => target.id !== item.originalId);
+    saveLifeEvents(next);
+    if (lifeEventEditingId === item.originalId) {
+      resetLifeEventFormFields();
+    }
+    render();
+  });
+
+  row.dataset.id = item.id;
+  row.dataset.source = item.source;
+  row.dataset.originalId = item.originalId;
+  return node;
+}
+
+function createPlannedAgeAccordion(group) {
+  const accordion = document.createElement("section");
+  accordion.className = "child-accordion history-planned-age-accordion";
+  accordion.dataset.childAccordion = "";
+  const panelId = `panel-history-planned-${group.key}`;
+  const triggerId = `trigger-history-planned-${group.key}`;
+  const countLabel = `（${group.items.length}件）`;
+
+  accordion.innerHTML = `
+    <button
+      type="button"
+      class="child-accordion-trigger history-planned-age-trigger"
+      aria-expanded="false"
+      aria-controls="${panelId}"
+      id="${triggerId}"
+    >
+      <h3>${group.label}${countLabel}</h3>
+      <span class="child-accordion-toggle" aria-hidden="true">＋</span>
+    </button>
+    <div
+      class="child-accordion-panel history-planned-age-panel"
+      id="${panelId}"
+      role="region"
+      aria-labelledby="${triggerId}"
+      aria-hidden="true"
+      hidden
+    >
+      <div class="child-accordion-panel-inner history-planned-age-panel-inner">
+        <ul class="list transaction-list planned-age-list"></ul>
+      </div>
+    </div>
+  `;
+
+  const listElement = accordion.querySelector(".planned-age-list");
+  const renderItems = () => {
+    if (!listElement || accordion.dataset.rendered === "true") return;
+    const fragment = document.createDocumentFragment();
+    group.items.forEach((item) => fragment.appendChild(createPlannedTransactionItemNode(item)));
+    listElement.appendChild(fragment);
+    accordion.dataset.rendered = "true";
+  };
+  const clearItems = () => {
+    if (!listElement || accordion.dataset.rendered !== "true") return;
+    listElement.replaceChildren();
+    accordion.dataset.rendered = "false";
+  };
+
+  accordion.addEventListener("childaccordiontoggle", (event) => {
+    if (event.detail?.expanded) {
+      renderItems();
+    } else {
+      clearItems();
+    }
+  });
+
+  return accordion;
+}
+
+function renderPlannedTransactionHistory(items) {
+  if (!plannedList) return;
+  plannedList.replaceChildren();
+  if (plannedHistoryTitle) {
+    plannedHistoryTitle.textContent = `予定の取引履歴（ライフイベント）${items.length > 0 ? `（${items.length}件）` : ""}`;
+  }
+
+  const ageGroups = groupPlannedHistoryItemsByAgeBracket(items);
+  if (ageGroups.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "chart-empty history-planned-empty";
+    empty.textContent = "予定の取引はまだありません。";
+    plannedList.appendChild(empty);
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+  ageGroups.forEach((group) => {
+    fragment.appendChild(createPlannedAgeAccordion(group));
+  });
+  plannedList.appendChild(fragment);
+  setupChildAccordions(plannedList);
 }
 
 function createDayRangeAccordion({ monthKey, range, items }) {
@@ -2133,63 +2293,7 @@ function render() {
   const plannedHistoryItems = buildLifeEventHistoryItems(lifeEvents, settings);
 
   renderTransactionHistory(historyItems);
-  if (plannedList) {
-    plannedList.innerHTML = "";
-  }
-
-  if (plannedList) {
-    if (plannedHistoryItems.length === 0) {
-      const empty = document.createElement("li");
-      empty.textContent = "まだ予定取引はありません。";
-      empty.className = "item";
-      plannedList.appendChild(empty);
-    }
-
-    plannedHistoryItems.forEach((item) => {
-      const node = template.content.cloneNode(true);
-      const row = node.querySelector(".item");
-      const meta = node.querySelector(".meta");
-      const memo = node.querySelector(".memo");
-      const amount = node.querySelector(".amount");
-      const edit = node.querySelector(".edit");
-      const del = node.querySelector(".delete");
-
-      row.classList.add("is-planned-transaction");
-
-      meta.textContent = "";
-      const plannedLabel = document.createElement("span");
-      plannedLabel.className = "transaction-source-badge";
-      plannedLabel.textContent = "予定";
-      const plannedMetaText = document.createElement("span");
-      plannedMetaText.className = "planned-meta-text";
-      plannedMetaText.textContent = `ライフイベント / ${item.classificationLabel} / ${item.category} / ${item.scheduledLabel}`;
-      meta.append(plannedLabel, plannedMetaText);
-
-      memo.textContent = item.memo
-        ? `発生年齢: ${item.age}歳 / メモ: ${item.memo}`
-        : `発生年齢: ${item.age}歳`;
-      amount.textContent = `${item.type === "income" ? "+" : "-"}${yen.format(item.amount)}`;
-      amount.classList.add(item.type);
-
-      edit.addEventListener("click", () => {
-        startLifeEventEdit(item.originalId);
-      });
-      del.addEventListener("click", () => {
-        if (!window.confirm("この予定取引（ライフイベント）を削除しますか？")) return;
-        const next = loadLifeEvents().filter((target) => target.id !== item.originalId);
-        saveLifeEvents(next);
-        if (lifeEventEditingId === item.originalId) {
-          resetLifeEventFormFields();
-        }
-        render();
-      });
-
-      row.dataset.id = item.id;
-      row.dataset.source = item.source;
-      row.dataset.originalId = item.originalId;
-      plannedList.appendChild(node);
-    });
-  }
+  renderPlannedTransactionHistory(plannedHistoryItems);
 
   const monthlyExpenseComposition = buildMonthlyExpenseComposition([...transactions, ...autoTransactions], currentMonth);
   renderDashboard(summary, settings, currentMonth, transactions, recurringExpenses, lifeEvents, monthlyExpenseComposition);

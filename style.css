@@ -1280,6 +1280,45 @@ button.ghost {
   color: #25425f;
 }
 
+.history-planned-accordion .child-accordion-trigger {
+  min-height: 50px;
+}
+
+.history-planned-trigger h3 {
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.history-planned-panel {
+  padding-inline: 8px;
+}
+
+.history-planned-panel-inner {
+  padding-top: 4px;
+}
+
+.history-planned-empty {
+  margin-top: 6px;
+}
+
+.history-planned-age-accordion .child-accordion-trigger {
+  min-height: 48px;
+  padding: 10px 12px;
+}
+
+.history-planned-age-accordion .child-accordion-trigger h3 {
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.history-planned-age-panel {
+  padding-inline: 8px;
+}
+
+.history-planned-age-panel-inner {
+  padding-top: 4px;
+}
+
 .history-month-item {
   list-style: none;
 }
