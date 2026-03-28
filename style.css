@@ -1657,6 +1657,44 @@ button.ghost {
   opacity: 0.96;
 }
 
+.back-to-top-button {
+  position: fixed;
+  right: 14px;
+  bottom: calc(90px + env(safe-area-inset-bottom));
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid #b9cade;
+  background: rgb(255 255 255 / 94%);
+  color: #1b365f;
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 16px rgb(15 23 42 / 14%);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    visibility 0.2s ease;
+  z-index: 24;
+}
+
+.back-to-top-button.is-visible {
+  opacity: 0.96;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.back-to-top-button:active {
+  transform: scale(0.96);
+}
+
 
 
 .life-event-form {
@@ -2029,6 +2067,10 @@ button.ghost {
 }
 
 @media (min-width: 1000px) {
+  .back-to-top-button {
+    display: none;
+  }
+
   .bottom-nav {
     width: 640px;
     bottom: 16px;

@@ -64,6 +64,7 @@ const dashboardDiagnosisComment = document.getElementById("dashboard-diagnosis-c
 const expenseChart = document.getElementById("expense-chart");
 const bottomNavButtons = Array.from(document.querySelectorAll(".bottom-nav-btn"));
 const navToast = document.getElementById("nav-toast");
+const backToTopButton = document.getElementById("back-to-top-button");
 const accordionSections = Array.from(document.querySelectorAll("[data-accordion-section]"));
 const assetsSection = document.getElementById("section-assets");
 const cashflowSettingsForm = document.getElementById("cashflow-settings-form");
@@ -75,6 +76,7 @@ const accordionCloseTimers = new WeakMap();
 const accordionCollapseWaiters = new WeakMap();
 const NAV_CLOSE_NEAR_DISTANCE = 180;
 const NAV_CLOSE_FAR_DISTANCE = 520;
+const BACK_TO_TOP_SHOW_SCROLL_Y = 320;
 let navActionToken = 0;
 
 let latestAssetForecastSettings = null;
@@ -3271,6 +3273,23 @@ function setupBottomNavigation() {
   sectionElements.forEach((item) => observer.observe(item.element));
 }
 
+function setupBackToTopButton() {
+  if (!backToTopButton) return;
+
+  const updateBackToTopVisibility = () => {
+    const shouldShow = window.scrollY >= BACK_TO_TOP_SHOW_SCROLL_Y;
+    backToTopButton.classList.toggle("is-visible", shouldShow);
+  };
+
+  backToTopButton.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  window.addEventListener("scroll", updateBackToTopVisibility, { passive: true });
+  window.addEventListener("resize", updateBackToTopVisibility);
+  updateBackToTopVisibility();
+}
+
 function init() {
   const settings = loadSettings();
 
@@ -3313,6 +3332,7 @@ function init() {
   setupSectionAccordions();
   setupChildAccordions();
   setupBottomNavigation();
+  setupBackToTopButton();
 
   render();
 }
