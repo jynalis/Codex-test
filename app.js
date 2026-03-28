@@ -2038,14 +2038,14 @@ function renderCashflowTable({ settings, transactions, recurringExpenses, lifeEv
       <tr>
         <th>年</th>
         <th>年齢</th>
-        <th>年収入</th>
-        <th>年通常支出</th>
-        <th>年定期支出</th>
-        <th>年資産形成支出</th>
-        <th>年臨時収入</th>
-        <th>年臨時支出</th>
-        <th>年間収支</th>
-        <th>年末残高</th>
+        <th>収入</th>
+        <th>通常支出</th>
+        <th>定期支出</th>
+        <th>積立支出</th>
+        <th>臨時収入</th>
+        <th>臨時支出</th>
+        <th>収支</th>
+        <th>残高</th>
       </tr>
     </thead>
     <tbody>
@@ -2108,10 +2108,10 @@ function downloadCashflowPdf() {
       td:first-child, td:nth-child(2) { text-align: center; }
       tr { page-break-inside: avoid; }
     </style></head><body>
-    <h1>キャッシュフロー表（予測）</h1>
+    <h1>キャッシュフロー表</h1>
     <p class="meta">作成日時: ${generatedAt}</p>
     <table>
-      <thead><tr><th>年</th><th>年齢</th><th>年収入</th><th>年通常支出</th><th>年定期支出</th><th>年資産形成支出</th><th>年臨時収入</th><th>年臨時支出</th><th>年間収支</th><th>年末残高</th></tr></thead>
+      <thead><tr><th>年</th><th>年齢</th><th>収入</th><th>通常支出</th><th>定期支出</th><th>積立支出</th><th>臨時収入</th><th>臨時支出</th><th>収支</th><th>残高</th></tr></thead>
       <tbody>${bodyRows}</tbody>
     </table></body></html>`);
   win.document.close();

@@ -2050,6 +2050,12 @@ button.ghost {
   margin-bottom: 8px;
 }
 
+.cashflow-forecast-note {
+  margin: 4px 2px 2px;
+  font-size: 0.8rem;
+  color: var(--support-text);
+}
+
 .cashflow-scroll-hint {
   margin: 6px 2px 8px;
   font-size: 0.82rem;
