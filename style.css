@@ -1305,10 +1305,31 @@ button.ghost {
   color: #102743;
 }
 
+.transaction-source-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #2f7e68;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.planned-meta-text {
+  display: inline;
+}
+
 .memo {
   margin-top: 4px;
   color: var(--support-text);
   font-size: 0.84rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .amount-wrap {
@@ -1833,6 +1854,17 @@ button.ghost {
   .item {
     flex-direction: column;
     gap: 8px;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .transaction-source-badge {
+    margin-right: 0;
   }
 
   .history-block-title {
