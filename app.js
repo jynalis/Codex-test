@@ -65,6 +65,7 @@ const navToast = document.getElementById("nav-toast");
 const accordionSections = Array.from(document.querySelectorAll("[data-accordion-section]"));
 const assetsSection = document.getElementById("section-assets");
 const accordionCloseTimers = new WeakMap();
+const accordionCollapseWaiters = new WeakMap();
 let navActionToken = 0;
 
 let latestAssetForecastSettings = null;
@@ -2226,23 +2227,40 @@ function clearAccordionCloseTimer(panel) {
 
 function collapseAccordionPanel(panel) {
   clearAccordionCloseTimer(panel);
+  const collapseWaiter = {};
+  collapseWaiter.promise = new Promise((resolve) => {
+    collapseWaiter.resolve = resolve;
+  });
+  accordionCollapseWaiters.set(panel, collapseWaiter);
   panel.classList.add("is-collapsing");
   const timerId = window.setTimeout(() => {
     panel.hidden = true;
     panel.classList.remove("is-collapsing");
     accordionCloseTimers.delete(panel);
+    const waiter = accordionCollapseWaiters.get(panel);
+    accordionCollapseWaiters.delete(panel);
+    if (waiter?.resolve) {
+      window.requestAnimationFrame(() => waiter.resolve());
+    }
   }, 170);
   accordionCloseTimers.set(panel, timerId);
+  return collapseWaiter.promise;
 }
 
 function expandAccordionPanel(panel) {
   clearAccordionCloseTimer(panel);
+  const waiter = accordionCollapseWaiters.get(panel);
+  if (waiter?.resolve) {
+    accordionCollapseWaiters.delete(panel);
+    waiter.resolve();
+  }
   panel.hidden = false;
   panel.classList.remove("is-collapsing");
 }
 
 function closeExpandedChildAccordions(section) {
   if (!section) return;
+  if (section.dataset.hasChildAccordion !== "true") return;
   const expandedChildTriggers = section.querySelectorAll('[data-child-accordion] .child-accordion-trigger[aria-expanded="true"]');
   expandedChildTriggers.forEach((trigger) => {
     const childAccordion = trigger.closest("[data-child-accordion]");
@@ -2275,7 +2293,7 @@ function setAccordionExpanded(section, expanded) {
 
   if (!expanded) {
     if (wasExpanded) {
-      collapseAccordionPanel(panel);
+      return collapseAccordionPanel(panel);
     } else {
       clearAccordionCloseTimer(panel);
       panel.hidden = true;
@@ -2290,6 +2308,8 @@ function setAccordionExpanded(section, expanded) {
       clearAssetForecastDOM();
     }
   }
+
+  return Promise.resolve();
 }
 
 function setupSectionAccordions() {
@@ -2297,6 +2317,7 @@ function setupSectionAccordions() {
     const trigger = section.querySelector(".accordion-trigger");
     const panel = section.querySelector(".accordion-panel");
     if (!trigger || !panel) return;
+    section.dataset.hasChildAccordion = section.querySelector("[data-child-accordion]") ? "true" : "false";
 
     const toggleSection = () => {
       if (section.dataset.toggleLocked === "true") return;
@@ -2391,6 +2412,16 @@ function ensureSectionHeadingVisible(section) {
 }
 
 function waitForAccordionCollapseLayout(panel) {
+  const collapseWaiter = accordionCollapseWaiters.get(panel);
+  if (collapseWaiter?.promise) {
+    return collapseWaiter.promise.then(
+      () =>
+        new Promise((resolve) => {
+          window.requestAnimationFrame(resolve);
+        })
+    );
+  }
+
   return new Promise((resolve) => {
     if (!panel || panel.hidden) {
       window.requestAnimationFrame(() => resolve());
