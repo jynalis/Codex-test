@@ -497,6 +497,11 @@ button.danger {
   padding: 0 12px 12px;
 }
 
+#panel-profile-plan-assets > .child-accordion-panel-inner,
+#panel-recurring-list > .child-accordion-panel-inner {
+  padding-top: 8px;
+}
+
 .child-accordion-panel[hidden] {
   display: none;
 }
