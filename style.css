@@ -358,18 +358,6 @@ header p {
   font-weight: 500;
 }
 
-.section-tone-cashflow .accordion-trigger {
-  border-color: #5a9cb8;
-  background: linear-gradient(160deg, #f8fcff 0%, #eaf6fb 100%);
-}
-
-.section-tone-cashflow .accordion-toggle-icon {
-  border-color: #4d8ea9;
-  color: #245d74;
-  background: linear-gradient(160deg, #ffffff 0%, #e7f4fa 100%);
-  box-shadow: 0 8px 16px rgb(42 111 138 / 20%);
-}
-
 .grid {
   margin-top: 14px;
   display: grid;
