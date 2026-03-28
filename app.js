@@ -776,6 +776,208 @@ function buildTransactionHistoryItems(transactions, autoTransactions, currentMon
     }));
 }
 
+function parseISODateParts(dateString) {
+  if (typeof dateString !== "string") return null;
+  const match = dateString.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+  return { year, month, day };
+}
+
+function getLastDayOfMonth(year, month) {
+  return new Date(year, month, 0).getDate();
+}
+
+function formatHistoryMonthLabel(monthKey) {
+  const parsed = parseMonth(monthKey);
+  if (!parsed) return monthKey;
+  return `${parsed.year}年${parsed.monthIndex + 1}月`;
+}
+
+function getDayRangeDefinitions(lastDay) {
+  return [
+    { key: "early", startDay: 1, endDay: 10 },
+    { key: "middle", startDay: 11, endDay: 20 },
+    { key: "late", startDay: 21, endDay: lastDay },
+  ];
+}
+
+function resolveDayRangeKey(day) {
+  if (day <= 10) return "early";
+  if (day <= 20) return "middle";
+  return "late";
+}
+
+function groupTransactionsByMonthAndDayRange(items) {
+  const monthMap = new Map();
+  items.forEach((item) => {
+    const parsedDate = parseISODateParts(item.date);
+    if (!parsedDate) return;
+    const monthKey = `${parsedDate.year}-${String(parsedDate.month).padStart(2, "0")}`;
+    const monthGroup = monthMap.get(monthKey)
+      || {
+        monthKey,
+        lastDay: getLastDayOfMonth(parsedDate.year, parsedDate.month),
+        ranges: { early: [], middle: [], late: [] },
+      };
+    monthGroup.ranges[resolveDayRangeKey(parsedDate.day)].push(item);
+    monthMap.set(monthKey, monthGroup);
+  });
+
+  return Array.from(monthMap.values())
+    .sort((a, b) => compareMonth(b.monthKey, a.monthKey));
+}
+
+function createTransactionItemNode(item) {
+  const node = template.content.cloneNode(true);
+  const row = node.querySelector(".item");
+  const meta = node.querySelector(".meta");
+  const memo = node.querySelector(".memo");
+  const amount = node.querySelector(".amount");
+  const edit = node.querySelector(".edit");
+  const del = node.querySelector(".delete");
+
+  meta.textContent = item.isAuto
+    ? item.autoKind === "recurring-expense"
+      ? `${item.date} / 自動反映 / 定期支出`
+      : `${item.date} / 自動反映 / ${item.sourceType}`
+    : `${item.date} / ${item.category}`;
+  memo.textContent = item.memo || "メモなし";
+  amount.textContent = `${item.type === "income" ? "+" : "-"}${yen.format(item.amount)}`;
+  amount.classList.add(item.type);
+
+  if (item.isAuto) {
+    edit.remove();
+    del.remove();
+  } else {
+    edit.addEventListener("click", () => {
+      startTransactionEdit(item.id);
+    });
+    del.addEventListener("click", () => {
+      if (transactionEditingId === item.id) {
+        resetTransactionFormFields();
+      }
+      const next = loadTransactions().filter((tx) => tx.id !== item.id);
+      saveTransactions(next);
+      render();
+    });
+  }
+
+  row.dataset.id = item.id;
+  row.dataset.source = item.source;
+  row.dataset.originalId = item.originalId;
+  return node;
+}
+
+function createDayRangeAccordion({ monthKey, range, items }) {
+  const accordion = document.createElement("section");
+  accordion.className = "child-accordion history-day-range-accordion";
+  accordion.dataset.childAccordion = "";
+  const panelId = `panel-history-${monthKey}-${range.key}`;
+  const triggerId = `trigger-history-${monthKey}-${range.key}`;
+  const countLabel = `（${items.length}件）`;
+
+  accordion.innerHTML = `
+    <button
+      type="button"
+      class="child-accordion-trigger history-day-range-trigger"
+      aria-expanded="false"
+      aria-controls="${panelId}"
+      id="${triggerId}"
+    >
+      <h3>${range.startDay}日〜${range.endDay}日${countLabel}</h3>
+      <span class="child-accordion-toggle" aria-hidden="true">＋</span>
+    </button>
+    <div
+      class="child-accordion-panel history-day-range-panel"
+      id="${panelId}"
+      role="region"
+      aria-labelledby="${triggerId}"
+      aria-hidden="true"
+      hidden
+    >
+      <div class="child-accordion-panel-inner history-day-range-panel-inner">
+        <ul class="list transaction-list history-range-list"></ul>
+      </div>
+    </div>
+  `;
+
+  const listElement = accordion.querySelector(".history-range-list");
+  const renderItems = () => {
+    if (!listElement || accordion.dataset.rendered === "true") return;
+    const fragment = document.createDocumentFragment();
+    items.forEach((item) => fragment.appendChild(createTransactionItemNode(item)));
+    listElement.appendChild(fragment);
+    accordion.dataset.rendered = "true";
+  };
+  const clearItems = () => {
+    if (!listElement || accordion.dataset.rendered !== "true") return;
+    listElement.replaceChildren();
+    accordion.dataset.rendered = "false";
+  };
+
+  accordion.addEventListener("childaccordiontoggle", (event) => {
+    if (event.detail?.expanded) {
+      renderItems();
+    } else {
+      clearItems();
+    }
+  });
+
+  return accordion;
+}
+
+function renderTransactionHistory(items) {
+  list.innerHTML = "";
+  if (items.length === 0) {
+    const empty = document.createElement("li");
+    empty.textContent = "まだ取引がありません。";
+    empty.className = "item";
+    list.appendChild(empty);
+    return;
+  }
+
+  const monthGroups = groupTransactionsByMonthAndDayRange(items);
+  const fragment = document.createDocumentFragment();
+
+  monthGroups.forEach((monthGroup) => {
+    const monthItem = document.createElement("li");
+    monthItem.className = "history-month-item";
+    const monthWrap = document.createElement("article");
+    monthWrap.className = "history-month-group";
+
+    const monthTitle = document.createElement("h4");
+    monthTitle.className = "history-month-title";
+    monthTitle.textContent = formatHistoryMonthLabel(monthGroup.monthKey);
+    monthWrap.appendChild(monthTitle);
+
+    const dayRanges = getDayRangeDefinitions(monthGroup.lastDay);
+    const dayRangeList = document.createElement("div");
+    dayRangeList.className = "history-day-range-list";
+    dayRanges.forEach((range) => {
+      const rangeItems = monthGroup.ranges[range.key];
+      if (!Array.isArray(rangeItems) || rangeItems.length === 0) return;
+      dayRangeList.appendChild(createDayRangeAccordion({ monthKey: monthGroup.monthKey, range, items: rangeItems }));
+    });
+    monthWrap.appendChild(dayRangeList);
+    monthItem.appendChild(monthWrap);
+    fragment.appendChild(monthItem);
+  });
+
+  list.appendChild(fragment);
+  setupChildAccordions(list);
+}
+
 function renderLifeEvents(items) {
   if (!lifeEventList) return;
   lifeEventList.innerHTML = "";
@@ -1918,58 +2120,10 @@ function render() {
   const historyItems = buildTransactionHistoryItems(transactions, autoTransactions, currentMonth);
   const plannedHistoryItems = buildLifeEventHistoryItems(lifeEvents, settings);
 
-  list.innerHTML = "";
+  renderTransactionHistory(historyItems);
   if (plannedList) {
     plannedList.innerHTML = "";
   }
-
-  if (historyItems.length === 0) {
-    const empty = document.createElement("li");
-    empty.textContent = "まだ取引がありません。";
-    empty.className = "item";
-    list.appendChild(empty);
-  }
-
-  historyItems.forEach((item) => {
-      const node = template.content.cloneNode(true);
-      const row = node.querySelector(".item");
-      const meta = node.querySelector(".meta");
-      const memo = node.querySelector(".memo");
-      const amount = node.querySelector(".amount");
-      const edit = node.querySelector(".edit");
-      const del = node.querySelector(".delete");
-
-      meta.textContent = item.isAuto
-        ? item.autoKind === "recurring-expense"
-          ? `${item.date} / 自動反映 / 定期支出`
-          : `${item.date} / 自動反映 / ${item.sourceType}`
-        : `${item.date} / ${item.category}`;
-      memo.textContent = item.memo || "メモなし";
-      amount.textContent = `${item.type === "income" ? "+" : "-"}${yen.format(item.amount)}`;
-      amount.classList.add(item.type);
-
-      if (item.isAuto) {
-        edit.remove();
-        del.remove();
-      } else {
-        edit.addEventListener("click", () => {
-          startTransactionEdit(item.id);
-        });
-        del.addEventListener("click", () => {
-          if (transactionEditingId === item.id) {
-            resetTransactionFormFields();
-          }
-          const next = loadTransactions().filter((tx) => tx.id !== item.id);
-          saveTransactions(next);
-          render();
-        });
-      }
-
-      row.dataset.id = item.id;
-      row.dataset.source = item.source;
-      row.dataset.originalId = item.originalId;
-      list.appendChild(node);
-    });
 
   if (plannedList) {
     if (plannedHistoryItems.length === 0) {
@@ -2364,6 +2518,11 @@ function setChildAccordionExpanded(childAccordion, expanded) {
   panel.hidden = !expanded;
   panel.setAttribute("aria-hidden", String(!expanded));
   toggle.textContent = expanded ? "－" : "＋";
+  childAccordion.dispatchEvent(
+    new CustomEvent("childaccordiontoggle", {
+      detail: { expanded },
+    })
+  );
 }
 
 function setupChildAccordion(childAccordion) {
