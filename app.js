@@ -2031,16 +2031,33 @@ function shouldApplyPlanContributionForMonth(plan, birthDate, month) {
   return compareMonth(month, withdrawTargetMonth) <= 0;
 }
 
+function countPlanContributionMonthsInYear(plan, birthDate, year) {
+  let months = 0;
+  for (let monthIndex = 0; monthIndex < 12; monthIndex += 1) {
+    const month = formatMonth(year, monthIndex);
+    if (shouldApplyPlanContributionForMonth(plan, birthDate, month)) {
+      months += 1;
+    }
+  }
+  return months;
+}
+
 function calculateAnnualAssetFormationExpense(settings, year) {
   const nowMonth = todayISO().slice(0, 7);
   if (!Array.isArray(settings.plans) || settings.plans.length === 0 || !parseMonth(nowMonth)) return 0;
 
-  const monthlyTotal = settings.plans.reduce((sum, plan) => {
-    const annualBaseMonth = formatMonth(year, 0);
-    if (!shouldApplyPlanContributionForMonth(plan, settings.birthDate, annualBaseMonth)) return sum;
-    return sum + findActiveMonthlyContribution(plan, nowMonth);
+  return settings.plans.reduce((sum, plan) => {
+    const monthlyContribution = findActiveMonthlyContribution(plan, nowMonth);
+    if (monthlyContribution <= 0) return sum;
+
+    const withdrawAge = Number(plan?.withdrawAge);
+    if (!Number.isFinite(withdrawAge) || withdrawAge <= 0) {
+      return sum + (monthlyContribution * 12);
+    }
+
+    const activeMonths = countPlanContributionMonthsInYear(plan, settings.birthDate, year);
+    return sum + (monthlyContribution * activeMonths);
   }, 0);
-  return monthlyTotal * 12;
 }
 
 function buildLifeEventTotalsByYear(lifeEvents, birthDate) {
