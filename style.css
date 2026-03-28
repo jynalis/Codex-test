@@ -1276,6 +1276,52 @@ button.ghost {
   color: #25425f;
 }
 
+.history-month-item {
+  list-style: none;
+}
+
+.history-month-group {
+  border: 1px solid #bfd0e3;
+  border-radius: 14px;
+  padding: 10px;
+  background: linear-gradient(180deg, #fff 0%, #f8fbff 100%);
+}
+
+.history-month-title {
+  font-size: 0.95rem;
+  color: #17385e;
+  font-weight: 800;
+  margin: 0;
+  padding: 2px 2px 8px;
+}
+
+.history-day-range-list {
+  display: grid;
+  gap: 8px;
+}
+
+.history-day-range-accordion .child-accordion-trigger {
+  min-height: 50px;
+  padding: 10px 12px;
+}
+
+.history-day-range-accordion .child-accordion-trigger h3 {
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.history-day-range-panel {
+  padding-inline: 8px;
+}
+
+.history-day-range-panel-inner {
+  padding-top: 4px;
+}
+
+.history-range-list {
+  margin-top: 8px;
+}
+
 .list {
   margin: 14px 0 0;
   padding: 0;
@@ -1870,6 +1916,19 @@ button.ghost {
 
   .history-block-title {
     font-size: 0.92rem;
+  }
+
+  .history-month-group {
+    padding: 8px;
+  }
+
+  .history-month-title {
+    font-size: 0.92rem;
+    padding-bottom: 6px;
+  }
+
+  .history-day-range-accordion .child-accordion-trigger h3 {
+    font-size: 0.9rem;
   }
 
   .amount-wrap {
