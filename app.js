@@ -2094,6 +2094,8 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
     const annualIncomeWithExtra = annualIncome + annualExtraIncome;
     const annualBalance = annualIncomeWithExtra - annualRegularExpense - annualRecurringExpense - annualAssetFormationExpense - annualExtraExpense;
     endingBalance += annualBalance;
+    const yearEndMonth = formatMonth(year, 11);
+    const financialAssetTotal = calculateFinancialAssetTotalAtMonth(settings, yearEndMonth);
 
     rows.push({
       year,
@@ -2106,6 +2108,7 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
       annualExtraExpense,
       annualBalance,
       endingBalance,
+      financialAssetTotal,
     });
   }
 
@@ -2142,6 +2145,7 @@ function renderCashflowTable({ settings, transactions, recurringExpenses, lifeEv
         <th>臨時支出</th>
         <th>収支</th>
         <th>残高</th>
+        <th>金融資産合計</th>
       </tr>
     </thead>
     <tbody>
@@ -2157,6 +2161,7 @@ function renderCashflowTable({ settings, transactions, recurringExpenses, lifeEv
           <td class="is-amount">${yen.format(row.annualExtraExpense)}</td>
           <td class="is-amount ${row.annualBalance >= 0 ? 'is-positive' : 'is-negative'}">${yen.format(row.annualBalance)}</td>
           <td class="is-amount ${row.endingBalance >= 0 ? 'is-positive' : 'is-negative'}">${yen.format(row.endingBalance)}</td>
+          <td class="is-amount">${yen.format(row.financialAssetTotal)}</td>
         </tr>
       `).join('')}
     </tbody>
@@ -2188,6 +2193,7 @@ function downloadCashflowPdf() {
       <td>${yen.format(row.annualExtraExpense)}</td>
       <td>${yen.format(row.annualBalance)}</td>
       <td>${yen.format(row.endingBalance)}</td>
+      <td>${yen.format(row.financialAssetTotal)}</td>
     </tr>
   `).join('');
 
@@ -2207,7 +2213,7 @@ function downloadCashflowPdf() {
     <h1>キャッシュフロー表</h1>
     <p class="meta">作成日時: ${generatedAt}</p>
     <table>
-      <thead><tr><th>年</th><th>年齢</th><th>収入</th><th>通常支出</th><th>定期支出</th><th>積立支出</th><th>臨時収入</th><th>臨時支出</th><th>収支</th><th>残高</th></tr></thead>
+      <thead><tr><th>年</th><th>年齢</th><th>収入</th><th>通常支出</th><th>定期支出</th><th>積立支出</th><th>臨時収入</th><th>臨時支出</th><th>収支</th><th>残高</th><th>金融資産合計</th></tr></thead>
       <tbody>${bodyRows}</tbody>
     </table></body></html>`);
   win.document.close();
@@ -2276,6 +2282,17 @@ function resolvePlanSimulationTargetMonth(plan, birthDate, baseTargetMonth, base
   if (!withdrawTargetMonth) return baseTargetMonth;
 
   return compareMonth(withdrawTargetMonth, baseTargetMonth) <= 0 ? withdrawTargetMonth : baseTargetMonth;
+}
+
+function calculateFinancialAssetTotalAtMonth(settings, targetMonth) {
+  if (!parseMonth(targetMonth) || !Array.isArray(settings?.plans) || settings.plans.length === 0) return 0;
+
+  return settings.plans.reduce((sum, plan) => {
+    const planTargetMonth = resolvePlanSimulationTargetMonth(plan, settings.birthDate, targetMonth, 200);
+    if (!planTargetMonth) return sum;
+    const projection = projectPlanAssetDetails(plan, settings.birthDate, planTargetMonth);
+    return sum + (projection.amount || 0);
+  }, 0);
 }
 
 function projectPlanAssetDetails(plan, birthDate, explicitTargetMonth = null) {
