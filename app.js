@@ -65,6 +65,7 @@ const navToast = document.getElementById("nav-toast");
 const accordionSections = Array.from(document.querySelectorAll("[data-accordion-section]"));
 const assetsSection = document.getElementById("section-assets");
 const accordionCloseTimers = new WeakMap();
+let navActionToken = 0;
 
 let latestAssetForecastSettings = null;
 let assetForecastDirty = true;
@@ -2389,7 +2390,38 @@ function ensureSectionHeadingVisible(section) {
   trigger.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function waitForAccordionCollapseLayout(panel) {
+  return new Promise((resolve) => {
+    if (!panel || panel.hidden) {
+      window.requestAnimationFrame(() => resolve());
+      return;
+    }
+
+    let settled = false;
+    let fallbackId = 0;
+
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      panel.removeEventListener("transitionend", handleTransitionEnd);
+      window.clearTimeout(fallbackId);
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(resolve);
+      });
+    };
+
+    const handleTransitionEnd = (event) => {
+      if (event.target !== panel) return;
+      finish();
+    };
+
+    panel.addEventListener("transitionend", handleTransitionEnd);
+    fallbackId = window.setTimeout(finish, 220);
+  });
+}
+
 function scrollToNavSection(target) {
+  const actionToken = ++navActionToken;
   const sectionId = NAV_TARGETS[target];
   const targetSection = sectionId ? document.getElementById(sectionId) : null;
   if (!targetSection) return;
@@ -2402,7 +2434,13 @@ function scrollToNavSection(target) {
 
   const expanded = isAccordionSectionExpanded(targetSection);
   if (expanded) {
+    const panel = targetSection.querySelector(".accordion-panel");
     setAccordionExpanded(targetSection, false);
+    waitForAccordionCollapseLayout(panel).then(() => {
+      if (actionToken !== navActionToken) return;
+      if (isAccordionSectionExpanded(targetSection)) return;
+      ensureSectionHeadingVisible(targetSection);
+    });
     return;
   }
 
