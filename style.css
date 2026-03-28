@@ -1113,6 +1113,28 @@ button.plan-card-trigger {
   font-size: 1.02rem;
 }
 
+.asset-breakdown-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.asset-breakdown-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  color: #1d3f67;
+  font-size: 0.93rem;
+}
+
+.asset-breakdown-list strong {
+  font-size: 0.95rem;
+  color: #153f73;
+}
+
 .recurring-form {
   gap: 12px;
 }
