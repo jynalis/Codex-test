@@ -198,6 +198,7 @@ header p {
 
 .accordion-section {
   padding: 10px 12px;
+  scroll-margin-top: 12px;
 }
 
 .accordion-trigger {

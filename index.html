@@ -21,7 +21,6 @@
       <section
         id="section-home"
         class="card dashboard-section section-tone-home accordion-section"
-        data-nav-section="home"
         data-accordion-section
       >
         <button type="button" class="accordion-trigger dashboard-header" aria-expanded="false" aria-controls="panel-home" id="trigger-home">
@@ -72,7 +71,7 @@
         </div>
       </section>
 
-      <section class="card section-tone-profile accordion-section" data-accordion-section>
+      <section id="section-profile" class="card section-tone-profile accordion-section" data-nav-section="home" data-accordion-section>
         <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-profile" id="trigger-profile">
           <div class="section-heading">
             <h2>基本情報・資産形成設定</h2>
@@ -272,7 +271,7 @@
         </div>
       </section>
 
-      <section id="section-life-events" class="card section-tone-life-events accordion-section" data-nav-section="schedule" data-accordion-section>
+      <section id="section-life-events" class="card section-tone-life-events accordion-section" data-accordion-section>
         <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-life-events" id="trigger-life-events">
           <div class="section-heading">
             <h2>ライフイベント</h2>
@@ -387,7 +386,7 @@
         </div>
       </section>
 
-      <section class="card section-tone-chart accordion-section" data-accordion-section>
+      <section id="section-expense" class="card section-tone-chart accordion-section" data-nav-section="expense" data-accordion-section>
         <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-chart" id="trigger-chart">
           <div class="section-heading">
             <h2>支出バランス分析</h2>
@@ -404,7 +403,7 @@
         </div>
       </section>
 
-      <section id="section-history" class="card section-tone-history accordion-section" data-nav-section="history" data-accordion-section>
+      <section id="section-history" class="card section-tone-history accordion-section" data-nav-section="transactions" data-accordion-section>
         <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-history" id="trigger-history">
           <div class="section-heading">
             <h2>取引履歴</h2>
@@ -445,13 +444,13 @@
         <span class="nav-icon" aria-hidden="true">◔</span>
         <span class="nav-label">資産</span>
       </button>
-      <button type="button" class="bottom-nav-btn" data-nav-target="schedule">
+      <button type="button" class="bottom-nav-btn" data-nav-target="expense">
         <span class="nav-icon" aria-hidden="true">☰</span>
-        <span class="nav-label">予定</span>
+        <span class="nav-label">支出</span>
       </button>
-      <button type="button" class="bottom-nav-btn" data-nav-target="history">
+      <button type="button" class="bottom-nav-btn" data-nav-target="transactions">
         <span class="nav-icon" aria-hidden="true">⎘</span>
-        <span class="nav-label">履歴</span>
+        <span class="nav-label">取引</span>
       </button>
     </nav>
 
