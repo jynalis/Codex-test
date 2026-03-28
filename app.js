@@ -2474,7 +2474,7 @@ function renderAssetForecast(settings) {
       aria-controls="${compositionPanelId}"
       id="${compositionTriggerId}"
     >
-      <h3>現時点の総資産額の構成比（契約別）</h3>
+      <h3>現在資産形成の構成比</h3>
       <span class="child-accordion-toggle" aria-hidden="true">+</span>
     </button>
     <div
@@ -2486,7 +2486,7 @@ function renderAssetForecast(settings) {
     >
       <div class="child-accordion-panel-inner">
         <section class="chart asset-composition">
-          <p class="section-description">現在入力されている積立・一括入金の実績をもとに算出しています（基準日: ${currentAssetBaseDate}）。</p>
+          <p class="section-description">現在入力されている資産形成の契約（積立・一括入金）の実績をもとに算出しています（基準日: ${currentAssetBaseDate}）。</p>
         </section>
       </div>
     </div>
