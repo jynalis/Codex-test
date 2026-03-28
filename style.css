@@ -1297,6 +1297,10 @@ button.ghost {
   padding-top: 4px;
 }
 
+.planned-transaction-list > .history-planned-age-accordion:first-child {
+  margin-top: 10px;
+}
+
 .history-planned-empty {
   margin-top: 6px;
 }
