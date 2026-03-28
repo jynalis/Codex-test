@@ -21,7 +21,7 @@
   --input-bg: linear-gradient(180deg, #fffef8 0%, #fff8e9 100%);
   --recurring-bg: linear-gradient(180deg, #f8fcff 0%, #eef7ff 100%);
   --assets-bg: linear-gradient(180deg, #f7f8ff 0%, #f0f2ff 100%);
-  --cashflow-bg: linear-gradient(180deg, #f7fbf8 0%, #edf5f1 100%);
+  --cashflow-bg: linear-gradient(180deg, #f6fbfe 0%, #eaf6fb 100%);
   --life-events-bg: linear-gradient(180deg, #f8fffb 0%, #eefaf4 100%);
   --chart-bg: linear-gradient(180deg, #fff8fb 0%, #fff1f7 100%);
   --history-bg: linear-gradient(180deg, #fbfcff 0%, #f4f7fd 100%);
@@ -180,8 +180,8 @@ header p {
 
 .section-tone-cashflow {
   background: var(--cashflow-bg);
-  border-color: #b7cfc1;
-  border-top: 5px solid #3e6f5f;
+  border-color: #2f7e9d;
+  border-top: 5px solid #3b92b3;
 }
 
 .section-tone-life-events {
@@ -340,7 +340,7 @@ header p {
 }
 
 .section-tone-cashflow .section-heading h2 {
-  border-left-color: #3e6f5f;
+  border-left-color: #2a6f8a;
 }
 
 .section-tone-chart .section-heading h2 {
@@ -359,15 +359,15 @@ header p {
 }
 
 .section-tone-cashflow .accordion-trigger {
-  border-color: #9ebbad;
-  background: linear-gradient(160deg, #f8fcfa 0%, #e7f1ec 100%);
+  border-color: #5a9cb8;
+  background: linear-gradient(160deg, #f8fcff 0%, #eaf6fb 100%);
 }
 
 .section-tone-cashflow .accordion-toggle-icon {
-  border-color: #8aa796;
-  color: #1f5243;
-  background: linear-gradient(160deg, #ffffff 0%, #e1ede7 100%);
-  box-shadow: 0 8px 16px rgb(31 82 67 / 18%);
+  border-color: #4d8ea9;
+  color: #245d74;
+  background: linear-gradient(160deg, #ffffff 0%, #e7f4fa 100%);
+  box-shadow: 0 8px 16px rgb(42 111 138 / 20%);
 }
 
 .grid {
