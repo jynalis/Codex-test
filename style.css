@@ -45,6 +45,10 @@ body {
   color: var(--text);
 }
 
+body.is-nav-closing {
+  overflow-anchor: none;
+}
+
 .container {
   max-width: 1160px;
   margin: 0 auto;

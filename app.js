@@ -66,6 +66,8 @@ const accordionSections = Array.from(document.querySelectorAll("[data-accordion-
 const assetsSection = document.getElementById("section-assets");
 const accordionCloseTimers = new WeakMap();
 const accordionCollapseWaiters = new WeakMap();
+const NAV_CLOSE_NEAR_DISTANCE = 180;
+const NAV_CLOSE_FAR_DISTANCE = 520;
 let navActionToken = 0;
 
 let latestAssetForecastSettings = null;
@@ -2395,7 +2397,19 @@ function isAccordionSectionExpanded(section) {
   return trigger?.getAttribute("aria-expanded") === "true";
 }
 
-function ensureSectionHeadingVisible(section) {
+function getSectionHeadingTargetY(section) {
+  const trigger = section?.querySelector(".accordion-trigger");
+  if (!trigger) return window.scrollY;
+  const topMargin = 12;
+  return window.scrollY + trigger.getBoundingClientRect().top - topMargin;
+}
+
+function distanceBasedScrollBehavior(distance) {
+  if (distance > NAV_CLOSE_FAR_DISTANCE) return "auto";
+  return "smooth";
+}
+
+function ensureSectionHeadingVisible(section, { behavior } = {}) {
   if (!section) return;
   const trigger = section.querySelector(".accordion-trigger");
   if (!trigger) return;
@@ -2408,7 +2422,12 @@ function ensureSectionHeadingVisible(section) {
   const isVisible = rect.top >= topMargin && rect.bottom <= window.innerHeight - bottomMargin;
 
   if (isVisible) return;
-  trigger.scrollIntoView({ behavior: "smooth", block: "start" });
+  const targetY = getSectionHeadingTargetY(section);
+  const distance = Math.abs(window.scrollY - targetY);
+  window.scrollTo({
+    top: targetY,
+    behavior: behavior || distanceBasedScrollBehavior(distance),
+  });
 }
 
 function waitForAccordionCollapseLayout(panel) {
@@ -2466,11 +2485,25 @@ function scrollToNavSection(target) {
   const expanded = isAccordionSectionExpanded(targetSection);
   if (expanded) {
     const panel = targetSection.querySelector(".accordion-panel");
+    const beforeCloseDistance = Math.abs(window.scrollY - getSectionHeadingTargetY(targetSection));
+    if (beforeCloseDistance > NAV_CLOSE_NEAR_DISTANCE) {
+      const closeBehavior = distanceBasedScrollBehavior(beforeCloseDistance);
+      document.body.classList.add("is-nav-closing");
+      window.scrollTo({
+        top: getSectionHeadingTargetY(targetSection),
+        behavior: closeBehavior,
+      });
+    }
+
     setAccordionExpanded(targetSection, false);
     waitForAccordionCollapseLayout(panel).then(() => {
-      if (actionToken !== navActionToken) return;
-      if (isAccordionSectionExpanded(targetSection)) return;
-      ensureSectionHeadingVisible(targetSection);
+      if (actionToken === navActionToken && !isAccordionSectionExpanded(targetSection)) {
+        ensureSectionHeadingVisible(targetSection, {
+          behavior: distanceBasedScrollBehavior(beforeCloseDistance),
+        });
+      }
+    }).finally(() => {
+      document.body.classList.remove("is-nav-closing");
     });
     return;
   }
