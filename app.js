@@ -2,6 +2,7 @@ const STORAGE_KEY = "kakeibo_transactions_v1";
 const SETTINGS_KEY = "kakeibo_settings_v1";
 const RECURRING_EXPENSES_KEY = "kakeibo_recurring_expenses_v1";
 const LIFE_EVENTS_KEY = "kakeibo_life_events_v1";
+const CASHFLOW_ASSUMPTIONS_KEY = "kakeibo_cashflow_assumptions_v1";
 
 const form = document.getElementById("transaction-form");
 const dateInput = document.getElementById("date");
@@ -65,6 +66,11 @@ const bottomNavButtons = Array.from(document.querySelectorAll(".bottom-nav-btn")
 const navToast = document.getElementById("nav-toast");
 const accordionSections = Array.from(document.querySelectorAll("[data-accordion-section]"));
 const assetsSection = document.getElementById("section-assets");
+const cashflowSettingsForm = document.getElementById("cashflow-settings-form");
+const cashflowSalaryGrowthRateInput = document.getElementById("cashflow-salary-growth-rate");
+const cashflowInflationRateInput = document.getElementById("cashflow-inflation-rate");
+const cashflowTableWrap = document.getElementById("cashflow-table-wrap");
+const cashflowDownloadPdfButton = document.getElementById("cashflow-download-pdf-button");
 const accordionCloseTimers = new WeakMap();
 const accordionCollapseWaiters = new WeakMap();
 const NAV_CLOSE_NEAR_DISTANCE = 180;
@@ -84,6 +90,11 @@ const NAV_TARGETS = {
   assets: "section-assets",
   expense: "section-expense",
   transactions: "section-history",
+};
+
+const DEFAULT_CASHFLOW_ASSUMPTIONS = {
+  salaryGrowthRate: 1,
+  inflationRate: 1,
 };
 
 const EXPENSE_CATEGORIES = ["日常費", "レジャー費", "ガソリン費", "雑費"];
@@ -672,6 +683,33 @@ function loadLifeEvents() {
 
 function saveLifeEvents(items) {
   localStorage.setItem(LIFE_EVENTS_KEY, JSON.stringify(items));
+}
+
+function loadCashflowAssumptions() {
+  const raw = localStorage.getItem(CASHFLOW_ASSUMPTIONS_KEY);
+  if (!raw) return { ...DEFAULT_CASHFLOW_ASSUMPTIONS };
+  try {
+    const data = JSON.parse(raw);
+    return {
+      salaryGrowthRate: Number.isFinite(Number(data?.salaryGrowthRate)) ? Number(data.salaryGrowthRate) : DEFAULT_CASHFLOW_ASSUMPTIONS.salaryGrowthRate,
+      inflationRate: Number.isFinite(Number(data?.inflationRate)) ? Number(data.inflationRate) : DEFAULT_CASHFLOW_ASSUMPTIONS.inflationRate,
+    };
+  } catch {
+    return { ...DEFAULT_CASHFLOW_ASSUMPTIONS };
+  }
+}
+
+function saveCashflowAssumptions(assumptions) {
+  localStorage.setItem(CASHFLOW_ASSUMPTIONS_KEY, JSON.stringify({
+    salaryGrowthRate: Number(assumptions?.salaryGrowthRate) || 0,
+    inflationRate: Number(assumptions?.inflationRate) || 0,
+  }));
+}
+
+function updateCashflowAssumptionInputs(assumptions) {
+  if (!cashflowSalaryGrowthRateInput || !cashflowInflationRateInput) return;
+  cashflowSalaryGrowthRateInput.value = String(assumptions.salaryGrowthRate ?? DEFAULT_CASHFLOW_ASSUMPTIONS.salaryGrowthRate);
+  cashflowInflationRateInput.value = String(assumptions.inflationRate ?? DEFAULT_CASHFLOW_ASSUMPTIONS.inflationRate);
 }
 
 function setLifeEventFormMode(isEditing) {
@@ -1778,6 +1816,274 @@ function calculateAge(birthDate) {
   return Math.max(age, 0);
 }
 
+function calculateAverageMonthlyAmount(transactions, {
+  startMonth,
+  endMonth,
+  type,
+  categories,
+}) {
+  if (!parseMonth(startMonth) || !parseMonth(endMonth) || compareMonth(startMonth, endMonth) > 0) return 0;
+
+  let cursor = startMonth;
+  let targetMonths = 0;
+  while (compareMonth(cursor, endMonth) <= 0) {
+    targetMonths += 1;
+    cursor = addOneMonth(cursor);
+  }
+  if (targetMonths <= 0) return 0;
+
+  const total = transactions.reduce((sum, item) => {
+    const month = monthISO(item.date);
+    if (compareMonth(month, startMonth) < 0 || compareMonth(month, endMonth) > 0) return sum;
+    if (item.type !== type) return sum;
+    if (Array.isArray(categories) && !categories.includes(item.category)) return sum;
+    return sum + item.amount;
+  }, 0);
+
+  return total / targetMonths;
+}
+
+function getRecurringExpenseMonthsInYear(item, year) {
+  const itemStart = parseMonth(item.startMonth);
+  if (!itemStart) return 0;
+  const start = formatMonth(year, 0);
+  const end = formatMonth(year, 11);
+  let effectiveStart = compareMonth(item.startMonth, start) > 0 ? item.startMonth : start;
+  let effectiveEnd = end;
+  if (parseMonth(item.endMonth) && compareMonth(item.endMonth, effectiveEnd) < 0) {
+    effectiveEnd = item.endMonth;
+  }
+  if (compareMonth(effectiveStart, effectiveEnd) > 0) return 0;
+  return monthsBetweenInclusive(effectiveStart, effectiveEnd);
+}
+
+function resolveAgeAtYear(birthDate, year) {
+  const birth = parseBirthDate(birthDate);
+  if (!birth) return null;
+  return year - birth.getFullYear();
+}
+
+function shouldApplyPlanContributionForMonth(plan, birthDate, month) {
+  const withdrawAge = Number(plan?.withdrawAge);
+  if (!Number.isFinite(withdrawAge) || withdrawAge <= 0) return true;
+  const withdrawTargetMonth = resolveWithdrawTargetMonth(birthDate, withdrawAge);
+  if (!withdrawTargetMonth) return true;
+  return compareMonth(month, withdrawTargetMonth) <= 0;
+}
+
+function calculateAnnualAssetFormationExpense(settings, year) {
+  if (!Array.isArray(settings.plans) || settings.plans.length === 0) return 0;
+  let total = 0;
+  for (let monthIndex = 0; monthIndex < 12; monthIndex += 1) {
+    const month = formatMonth(year, monthIndex);
+    settings.plans.forEach((plan) => {
+      if (!shouldApplyPlanContributionForMonth(plan, settings.birthDate, month)) return;
+      total += findActiveMonthlyContribution(plan, month);
+      total += getLumpSumsOnMonth(plan, month).reduce((sum, amount) => sum + amount, 0);
+    });
+  }
+  return total;
+}
+
+function buildLifeEventTotalsByYear(lifeEvents, birthDate) {
+  return (Array.isArray(lifeEvents) ? lifeEvents : []).reduce((map, event) => {
+    const age = Number(event?.age);
+    const amount = Math.max(Number(event?.amount) || 0, 0);
+    if (!Number.isFinite(age) || amount <= 0) return map;
+    const birth = parseBirthDate(birthDate);
+    if (!birth) return map;
+    const year = birth.getFullYear() + age;
+    if (!map[year]) {
+      map[year] = { income: 0, expense: 0 };
+    }
+    if (event.type === 'income') {
+      map[year].income += amount;
+    } else if (event.type === 'expense') {
+      map[year].expense += amount;
+    }
+    return map;
+  }, {});
+}
+
+function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEvents, assumptions }) {
+  const birth = parseBirthDate(settings.birthDate);
+  if (!birth) return [];
+
+  const currentAge = calculateAge(settings.birthDate);
+  const startYear = new Date().getFullYear();
+  const endYear = birth.getFullYear() + 60;
+  if (startYear > endYear) return [];
+
+  const nowMonth = todayISO().slice(0, 7);
+  const averageStartMonth = resolveEntryStartMonth(settings, transactions);
+  const averageEndMonth = nowMonth;
+
+  const monthlyIncome = calculateAverageMonthlyAmount(transactions, {
+    startMonth: averageStartMonth,
+    endMonth: averageEndMonth,
+    type: 'income',
+    categories: ['定期収入'],
+  });
+  const monthlyRegularExpense = calculateAverageMonthlyAmount(transactions, {
+    startMonth: averageStartMonth,
+    endMonth: averageEndMonth,
+    type: 'expense',
+    categories: EXPENSE_CATEGORIES,
+  });
+
+  const assetFormationAnnualBase = calculateAnnualAssetFormationExpense(settings, startYear);
+
+  const salaryGrowth = (Number(assumptions?.salaryGrowthRate) || 0) / 100;
+  const inflationRate = (Number(assumptions?.inflationRate) || 0) / 100;
+  const lifeEventByYear = buildLifeEventTotalsByYear(lifeEvents, settings.birthDate);
+
+  const initialBalance = calculateMonthlySummary(transactions, settings, nowMonth).endingBalance;
+  const rows = [];
+  let endingBalance = initialBalance;
+
+  for (let year = startYear; year <= endYear; year += 1) {
+    const yearOffset = year - startYear;
+    const age = resolveAgeAtYear(settings.birthDate, year);
+    if (!Number.isFinite(age) || age < currentAge || age > 60) continue;
+
+    const annualIncome = Math.round(monthlyIncome * 12 * ((1 + salaryGrowth) ** yearOffset));
+    const annualRegularExpense = Math.round(monthlyRegularExpense * 12 * ((1 + inflationRate) ** yearOffset));
+
+    const recurringAmountThisYear = (Array.isArray(recurringExpenses) ? recurringExpenses : []).reduce((sum, item) => {
+      const months = getRecurringExpenseMonthsInYear(item, year);
+      if (months <= 0) return sum;
+      return sum + (item.amount * months);
+    }, 0);
+    const annualRecurringExpense = Math.round(recurringAmountThisYear * ((1 + inflationRate) ** yearOffset));
+
+    const annualAssetFormationExpense = year === startYear
+      ? assetFormationAnnualBase
+      : calculateAnnualAssetFormationExpense(settings, year);
+
+    const lifeEvent = lifeEventByYear[year] || { income: 0, expense: 0 };
+    const annualBalance = annualIncome + lifeEvent.income - annualRegularExpense - annualRecurringExpense - annualAssetFormationExpense - lifeEvent.expense;
+    endingBalance += annualBalance;
+
+    rows.push({
+      year,
+      age,
+      annualIncome,
+      annualRegularExpense,
+      annualRecurringExpense,
+      annualAssetFormationExpense,
+      annualExtraIncome: lifeEvent.income,
+      annualExtraExpense: lifeEvent.expense,
+      annualBalance,
+      endingBalance,
+    });
+  }
+
+  return rows;
+}
+
+function renderCashflowTable({ settings, transactions, recurringExpenses, lifeEvents, assumptions }) {
+  if (!cashflowTableWrap) return;
+  cashflowTableWrap.innerHTML = '';
+
+  if (!settings.birthDate) {
+    cashflowTableWrap.innerHTML = '<p class="chart-empty">生年月日を保存するとキャッシュフロー表を表示できます。</p>';
+    return;
+  }
+
+  const rows = buildCashflowRows({ settings, transactions, recurringExpenses, lifeEvents, assumptions });
+  if (rows.length === 0) {
+    cashflowTableWrap.innerHTML = '<p class="chart-empty">対象期間のデータが不足しているため、表を作成できません。</p>';
+    return;
+  }
+
+  const table = document.createElement('table');
+  table.className = 'cashflow-table';
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>年</th>
+        <th>年齢</th>
+        <th>年収入</th>
+        <th>年通常支出</th>
+        <th>年定期支出</th>
+        <th>年資産形成支出</th>
+        <th>年臨時収入</th>
+        <th>年臨時支出</th>
+        <th>年間収支</th>
+        <th>年末残高</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows.map((row) => `
+        <tr>
+          <td>${row.year}</td>
+          <td>${row.age}歳</td>
+          <td class="is-amount">${yen.format(row.annualIncome)}</td>
+          <td class="is-amount">${yen.format(row.annualRegularExpense)}</td>
+          <td class="is-amount">${yen.format(row.annualRecurringExpense)}</td>
+          <td class="is-amount">${yen.format(row.annualAssetFormationExpense)}</td>
+          <td class="is-amount">${yen.format(row.annualExtraIncome)}</td>
+          <td class="is-amount">${yen.format(row.annualExtraExpense)}</td>
+          <td class="is-amount ${row.annualBalance >= 0 ? 'is-positive' : 'is-negative'}">${yen.format(row.annualBalance)}</td>
+          <td class="is-amount ${row.endingBalance >= 0 ? 'is-positive' : 'is-negative'}">${yen.format(row.endingBalance)}</td>
+        </tr>
+      `).join('')}
+    </tbody>
+  `;
+  cashflowTableWrap.appendChild(table);
+}
+
+function downloadCashflowPdf() {
+  const settings = loadSettings();
+  const transactions = loadTransactions();
+  const recurringExpenses = loadRecurringExpenses();
+  const lifeEvents = loadLifeEvents();
+  const assumptions = loadCashflowAssumptions();
+  const rows = buildCashflowRows({ settings, transactions, recurringExpenses, lifeEvents, assumptions });
+  if (rows.length === 0) return;
+
+  const win = window.open('', '_blank');
+  if (!win) return;
+  const generatedAt = new Date().toLocaleString('ja-JP');
+  const bodyRows = rows.map((row) => `
+    <tr>
+      <td>${row.year}</td>
+      <td>${row.age}歳</td>
+      <td>${yen.format(row.annualIncome)}</td>
+      <td>${yen.format(row.annualRegularExpense)}</td>
+      <td>${yen.format(row.annualRecurringExpense)}</td>
+      <td>${yen.format(row.annualAssetFormationExpense)}</td>
+      <td>${yen.format(row.annualExtraIncome)}</td>
+      <td>${yen.format(row.annualExtraExpense)}</td>
+      <td>${yen.format(row.annualBalance)}</td>
+      <td>${yen.format(row.endingBalance)}</td>
+    </tr>
+  `).join('');
+
+  win.document.write(`<!doctype html><html lang="ja"><head><meta charset="UTF-8" /><title>キャッシュフロー表</title>
+    <style>
+      @page { size: A4 landscape; margin: 10mm; }
+      body { font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif; color: #1d2a3b; font-size: 11px; }
+      h1 { font-size: 18px; margin: 0 0 6px; }
+      .meta { margin: 0 0 12px; color: #475569; }
+      table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+      th, td { border: 1px solid #cbd5e1; padding: 6px 8px; white-space: nowrap; }
+      th { background: #e2e8f0; }
+      td { text-align: right; }
+      td:first-child, td:nth-child(2) { text-align: center; }
+      tr { page-break-inside: avoid; }
+    </style></head><body>
+    <h1>キャッシュフロー表（予測）</h1>
+    <p class="meta">作成日時: ${generatedAt}</p>
+    <table>
+      <thead><tr><th>年</th><th>年齢</th><th>年収入</th><th>年通常支出</th><th>年定期支出</th><th>年資産形成支出</th><th>年臨時収入</th><th>年臨時支出</th><th>年間収支</th><th>年末残高</th></tr></thead>
+      <tbody>${bodyRows}</tbody>
+    </table></body></html>`);
+  win.document.close();
+  win.focus();
+  win.print();
+}
+
 function parseBirthDate(birthDate) {
   if (typeof birthDate !== "string") return null;
   const match = birthDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -2277,6 +2583,7 @@ function render() {
   const transactions = syncRecurringAutoTransactions(loadTransactions(), recurringExpenses, monthFilter.value);
   const lifeEvents = loadLifeEvents();
   const settings = loadSettings();
+  const assumptions = loadCashflowAssumptions();
   const currentMonth = monthFilter.value;
   const autoTransactions = createEligibleAutoExpensesForMonth(settings, transactions, currentMonth);
   const summary = calculateMonthlySummary(transactions, settings, currentMonth);
@@ -2288,6 +2595,7 @@ function render() {
 
   entryStartMonthInput.value = resolveEntryStartMonth(settings, transactions);
   birthDateInput.value = settings.birthDate || "";
+  updateCashflowAssumptionInputs(assumptions);
 
   const historyItems = buildTransactionHistoryItems(transactions, autoTransactions, currentMonth);
   const plannedHistoryItems = buildLifeEventHistoryItems(lifeEvents, settings);
@@ -2299,6 +2607,7 @@ function render() {
   renderDashboard(summary, settings, currentMonth, transactions, recurringExpenses, lifeEvents, monthlyExpenseComposition);
 
   renderExpenseChart([...transactions, ...autoTransactions], currentMonth);
+  renderCashflowTable({ settings, transactions, recurringExpenses, lifeEvents, assumptions });
   markAssetForecastDirty(settings);
   if (isAssetsSectionExpanded()) {
     queueAssetForecastRender();
@@ -2846,6 +3155,15 @@ function init() {
   lifeEventForm?.addEventListener("submit", addLifeEvent);
   lifeEventTypeInput?.addEventListener("change", handleLifeEventTypeChange);
   lifeEventCancelButton?.addEventListener("click", cancelLifeEventEdit);
+  cashflowSettingsForm?.addEventListener("input", () => {
+    const assumptions = {
+      salaryGrowthRate: Number(cashflowSalaryGrowthRateInput?.value) || 0,
+      inflationRate: Number(cashflowInflationRateInput?.value) || 0,
+    };
+    saveCashflowAssumptions(assumptions);
+    render();
+  });
+  cashflowDownloadPdfButton?.addEventListener("click", downloadCashflowPdf);
   setupSectionAccordions();
   setupChildAccordions();
   setupBottomNavigation();

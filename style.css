@@ -2041,3 +2041,103 @@ button.ghost {
     padding-bottom: 140px;
   }
 }
+
+.cashflow-settings-grid {
+  margin-bottom: 8px;
+}
+
+.cashflow-scroll-hint {
+  margin: 6px 2px 8px;
+  font-size: 0.82rem;
+  color: var(--support-text);
+}
+
+.cashflow-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid #bfcbe0;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.cashflow-table {
+  width: 100%;
+  min-width: 920px;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+
+.cashflow-table th,
+.cashflow-table td {
+  border-bottom: 1px solid #d8e1ee;
+  padding: 10px 8px;
+  white-space: nowrap;
+}
+
+.cashflow-table th {
+  position: sticky;
+  top: 0;
+  background: #edf3ff;
+  color: #1b2f4d;
+  z-index: 1;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.cashflow-table tbody tr:nth-child(even) {
+  background: #f9fbff;
+}
+
+.cashflow-table .is-amount {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.cashflow-table td:first-child,
+.cashflow-table td:nth-child(2) {
+  text-align: center;
+}
+
+.cashflow-table .is-positive {
+  color: #18794e;
+  font-weight: 700;
+}
+
+.cashflow-table .is-negative {
+  color: #be123c;
+  font-weight: 700;
+}
+
+.cashflow-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.cashflow-actions button {
+  min-height: 46px;
+}
+
+@media (max-width: 680px) {
+  .cashflow-settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cashflow-table {
+    min-width: 840px;
+    font-size: 0.82rem;
+  }
+
+  .cashflow-table th,
+  .cashflow-table td {
+    padding: 9px 7px;
+  }
+
+  .cashflow-actions {
+    justify-content: stretch;
+  }
+
+  .cashflow-actions button {
+    width: 100%;
+  }
+}

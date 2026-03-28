@@ -386,6 +386,37 @@
         </div>
       </section>
 
+      <section id="section-cashflow" class="card section-tone-assets accordion-section" data-accordion-section>
+        <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-cashflow" id="trigger-cashflow">
+          <div class="section-heading">
+            <h2>キャッシュフロー表（予測）</h2>
+            <p class="section-description">
+              現在年齢から60歳までの毎年の収入・支出・残高を確認できます。
+            </p>
+          </div>
+          <span class="accordion-toggle-icon" aria-hidden="true">＋</span>
+        </button>
+        <div class="accordion-panel" id="panel-cashflow" role="region" aria-labelledby="trigger-cashflow">
+          <div class="accordion-panel-inner">
+            <form id="cashflow-settings-form" class="grid cashflow-settings-grid" autocomplete="off">
+              <label>
+                昇給率（%）
+                <input id="cashflow-salary-growth-rate" type="number" inputmode="decimal" min="-10" max="20" step="0.1" />
+              </label>
+              <label>
+                物価上昇率（%）
+                <input id="cashflow-inflation-rate" type="number" inputmode="decimal" min="-10" max="20" step="0.1" />
+              </label>
+            </form>
+            <p class="cashflow-scroll-hint">左右にスワイプして確認できます。</p>
+            <div class="cashflow-table-wrap" id="cashflow-table-wrap"></div>
+            <div class="cashflow-actions">
+              <button type="button" id="cashflow-download-pdf-button">PDFダウンロード</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="section-expense" class="card section-tone-chart accordion-section" data-nav-section="expense" data-accordion-section>
         <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-chart" id="trigger-chart">
           <div class="section-heading">
