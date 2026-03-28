@@ -2072,7 +2072,7 @@ button.ghost {
 
 .cashflow-table {
   width: 100%;
-  min-width: 920px;
+  min-width: 1020px;
   border-collapse: collapse;
   font-size: 0.86rem;
 }
@@ -2134,7 +2134,7 @@ button.ghost {
   }
 
   .cashflow-table {
-    min-width: 840px;
+    min-width: 960px;
     font-size: 0.82rem;
   }
 
