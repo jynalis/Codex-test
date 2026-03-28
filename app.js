@@ -2095,7 +2095,8 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
     const annualBalance = annualIncomeWithExtra - annualRegularExpense - annualRecurringExpense - annualAssetFormationExpense - annualExtraExpense;
     endingBalance += annualBalance;
     const yearEndMonth = formatMonth(year, 11);
-    const financialAssetTotal = calculateFinancialAssetTotalAtMonth(settings, yearEndMonth);
+    const assetFormationBalance = calculateFinancialAssetTotalAtMonth(settings, yearEndMonth);
+    const financialAssetTotal = endingBalance + assetFormationBalance;
 
     rows.push({
       year,
@@ -2108,6 +2109,7 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
       annualExtraExpense,
       annualBalance,
       endingBalance,
+      assetFormationBalance,
       financialAssetTotal,
     });
   }
