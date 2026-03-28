@@ -85,9 +85,13 @@ const EXPENSE_CATEGORIES = ["日常費", "レジャー費", "ガソリン費", "
 const LEGACY_EXPENSE_CATEGORY_ALIASES = {
   "趣味・レジャー費": "レジャー費",
   "雑費・予備費": "雑費",
+  家賃: "家賃・住宅ローン",
 };
 const LEGACY_EXPENSE_CATEGORIES = ["家賃・マイホーム費", "生命保険"];
-const RECURRING_EXPENSE_CATEGORIES = ["家賃", "通信費", "保険料", "その他固定費"];
+const RECURRING_EXPENSE_CATEGORIES = ["家賃・住宅ローン", "通信費", "保険料", "カーローン", "教育費", "その他固定費"];
+const LEGACY_RECURRING_EXPENSE_CATEGORY_ALIASES = {
+  家賃: "家賃・住宅ローン",
+};
 const LIFE_EVENT_TYPES = {
   income: "臨時収入",
   expense: "臨時支出",
@@ -124,9 +128,11 @@ const EXPENSE_COMPOSITION_ITEMS = [
   "ガソリン費",
   "雑費",
   "家賃・マイホーム費",
-  "家賃",
+  "家賃・住宅ローン",
   "通信費",
   "保険料",
+  "カーローン",
+  "教育費",
   "その他固定費",
   "NISA",
   "iDeCo",
@@ -156,6 +162,14 @@ function formatAmountInputValue(value) {
 
 function normalizeLegacyExpenseCategory(category) {
   return LEGACY_EXPENSE_CATEGORY_ALIASES[category] || category;
+}
+
+function normalizeRecurringExpenseCategory(category) {
+  const normalized = LEGACY_RECURRING_EXPENSE_CATEGORY_ALIASES[category] || category;
+  if (RECURRING_EXPENSE_CATEGORIES.includes(normalized)) {
+    return normalized;
+  }
+  return RECURRING_EXPENSE_CATEGORIES[0];
 }
 
 function syncCategoryOptions() {
@@ -407,7 +421,7 @@ function saveSettings(settings) {
 function normalizeRecurringExpense(item) {
   return {
     id: typeof item?.id === "string" ? item.id : crypto.randomUUID(),
-    category: RECURRING_EXPENSE_CATEGORIES.includes(item?.category) ? item.category : RECURRING_EXPENSE_CATEGORIES[0],
+    category: normalizeRecurringExpenseCategory(item?.category),
     amount: Math.max(Number(item?.amount) || 0, 0),
     day: Math.min(Math.max(Number(item?.day) || 1, 1), 31),
     startMonth: parseMonth(item?.startMonth) ? item.startMonth : "",
@@ -1214,7 +1228,7 @@ function createDashboardDiagnosisComment({ summary, monthlySavingTotal, manualTr
 
   const balance = summary.endingBalance;
   const itemRatios = expenseComposition?.itemRatios || {};
-  const fixedExpenseRatio = (itemRatios["家賃"] || 0) + (itemRatios["通信費"] || 0) + (itemRatios["保険料"] || 0) + (itemRatios["その他固定費"] || 0);
+  const fixedExpenseRatio = (itemRatios["家賃・住宅ローン"] || 0) + (itemRatios["家賃"] || 0) + (itemRatios["通信費"] || 0) + (itemRatios["保険料"] || 0) + (itemRatios["カーローン"] || 0) + (itemRatios["教育費"] || 0) + (itemRatios["その他固定費"] || 0);
   if (balance < 0) {
     return "今月は赤字傾向です。固定費や臨時支出の見直し余地があります。";
   }
