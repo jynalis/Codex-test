@@ -2266,6 +2266,24 @@ function resolveWithdrawTargetMonth(birthDate, withdrawAge) {
   return formatMonth(withdrawDate.getFullYear(), withdrawDate.getMonth());
 }
 
+function resolveWithdrawTargetMonthAfterDays(birthDate, withdrawAge, daysAfterBirthday = 0) {
+  const birth = parseBirthDate(birthDate);
+  if (!birth) return null;
+
+  const targetAge = Number(withdrawAge);
+  if (!Number.isFinite(targetAge) || targetAge < 0) return null;
+
+  const offsetDays = Number(daysAfterBirthday);
+  if (!Number.isFinite(offsetDays)) return null;
+
+  const targetDate = new Date(
+    birth.getFullYear() + targetAge,
+    birth.getMonth(),
+    birth.getDate() + Math.trunc(offsetDays)
+  );
+  return formatMonth(targetDate.getFullYear(), targetDate.getMonth());
+}
+
 function resolveProjectionStartMonth(plan, targetMonth) {
   const monthlyStart = (Array.isArray(plan.monthlyContributions) ? plan.monthlyContributions : [])
     .map((history) => history.startMonth)
@@ -2383,6 +2401,16 @@ function renderAssetForecast(settings) {
   });
   const plansHeldUntil60 = projectedRowsAt60.filter((plan) => plan.isHeldUntil60);
   const earlyWithdrawPlans = projectedRowsAt60.filter((plan) => !plan.isHeldUntil60 && plan.projectedAmount > 0);
+  const earlyWithdrawPlansForDisplay = earlyWithdrawPlans.map((plan) => {
+    const displayTargetMonth = resolveWithdrawTargetMonthAfterDays(settings.birthDate, plan.withdrawAge, 364);
+    const displayProjection = displayTargetMonth
+      ? projectPlanAssetDetails(plan, settings.birthDate, displayTargetMonth)
+      : null;
+    return {
+      ...plan,
+      displayProjectedAmount: displayProjection?.amount ?? plan.projectedAmount,
+    };
+  });
 
   const currentRows = settings.plans.map((plan) => {
     const currentProjection = projectPlanAssetDetails(plan, settings.birthDate, currentAssetTargetMonth);
@@ -2410,7 +2438,7 @@ function renderAssetForecast(settings) {
       .reduce((sum, plan) => sum + plan.projectedAmount, 0);
     return { type, amount };
   }).filter((item) => item.amount > 0);
-  const earlyWithdrawHtml = earlyWithdrawPlans
+  const earlyWithdrawHtml = earlyWithdrawPlansForDisplay
     .map((plan) => {
       const withdrawAge = Number(plan.withdrawAge);
       const withdrawLabel = Number.isFinite(withdrawAge) && withdrawAge > 0 ? `${withdrawAge}歳` : "取崩し時";
@@ -2420,7 +2448,7 @@ function renderAssetForecast(settings) {
             <span class="asset-withdraw-contract">${plan.type}${plan.name ? `（${plan.name}）` : ""}</span>
             <span class="asset-withdraw-age">取崩し: ${withdrawLabel}</span>
           </div>
-          <strong>${yen.format(plan.projectedAmount)}</strong>
+          <strong>${yen.format(plan.displayProjectedAmount)}</strong>
         </li>
       `;
     })
