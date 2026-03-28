@@ -2023,7 +2023,7 @@ function renderAssetForecast(settings) {
       aria-controls="${compositionPanelId}"
       id="${compositionTriggerId}"
     >
-      <h3>現時点の総資産額の構成比（契約別）</h3>
+      <h3>現在総資産の構成比(契約別)</h3>
       <span class="child-accordion-toggle" aria-hidden="true">+</span>
     </button>
     <div
