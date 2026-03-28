@@ -2170,9 +2170,9 @@ function renderCashflowTable({ settings, transactions, recurringExpenses, lifeEv
           <td class="is-amount">${yen.format(row.annualAssetFormationExpense)}</td>
           <td class="is-amount">${yen.format(row.annualExtraIncome)}</td>
           <td class="is-amount">${yen.format(row.annualExtraExpense)}</td>
-          <td class="is-amount ${row.annualBalance >= 0 ? 'is-positive' : 'is-negative'}">${yen.format(row.annualBalance)}</td>
-          <td class="is-amount ${row.endingBalance >= 0 ? 'is-positive' : 'is-negative'}">${yen.format(row.endingBalance)}</td>
-          <td class="is-amount">${yen.format(row.financialAssetTotal)}</td>
+          <td class="is-amount is-annual-balance ${row.annualBalance >= 0 ? 'is-positive' : 'is-negative'}">${yen.format(row.annualBalance)}</td>
+          <td class="is-amount is-ending-balance ${row.endingBalance >= 0 ? 'is-positive' : 'is-negative'}">${yen.format(row.endingBalance)}</td>
+          <td class="is-amount is-financial-asset-total">${yen.format(row.financialAssetTotal)}</td>
         </tr>
       `).join('')}
     </tbody>
