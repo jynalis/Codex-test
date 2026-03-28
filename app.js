@@ -50,6 +50,7 @@ const lifeEventsSection = document.getElementById("section-life-events");
 const lifeEventFormAccordion = document.getElementById("trigger-life-event-form")?.closest("[data-child-accordion]");
 
 const list = document.getElementById("transaction-list");
+const plannedList = document.getElementById("planned-transaction-list");
 const template = document.getElementById("transaction-item-template");
 const dashboardCarryoverTotal = document.getElementById("dashboard-carryover-total");
 const dashboardIncomeTotal = document.getElementById("dashboard-income-total");
@@ -680,6 +681,38 @@ function startLifeEventEdit(id) {
     lifeEventsSection.scrollIntoView({ behavior: "smooth", block: "start" });
   }
   lifeEventAgeInput.focus();
+}
+
+function resolveLifeEventHistoryPeriodLabel(item, settings) {
+  const ageLabel = `${item.age}歳時`;
+  const birth = parseBirthDate(settings?.birthDate);
+  if (!birth) {
+    return `${ageLabel}の予定`;
+  }
+
+  const scheduledYear = birth.getFullYear() + item.age;
+  if (!Number.isFinite(scheduledYear)) {
+    return `${ageLabel}の予定`;
+  }
+  return `${scheduledYear}年（${ageLabel}）の予定`;
+}
+
+function buildLifeEventHistoryItems(lifeEvents, settings) {
+  return lifeEvents
+    .slice()
+    .sort((a, b) => (a.age !== b.age ? a.age - b.age : a.createdAt.localeCompare(b.createdAt)))
+    .map((item, index) => ({
+      id: `life-event-history-${item.id}`,
+      source: "lifeEvent",
+      originalId: item.id,
+      type: item.type,
+      category: item.category,
+      amount: item.amount,
+      memo: item.memo,
+      age: item.age,
+      scheduledLabel: resolveLifeEventHistoryPeriodLabel(item, settings),
+      order: index,
+    }));
 }
 
 function renderLifeEvents(items) {
@@ -1824,8 +1857,12 @@ function render() {
   const filtered = currentMonth
     ? [...transactions, ...autoTransactions].filter((item) => monthISO(item.date) === currentMonth)
     : [...transactions, ...autoTransactions];
+  const plannedHistoryItems = buildLifeEventHistoryItems(lifeEvents, settings);
 
   list.innerHTML = "";
+  if (plannedList) {
+    plannedList.innerHTML = "";
+  }
 
   if (filtered.length === 0) {
     const empty = document.createElement("li");
@@ -1875,6 +1912,49 @@ function render() {
       row.dataset.id = item.id;
       list.appendChild(node);
     });
+
+  if (plannedList) {
+    if (plannedHistoryItems.length === 0) {
+      const empty = document.createElement("li");
+      empty.textContent = "まだ予定取引はありません。";
+      empty.className = "item";
+      plannedList.appendChild(empty);
+    }
+
+    plannedHistoryItems.forEach((item) => {
+      const node = template.content.cloneNode(true);
+      const row = node.querySelector(".item");
+      const meta = node.querySelector(".meta");
+      const memo = node.querySelector(".memo");
+      const amount = node.querySelector(".amount");
+      const edit = node.querySelector(".edit");
+      const del = node.querySelector(".delete");
+
+      row.classList.add("is-planned-transaction");
+      meta.textContent = `予定 / ライフイベント / ${LIFE_EVENT_TYPES[item.type]} / ${item.category} / ${item.scheduledLabel}`;
+      memo.textContent = item.memo ? `メモ: ${item.memo}` : "メモなし";
+      amount.textContent = `${item.type === "income" ? "+" : "-"}${yen.format(item.amount)}`;
+      amount.classList.add(item.type);
+
+      edit.addEventListener("click", () => {
+        startLifeEventEdit(item.originalId);
+      });
+      del.addEventListener("click", () => {
+        if (!window.confirm("この予定取引（ライフイベント）を削除しますか？")) return;
+        const next = loadLifeEvents().filter((target) => target.id !== item.originalId);
+        saveLifeEvents(next);
+        if (lifeEventEditingId === item.originalId) {
+          resetLifeEventFormFields();
+        }
+        render();
+      });
+
+      row.dataset.id = item.id;
+      row.dataset.source = item.source;
+      row.dataset.originalId = item.originalId;
+      plannedList.appendChild(node);
+    });
+  }
 
   const monthlyExpenseComposition = buildMonthlyExpenseComposition([...transactions, ...autoTransactions], currentMonth);
   renderDashboard(summary, settings, currentMonth, transactions, recurringExpenses, lifeEvents, monthlyExpenseComposition);
