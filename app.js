@@ -736,8 +736,25 @@ function buildLifeEventHistoryItems(lifeEvents, settings) {
       amount: item.amount,
       memo: item.memo,
       age: item.age,
+      classificationLabel: LIFE_EVENT_TYPES[item.type],
       scheduledLabel: resolveLifeEventHistoryPeriodLabel(item, settings),
       order: index,
+    }));
+}
+
+function buildTransactionHistoryItems(transactions, autoTransactions, currentMonth) {
+  const allTransactions = [...transactions, ...autoTransactions];
+  const filtered = currentMonth
+    ? allTransactions.filter((item) => monthISO(item.date) === currentMonth)
+    : allTransactions;
+
+  return filtered
+    .slice()
+    .sort((a, b) => (a.date < b.date ? 1 : -1))
+    .map((item) => ({
+      ...item,
+      source: item.isAuto ? "autoTransaction" : "transaction",
+      originalId: item.id,
     }));
 }
 
@@ -1880,9 +1897,7 @@ function render() {
   entryStartMonthInput.value = resolveEntryStartMonth(settings, transactions);
   birthDateInput.value = settings.birthDate || "";
 
-  const filtered = currentMonth
-    ? [...transactions, ...autoTransactions].filter((item) => monthISO(item.date) === currentMonth)
-    : [...transactions, ...autoTransactions];
+  const historyItems = buildTransactionHistoryItems(transactions, autoTransactions, currentMonth);
   const plannedHistoryItems = buildLifeEventHistoryItems(lifeEvents, settings);
 
   list.innerHTML = "";
@@ -1890,17 +1905,14 @@ function render() {
     plannedList.innerHTML = "";
   }
 
-  if (filtered.length === 0) {
+  if (historyItems.length === 0) {
     const empty = document.createElement("li");
     empty.textContent = "まだ取引がありません。";
     empty.className = "item";
     list.appendChild(empty);
   }
 
-  filtered
-    .slice()
-    .sort((a, b) => (a.date < b.date ? 1 : -1))
-    .forEach((item) => {
+  historyItems.forEach((item) => {
       const node = template.content.cloneNode(true);
       const row = node.querySelector(".item");
       const meta = node.querySelector(".meta");
@@ -1936,6 +1948,8 @@ function render() {
       }
 
       row.dataset.id = item.id;
+      row.dataset.source = item.source;
+      row.dataset.originalId = item.originalId;
       list.appendChild(node);
     });
 
@@ -1957,8 +1971,19 @@ function render() {
       const del = node.querySelector(".delete");
 
       row.classList.add("is-planned-transaction");
-      meta.textContent = `予定 / ライフイベント / ${LIFE_EVENT_TYPES[item.type]} / ${item.category} / ${item.scheduledLabel}`;
-      memo.textContent = item.memo ? `メモ: ${item.memo}` : "メモなし";
+
+      meta.textContent = "";
+      const plannedLabel = document.createElement("span");
+      plannedLabel.className = "transaction-source-badge";
+      plannedLabel.textContent = "予定";
+      const plannedMetaText = document.createElement("span");
+      plannedMetaText.className = "planned-meta-text";
+      plannedMetaText.textContent = `ライフイベント / ${item.classificationLabel} / ${item.category} / ${item.scheduledLabel}`;
+      meta.append(plannedLabel, plannedMetaText);
+
+      memo.textContent = item.memo
+        ? `発生年齢: ${item.age}歳 / メモ: ${item.memo}`
+        : `発生年齢: ${item.age}歳`;
       amount.textContent = `${item.type === "income" ? "+" : "-"}${yen.format(item.amount)}`;
       amount.classList.add(item.type);
 
