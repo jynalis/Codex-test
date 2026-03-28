@@ -74,11 +74,11 @@ let transactionEditingId = null;
 let lifeEventEditingId = null;
 
 const NAV_TARGETS = {
-  home: "section-home",
+  home: "section-profile",
   input: "section-input",
   assets: "section-assets",
-  schedule: "section-life-events",
-  history: "section-history",
+  expense: "section-expense",
+  transactions: "section-history",
 };
 
 const EXPENSE_CATEGORIES = ["日常費", "レジャー費", "ガソリン費", "雑費"];
