@@ -1879,7 +1879,6 @@ function calculateAnnualAssetFormationExpense(settings, year) {
     settings.plans.forEach((plan) => {
       if (!shouldApplyPlanContributionForMonth(plan, settings.birthDate, month)) return;
       total += findActiveMonthlyContribution(plan, month);
-      total += getLumpSumsOnMonth(plan, month).reduce((sum, amount) => sum + amount, 0);
     });
   }
   return total;
