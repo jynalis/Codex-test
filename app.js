@@ -2266,22 +2266,20 @@ function resolveWithdrawTargetMonth(birthDate, withdrawAge) {
   return formatMonth(withdrawDate.getFullYear(), withdrawDate.getMonth());
 }
 
-function resolveWithdrawTargetMonthAfterDays(birthDate, withdrawAge, daysAfterBirthday = 0) {
+function resolveWithdrawTargetMonthAtAgeEnd(birthDate, withdrawAge) {
   const birth = parseBirthDate(birthDate);
   if (!birth) return null;
 
   const targetAge = Number(withdrawAge);
   if (!Number.isFinite(targetAge) || targetAge < 0) return null;
 
-  const offsetDays = Number(daysAfterBirthday);
-  if (!Number.isFinite(offsetDays)) return null;
-
-  const targetDate = new Date(
-    birth.getFullYear() + targetAge,
+  const nextBirthday = new Date(
+    birth.getFullYear() + targetAge + 1,
     birth.getMonth(),
-    birth.getDate() + Math.trunc(offsetDays)
+    birth.getDate()
   );
-  return formatMonth(targetDate.getFullYear(), targetDate.getMonth());
+  nextBirthday.setDate(nextBirthday.getDate() - 1);
+  return formatMonth(nextBirthday.getFullYear(), nextBirthday.getMonth());
 }
 
 function resolveProjectionStartMonth(plan, targetMonth) {
@@ -2402,7 +2400,7 @@ function renderAssetForecast(settings) {
   const plansHeldUntil60 = projectedRowsAt60.filter((plan) => plan.isHeldUntil60);
   const earlyWithdrawPlans = projectedRowsAt60.filter((plan) => !plan.isHeldUntil60 && plan.projectedAmount > 0);
   const earlyWithdrawPlansForDisplay = earlyWithdrawPlans.map((plan) => {
-    const displayTargetMonth = resolveWithdrawTargetMonthAfterDays(settings.birthDate, plan.withdrawAge, 364);
+    const displayTargetMonth = resolveWithdrawTargetMonthAtAgeEnd(settings.birthDate, plan.withdrawAge);
     const displayProjection = displayTargetMonth
       ? projectPlanAssetDetails(plan, settings.birthDate, displayTargetMonth)
       : null;
