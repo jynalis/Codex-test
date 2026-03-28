@@ -2047,6 +2047,27 @@ function buildPlannedExtraTotalsByYear(transactions, nowMonth) {
   }, {});
 }
 
+function buildAssetWithdrawalTransfersByYear(settings) {
+  if (!Array.isArray(settings?.plans) || settings.plans.length === 0) return {};
+  return settings.plans.reduce((map, plan) => {
+    const withdrawAge = Number(plan?.withdrawAge);
+    if (!Number.isFinite(withdrawAge) || withdrawAge <= 0) return map;
+
+    const withdrawTargetMonth = resolveWithdrawTargetMonth(settings.birthDate, withdrawAge);
+    if (!withdrawTargetMonth) return map;
+
+    const projection = projectPlanAssetDetails(plan, settings.birthDate, withdrawTargetMonth);
+    const amount = Math.max(Number(projection?.amount) || 0, 0);
+    if (amount <= 0) return map;
+
+    const year = Number(withdrawTargetMonth.slice(0, 4));
+    if (!Number.isFinite(year)) return map;
+
+    map[year] = (map[year] || 0) + amount;
+    return map;
+  }, {});
+}
+
 function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEvents, assumptions }) {
   const birth = parseBirthDate(settings.birthDate);
   if (!birth) return [];
@@ -2079,6 +2100,7 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
   const inflationRate = (Number(assumptions?.inflationRate) || 0) / 100;
   const lifeEventByYear = buildLifeEventTotalsByYear(lifeEvents, settings.birthDate);
   const plannedExtraByYear = buildPlannedExtraTotalsByYear(transactions, nowMonth);
+  const assetWithdrawalTransfersByYear = buildAssetWithdrawalTransfersByYear(settings);
 
   const initialBalance = calculateMonthlySummary(transactions, settings, nowMonth).endingBalance;
   const rows = [];
@@ -2102,7 +2124,8 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
     const annualExtraExpense = lifeEvent.expense + plannedExtra.expense;
     const annualIncomeWithExtra = annualIncome + annualExtraIncome;
     const annualBalance = annualIncomeWithExtra - annualRegularExpense - annualRecurringExpense - annualAssetFormationExpense - annualExtraExpense;
-    endingBalance += annualBalance;
+    const annualAssetWithdrawalTransfer = assetWithdrawalTransfersByYear[year] || 0;
+    endingBalance += annualBalance + annualAssetWithdrawalTransfer;
     const yearEndMonth = formatMonth(year, 11);
     const assetFormationBalance = calculateFinancialAssetTotalAtMonth(settings, yearEndMonth);
     const financialAssetTotal = endingBalance + assetFormationBalance;
@@ -2116,6 +2139,7 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
       annualAssetFormationExpense,
       annualExtraIncome,
       annualExtraExpense,
+      annualAssetWithdrawalTransfer,
       annualBalance,
       endingBalance,
       assetFormationBalance,
@@ -2315,8 +2339,15 @@ function calculateFinancialAssetTotalAtMonth(settings, targetMonth) {
   if (!parseMonth(targetMonth) || !Array.isArray(settings?.plans) || settings.plans.length === 0) return 0;
 
   return settings.plans.reduce((sum, plan) => {
-    const planTargetMonth = resolvePlanSimulationTargetMonth(plan, settings.birthDate, targetMonth, 200);
-    if (!planTargetMonth) return sum;
+    const withdrawAge = Number(plan?.withdrawAge);
+    if (Number.isFinite(withdrawAge) && withdrawAge > 0) {
+      const withdrawTargetMonth = resolveWithdrawTargetMonth(settings.birthDate, withdrawAge);
+      if (withdrawTargetMonth && compareMonth(targetMonth, withdrawTargetMonth) >= 0) {
+        return sum;
+      }
+    }
+
+    const planTargetMonth = targetMonth;
     const projection = projectPlanAssetDetails(plan, settings.birthDate, planTargetMonth);
     return sum + (projection.amount || 0);
   }, 0);
