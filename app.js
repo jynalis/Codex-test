@@ -2368,17 +2368,46 @@ function setupChildAccordions(root = document) {
   scopedChildAccordions.forEach(setupChildAccordion);
 }
 
+function isAccordionSectionExpanded(section) {
+  const trigger = section?.querySelector(".accordion-trigger");
+  return trigger?.getAttribute("aria-expanded") === "true";
+}
+
+function ensureSectionHeadingVisible(section) {
+  if (!section) return;
+  const trigger = section.querySelector(".accordion-trigger");
+  if (!trigger) return;
+
+  const bottomNav = document.querySelector(".bottom-nav");
+  const navHeight = bottomNav?.offsetHeight || 0;
+  const topMargin = 12;
+  const bottomMargin = navHeight + 12;
+  const rect = trigger.getBoundingClientRect();
+  const isVisible = rect.top >= topMargin && rect.bottom <= window.innerHeight - bottomMargin;
+
+  if (isVisible) return;
+  trigger.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function scrollToNavSection(target) {
   const sectionId = NAV_TARGETS[target];
   const targetSection = sectionId ? document.getElementById(sectionId) : null;
   if (!targetSection) return;
+  setBottomNavActive(target);
 
-  if (targetSection.dataset.accordionSection !== undefined) {
-    setAccordionExpanded(targetSection, true);
+  if (targetSection.dataset.accordionSection === undefined) {
+    targetSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
   }
 
-  targetSection.scrollIntoView({ behavior: "smooth", block: "start" });
-  setBottomNavActive(target);
+  const expanded = isAccordionSectionExpanded(targetSection);
+  if (expanded) {
+    setAccordionExpanded(targetSection, false);
+    return;
+  }
+
+  setAccordionExpanded(targetSection, true);
+  ensureSectionHeadingVisible(targetSection);
 }
 
 function setupBottomNavigation() {
