@@ -1946,6 +1946,22 @@ function getRecurringExpenseMonthsInYear(item, year) {
   return monthsBetweenInclusive(effectiveStart, effectiveEnd);
 }
 
+function isRecurringExpenseActiveOnMonth(item, month) {
+  if (!parseMonth(month)) return false;
+  if (!parseMonth(item?.startMonth)) return false;
+  if (compareMonth(item.startMonth, month) > 0) return false;
+  if (parseMonth(item.endMonth) && compareMonth(item.endMonth, month) < 0) return false;
+  return true;
+}
+
+function calculateCurrentRecurringExpenseMonthlyTotal(recurringExpenses, nowMonth) {
+  if (!parseMonth(nowMonth)) return 0;
+  return (Array.isArray(recurringExpenses) ? recurringExpenses : []).reduce((sum, item) => {
+    if (!isRecurringExpenseActiveOnMonth(item, nowMonth)) return sum;
+    return sum + Math.max(Number(item.amount) || 0, 0);
+  }, 0);
+}
+
 function resolveAgeAtYear(birthDate, year) {
   const birth = parseBirthDate(birthDate);
   if (!birth) return null;
@@ -1961,16 +1977,15 @@ function shouldApplyPlanContributionForMonth(plan, birthDate, month) {
 }
 
 function calculateAnnualAssetFormationExpense(settings, year) {
-  if (!Array.isArray(settings.plans) || settings.plans.length === 0) return 0;
-  let total = 0;
-  for (let monthIndex = 0; monthIndex < 12; monthIndex += 1) {
-    const month = formatMonth(year, monthIndex);
-    settings.plans.forEach((plan) => {
-      if (!shouldApplyPlanContributionForMonth(plan, settings.birthDate, month)) return;
-      total += findActiveMonthlyContribution(plan, month);
-    });
-  }
-  return total;
+  const nowMonth = todayISO().slice(0, 7);
+  if (!Array.isArray(settings.plans) || settings.plans.length === 0 || !parseMonth(nowMonth)) return 0;
+
+  const monthlyTotal = settings.plans.reduce((sum, plan) => {
+    const annualBaseMonth = formatMonth(year, 0);
+    if (!shouldApplyPlanContributionForMonth(plan, settings.birthDate, annualBaseMonth)) return sum;
+    return sum + findActiveMonthlyContribution(plan, nowMonth);
+  }, 0);
+  return monthlyTotal * 12;
 }
 
 function buildLifeEventTotalsByYear(lifeEvents, birthDate) {
@@ -2049,7 +2064,7 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
     categories: EXPENSE_CATEGORIES,
   });
 
-  const assetFormationAnnualBase = calculateAnnualAssetFormationExpense(settings, startYear);
+  const recurringMonthlyBase = calculateCurrentRecurringExpenseMonthlyTotal(recurringExpenses, nowMonth);
 
   const salaryGrowth = (Number(assumptions?.salaryGrowthRate) || 0) / 100;
   const inflationRate = (Number(assumptions?.inflationRate) || 0) / 100;
@@ -2068,16 +2083,9 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
     const annualIncome = Math.round(monthlyIncome * 12 * ((1 + salaryGrowth) ** yearOffset));
     const annualRegularExpense = Math.round(monthlyRegularExpense * 12 * ((1 + inflationRate) ** yearOffset));
 
-    const recurringAmountThisYear = (Array.isArray(recurringExpenses) ? recurringExpenses : []).reduce((sum, item) => {
-      const months = getRecurringExpenseMonthsInYear(item, year);
-      if (months <= 0) return sum;
-      return sum + (item.amount * months);
-    }, 0);
-    const annualRecurringExpense = Math.round(recurringAmountThisYear * ((1 + inflationRate) ** yearOffset));
+    const annualRecurringExpense = Math.round(recurringMonthlyBase * 12);
 
-    const annualAssetFormationExpense = year === startYear
-      ? assetFormationAnnualBase
-      : calculateAnnualAssetFormationExpense(settings, year);
+    const annualAssetFormationExpense = calculateAnnualAssetFormationExpense(settings, year);
 
     const lifeEvent = lifeEventByYear[year] || { income: 0, expense: 0 };
     const plannedExtra = plannedExtraByYear[year] || { income: 0, expense: 0 };
