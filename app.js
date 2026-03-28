@@ -92,7 +92,13 @@ const LIFE_EVENT_TYPES = {
   income: "臨時収入",
   expense: "臨時支出",
 };
-const LIFE_EVENT_CATEGORIES = ["車購入", "教育費", "住宅", "リフォーム", "保険満期・解約返戻金", "退職金", "旅行", "その他"];
+const LIFE_EVENT_CATEGORY_OPTIONS = {
+  income: ["退職金", "相続・贈与", "売却収入", "給付金・補助金", "その他"],
+  expense: ["車購入", "教育費", "住宅", "リフォーム", "旅行", "その他"],
+};
+const LEGACY_LIFE_EVENT_CATEGORY_ALIASES = {
+  "保険満期・解約返戻金": "その他",
+};
 const CATEGORY_OPTIONS = {
   expense: EXPENSE_CATEGORIES,
   income: ["定期収入", "臨時収入"],
@@ -176,17 +182,21 @@ function syncRecurringCategoryOptions() {
 
 function syncLifeEventCategoryOptions() {
   if (!lifeEventCategoryInput) return;
+  const categoryOptions = LIFE_EVENT_CATEGORY_OPTIONS[lifeEventTypeInput?.value] ?? [];
+  const currentCategory = normalizeLegacyLifeEventCategory(lifeEventCategoryInput.value);
+  const canKeepCurrentCategory = categoryOptions.includes(currentCategory);
   lifeEventCategoryInput.innerHTML = "";
   const placeholder = document.createElement("option");
   placeholder.value = "";
   placeholder.textContent = "選択してください";
   lifeEventCategoryInput.appendChild(placeholder);
-  LIFE_EVENT_CATEGORIES.forEach((category) => {
+  categoryOptions.forEach((category) => {
     const option = document.createElement("option");
     option.value = category;
     option.textContent = category;
     lifeEventCategoryInput.appendChild(option);
   });
+  lifeEventCategoryInput.value = canKeepCurrentCategory ? currentCategory : "";
 }
 
 function syncRecurringDayOptions() {
@@ -599,16 +609,32 @@ function startRecurringExpenseEdit(id) {
 
 function normalizeLifeEvent(item) {
   const type = item?.type === "income" ? "income" : "expense";
+  const validCategories = LIFE_EVENT_CATEGORY_OPTIONS[type] ?? [];
+  const normalizedCategory = normalizeLegacyLifeEventCategory(item?.category);
   return {
     id: typeof item?.id === "string" ? item.id : crypto.randomUUID(),
     age: Math.min(Math.max(Number(item?.age) || 0, 0), 120),
     type,
-    category: LIFE_EVENT_CATEGORIES.includes(item?.category) ? item.category : LIFE_EVENT_CATEGORIES.at(-1),
+    category: validCategories.includes(normalizedCategory) ? normalizedCategory : "その他",
     amount: Math.max(Number(item?.amount) || 0, 0),
     memo: typeof item?.memo === "string" ? item.memo : "",
     createdAt: typeof item?.createdAt === "string" ? item.createdAt : new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
+}
+
+function normalizeLegacyLifeEventCategory(category) {
+  return LEGACY_LIFE_EVENT_CATEGORY_ALIASES[category] || category;
+}
+
+function isValidLifeEventCategoryForType(type, category) {
+  const normalizedCategory = normalizeLegacyLifeEventCategory(category);
+  const categoryOptions = LIFE_EVENT_CATEGORY_OPTIONS[type] ?? [];
+  return categoryOptions.includes(normalizedCategory);
+}
+
+function handleLifeEventTypeChange() {
+  syncLifeEventCategoryOptions();
 }
 
 function loadLifeEvents() {
@@ -672,7 +698,7 @@ function startLifeEventEdit(id) {
   lifeEventAgeInput.value = String(lifeEvent.age);
   lifeEventTypeInput.value = lifeEvent.type;
   syncLifeEventCategoryOptions();
-  lifeEventCategoryInput.value = lifeEvent.category;
+  lifeEventCategoryInput.value = normalizeLegacyLifeEventCategory(lifeEvent.category);
   lifeEventAmountInput.value = numberWithComma.format(lifeEvent.amount);
   lifeEventMemoInput.value = lifeEvent.memo || "";
   setLifeEventError("");
@@ -802,8 +828,8 @@ function addLifeEvent(event) {
     lifeEventTypeInput.focus();
     return;
   }
-  if (!LIFE_EVENT_CATEGORIES.includes(category)) {
-    setLifeEventError("費目を選択してください。");
+  if (!isValidLifeEventCategoryForType(type, category)) {
+    setLifeEventError("区分に対応する費目を選択してください。");
     lifeEventCategoryInput.focus();
     return;
   }
@@ -821,7 +847,7 @@ function addLifeEvent(event) {
           ...item,
           age,
           type,
-          category,
+          category: normalizeLegacyLifeEventCategory(category),
           amount,
           memo,
           updatedAt: new Date().toISOString(),
@@ -833,7 +859,7 @@ function addLifeEvent(event) {
       id: crypto.randomUUID(),
       age,
       type,
-      category,
+      category: normalizeLegacyLifeEventCategory(category),
       amount,
       memo,
       createdAt: new Date().toISOString(),
@@ -2374,6 +2400,7 @@ function init() {
   recurringForm.addEventListener("submit", addRecurringExpense);
   recurringCancelButton?.addEventListener("click", cancelRecurringExpenseEdit);
   lifeEventForm?.addEventListener("submit", addLifeEvent);
+  lifeEventTypeInput?.addEventListener("change", handleLifeEventTypeChange);
   lifeEventCancelButton?.addEventListener("click", cancelLifeEventEdit);
   setupSectionAccordions();
   setupChildAccordions();
