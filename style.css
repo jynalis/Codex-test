@@ -1131,6 +1131,17 @@ button.plan-card-trigger {
   gap: 8px;
 }
 
+.asset-list li > span,
+.asset-list li > .asset-withdraw-item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.asset-list li > strong {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .asset-total {
   font-weight: 700;
   color: var(--primary-strong);
@@ -1161,6 +1172,42 @@ button.plan-card-trigger {
 .asset-breakdown-list strong {
   font-size: 0.95rem;
   color: #153f73;
+}
+
+.asset-withdraw-card {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #f0d8b0;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fffaf1 0%, #fff4e3 100%);
+  display: grid;
+  gap: 8px;
+}
+
+.asset-withdraw-card h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #704300;
+}
+
+.asset-withdraw-list li {
+  background: #fffdf8;
+}
+
+.asset-withdraw-item-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.asset-withdraw-contract {
+  font-weight: 700;
+  color: #173b61;
+}
+
+.asset-withdraw-age {
+  font-size: 0.84rem;
+  color: #7a4c09;
 }
 
 .recurring-form {
