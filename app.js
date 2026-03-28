@@ -42,11 +42,12 @@ const lifeEventCategoryInput = document.getElementById("life-event-category");
 const lifeEventAmountInput = document.getElementById("life-event-amount");
 const lifeEventMemoInput = document.getElementById("life-event-memo");
 const lifeEventList = document.getElementById("life-event-list");
-const lifeEventIncomeTotal = document.getElementById("life-event-income-total");
-const lifeEventExpenseTotal = document.getElementById("life-event-expense-total");
 const lifeEventSubmitButton = document.getElementById("life-event-submit-button") || lifeEventForm?.querySelector('button[type="submit"]');
 const lifeEventCancelButton = document.getElementById("life-event-cancel-button");
 const lifeEventEditStatus = document.getElementById("life-event-edit-status");
+const lifeEventError = document.getElementById("life-event-error");
+const lifeEventsSection = document.getElementById("section-life-events");
+const lifeEventFormAccordion = document.getElementById("trigger-life-event-form")?.closest("[data-child-accordion]");
 
 const list = document.getElementById("transaction-list");
 const template = document.getElementById("transaction-item-template");
@@ -175,6 +176,10 @@ function syncRecurringCategoryOptions() {
 function syncLifeEventCategoryOptions() {
   if (!lifeEventCategoryInput) return;
   lifeEventCategoryInput.innerHTML = "";
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "選択してください";
+  lifeEventCategoryInput.appendChild(placeholder);
   LIFE_EVENT_CATEGORIES.forEach((category) => {
     const option = document.createElement("option");
     option.value = category;
@@ -595,7 +600,7 @@ function normalizeLifeEvent(item) {
   const type = item?.type === "income" ? "income" : "expense";
   return {
     id: typeof item?.id === "string" ? item.id : crypto.randomUUID(),
-    age: Math.min(Math.max(Number(item?.age) || 0, 0), 120),
+    age: Math.min(Math.max(Number(item?.age) || 0, 0), 60),
     type,
     category: LIFE_EVENT_CATEGORIES.includes(item?.category) ? item.category : LIFE_EVENT_CATEGORIES.at(-1),
     amount: Math.max(Number(item?.amount) || 0, 0),
@@ -623,18 +628,9 @@ function saveLifeEvents(items) {
   localStorage.setItem(LIFE_EVENTS_KEY, JSON.stringify(items));
 }
 
-function summarizeLifeEventsUpToAge(items, maxAge = 60) {
-  return items.reduce((acc, item) => {
-    if (item.age > maxAge) return acc;
-    if (item.type === "income") acc.income += item.amount;
-    else acc.expense += item.amount;
-    return acc;
-  }, { income: 0, expense: 0, maxAge });
-}
-
 function setLifeEventFormMode(isEditing) {
   if (lifeEventSubmitButton) {
-    lifeEventSubmitButton.textContent = isEditing ? "更新" : "登録";
+    lifeEventSubmitButton.textContent = isEditing ? "更新" : "追加";
   }
   if (lifeEventCancelButton) {
     lifeEventCancelButton.hidden = !isEditing;
@@ -644,22 +640,32 @@ function setLifeEventFormMode(isEditing) {
   }
 }
 
+function setLifeEventError(message = "") {
+  if (!lifeEventError) return;
+  const hasError = Boolean(message);
+  lifeEventError.textContent = message;
+  lifeEventError.hidden = !hasError;
+}
+
 function resetLifeEventFormFields() {
   if (!lifeEventForm) return;
   lifeEventForm.reset();
   lifeEventEditingId = null;
-  lifeEventTypeInput.value = "expense";
+  lifeEventTypeInput.value = "";
   syncLifeEventCategoryOptions();
   lifeEventAmountInput.value = "";
+  setLifeEventError("");
   setLifeEventFormMode(false);
 }
 
 function startLifeEventEdit(id) {
   const lifeEvent = loadLifeEvents().find((item) => item.id === id);
   if (!lifeEvent) return;
-  const lifeEventsSection = document.getElementById("section-life-events");
   if (lifeEventsSection) {
     setAccordionExpanded(lifeEventsSection, true);
+  }
+  if (lifeEventFormAccordion) {
+    setChildAccordionExpanded(lifeEventFormAccordion, true);
   }
   lifeEventEditingId = lifeEvent.id;
   lifeEventAgeInput.value = String(lifeEvent.age);
@@ -668,7 +674,11 @@ function startLifeEventEdit(id) {
   lifeEventCategoryInput.value = lifeEvent.category;
   lifeEventAmountInput.value = numberWithComma.format(lifeEvent.amount);
   lifeEventMemoInput.value = lifeEvent.memo || "";
+  setLifeEventError("");
   setLifeEventFormMode(true);
+  if (lifeEventsSection) {
+    lifeEventsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
   lifeEventAgeInput.focus();
 }
 
@@ -681,14 +691,10 @@ function renderLifeEvents(items) {
     setLifeEventFormMode(false);
   }
 
-  const summary = summarizeLifeEventsUpToAge(items, 60);
-  if (lifeEventIncomeTotal) lifeEventIncomeTotal.textContent = yen.format(summary.income);
-  if (lifeEventExpenseTotal) lifeEventExpenseTotal.textContent = yen.format(summary.expense);
-
   if (items.length === 0) {
     const empty = document.createElement("p");
     empty.className = "chart-empty";
-    empty.textContent = "登録済みのライフイベントはありません。";
+    empty.textContent = "まだライフイベントは登録されていません。";
     lifeEventList.appendChild(empty);
     return;
   }
@@ -702,11 +708,12 @@ function renderLifeEvents(items) {
       card.innerHTML = `
         <div class="life-event-card-header">
           <h4>${item.age}歳 / ${item.category}</h4>
-          <p class="life-event-amount ${item.type}">${item.type === "income" ? "+" : "-"}${yen.format(item.amount)}</p>
+          <p class="life-event-amount ${item.type}">${yen.format(item.amount)}</p>
         </div>
         <ul class="life-event-meta-list">
           <li><span>区分</span><strong>${LIFE_EVENT_TYPES[item.type]}</strong></li>
-          <li><span>メモ</span><strong>${item.memo || "なし"}</strong></li>
+          <li><span>費目</span><strong>${item.category}</strong></li>
+          ${item.memo ? `<li><span>メモ</span><strong>${item.memo}</strong></li>` : ""}
         </ul>
       `;
 
@@ -724,6 +731,7 @@ function renderLifeEvents(items) {
       deleteButton.className = "small danger";
       deleteButton.textContent = "削除";
       deleteButton.addEventListener("click", () => {
+        if (!window.confirm("このライフイベントを削除しますか？")) return;
         const next = loadLifeEvents().filter((target) => target.id !== item.id);
         saveLifeEvents(next);
         if (lifeEventEditingId === item.id) {
@@ -746,10 +754,32 @@ function addLifeEvent(event) {
   const amount = parseAmountInput(lifeEventAmountInput.value);
   const memo = lifeEventMemoInput.value.trim();
 
-  if (!Number.isFinite(age) || age < 0 || age > 60) return;
-  if (!(type in LIFE_EVENT_TYPES)) return;
-  if (!LIFE_EVENT_CATEGORIES.includes(category)) return;
-  if (amount <= 0) return;
+  if (!Number.isFinite(age)) {
+    setLifeEventError("発生年齢を入力してください。");
+    lifeEventAgeInput.focus();
+    return;
+  }
+  if (age < 0 || age > 60) {
+    setLifeEventError("発生年齢は0〜60の範囲で入力してください。");
+    lifeEventAgeInput.focus();
+    return;
+  }
+  if (!(type in LIFE_EVENT_TYPES)) {
+    setLifeEventError("区分を選択してください。");
+    lifeEventTypeInput.focus();
+    return;
+  }
+  if (!LIFE_EVENT_CATEGORIES.includes(category)) {
+    setLifeEventError("費目を選択してください。");
+    lifeEventCategoryInput.focus();
+    return;
+  }
+  if (amount <= 0) {
+    setLifeEventError("金額は1円以上で入力してください。");
+    lifeEventAmountInput.focus();
+    return;
+  }
+  setLifeEventError("");
 
   const current = loadLifeEvents();
   if (lifeEventEditingId) {
