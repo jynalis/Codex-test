@@ -1102,6 +1102,7 @@ function createPlannedAgeAccordion(group) {
   const accordion = document.createElement("section");
   accordion.className = "child-accordion history-planned-age-accordion";
   accordion.dataset.childAccordion = "";
+  accordion.dataset.accordionStateKey = `planned-age:${group.key}`;
   const panelId = `panel-history-planned-${group.key}`;
   const triggerId = `trigger-history-planned-${group.key}`;
   const countLabel = `（${group.items.length}件）`;
@@ -1158,6 +1159,7 @@ function createPlannedAgeAccordion(group) {
 
 function renderPlannedTransactionHistory(items) {
   if (!plannedList) return;
+  const accordionState = captureChildAccordionState(plannedList);
   plannedList.replaceChildren();
   if (plannedHistoryTitle) {
     plannedHistoryTitle.textContent = `予定の取引履歴${items.length > 0 ? `（${items.length}件）` : ""}`;
@@ -1178,12 +1180,14 @@ function renderPlannedTransactionHistory(items) {
   });
   plannedList.appendChild(fragment);
   setupChildAccordions(plannedList);
+  restoreChildAccordionState(plannedList, accordionState);
 }
 
 function createDayRangeAccordion({ monthKey, range, items }) {
   const accordion = document.createElement("section");
   accordion.className = "child-accordion history-day-range-accordion";
   accordion.dataset.childAccordion = "";
+  accordion.dataset.accordionStateKey = `actual:${monthKey}:${range.key}`;
   const panelId = `panel-history-${monthKey}-${range.key}`;
   const triggerId = `trigger-history-${monthKey}-${range.key}`;
   const countLabel = `（${items.length}件）`;
@@ -1239,6 +1243,7 @@ function createDayRangeAccordion({ monthKey, range, items }) {
 }
 
 function renderTransactionHistory(items) {
+  const accordionState = captureChildAccordionState(list);
   list.innerHTML = "";
   if (items.length === 0) {
     const empty = document.createElement("li");
@@ -1277,6 +1282,47 @@ function renderTransactionHistory(items) {
 
   list.appendChild(fragment);
   setupChildAccordions(list);
+  restoreChildAccordionState(list, accordionState);
+}
+
+function getChildAccordionStateKey(childAccordion, index = 0) {
+  if (!childAccordion) return `index:${index}`;
+  const explicitKey = childAccordion.dataset.accordionStateKey;
+  if (explicitKey) return explicitKey;
+  const triggerId = childAccordion.querySelector(".child-accordion-trigger")?.id;
+  if (triggerId) return `trigger:${triggerId}`;
+  return `index:${index}`;
+}
+
+function captureChildAccordionState(root) {
+  if (!root) return null;
+  const expandedKeys = new Set();
+  const childAccordions = Array.from(root.querySelectorAll("[data-child-accordion]"));
+  childAccordions.forEach((childAccordion, index) => {
+    const trigger = childAccordion.querySelector(".child-accordion-trigger");
+    if (trigger?.getAttribute("aria-expanded") !== "true") return;
+    expandedKeys.add(getChildAccordionStateKey(childAccordion, index));
+  });
+  return {
+    expandedKeys,
+    anchorTop: root.getBoundingClientRect().top,
+  };
+}
+
+function restoreChildAccordionState(root, state) {
+  if (!root || !state) return;
+  const childAccordions = Array.from(root.querySelectorAll("[data-child-accordion]"));
+  childAccordions.forEach((childAccordion, index) => {
+    const key = getChildAccordionStateKey(childAccordion, index);
+    if (!state.expandedKeys.has(key)) return;
+    setChildAccordionExpanded(childAccordion, true);
+  });
+
+  if (!Number.isFinite(state.anchorTop)) return;
+  const nextTop = root.getBoundingClientRect().top;
+  const topDelta = nextTop - state.anchorTop;
+  if (Math.abs(topDelta) <= 1) return;
+  window.scrollBy({ top: topDelta, behavior: "auto" });
 }
 
 function renderLifeEvents(items) {
