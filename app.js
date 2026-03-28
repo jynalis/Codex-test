@@ -121,7 +121,7 @@ const ALLOWED_EXPENSE_CATEGORIES = [
   ASSET_FORMATION_CATEGORY,
   ...RECURRING_EXPENSE_CATEGORIES,
 ];
-const ASSET_PIE_COLORS = ["#245e8f", "#b85c3f", "#2f7e68", "#7a56ad", "#9b7a2f", "#3c6a9b", "#b04f74", "#4f7f9f"];
+const ASSET_PIE_COLORS = ["#2b85e4", "#18b8c9", "#41b86f", "#f3a64c", "#9d86eb", "#ef7fa8", "#e3c44b", "#57bce8", "#66a8f1", "#79c99a"];
 const EXPENSE_COMPOSITION_ITEMS = [
   "日常費",
   "レジャー費",
