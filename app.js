@@ -1,6 +1,7 @@
 const STORAGE_KEY = "kakeibo_transactions_v1";
 const SETTINGS_KEY = "kakeibo_settings_v1";
 const RECURRING_EXPENSES_KEY = "kakeibo_recurring_expenses_v1";
+const LIFE_EVENTS_KEY = "kakeibo_life_events_v1";
 
 const form = document.getElementById("transaction-form");
 const dateInput = document.getElementById("date");
@@ -34,6 +35,19 @@ const recurringSection = document.getElementById("trigger-recurring")?.closest("
 const recurringFormAccordion = document.getElementById("trigger-recurring-form")?.closest("[data-child-accordion]");
 const inputSection = document.getElementById("section-input");
 
+const lifeEventForm = document.getElementById("life-event-form");
+const lifeEventAgeInput = document.getElementById("life-event-age");
+const lifeEventTypeInput = document.getElementById("life-event-type");
+const lifeEventCategoryInput = document.getElementById("life-event-category");
+const lifeEventAmountInput = document.getElementById("life-event-amount");
+const lifeEventMemoInput = document.getElementById("life-event-memo");
+const lifeEventList = document.getElementById("life-event-list");
+const lifeEventIncomeTotal = document.getElementById("life-event-income-total");
+const lifeEventExpenseTotal = document.getElementById("life-event-expense-total");
+const lifeEventSubmitButton = document.getElementById("life-event-submit-button") || lifeEventForm?.querySelector('button[type="submit"]');
+const lifeEventCancelButton = document.getElementById("life-event-cancel-button");
+const lifeEventEditStatus = document.getElementById("life-event-edit-status");
+
 const list = document.getElementById("transaction-list");
 const template = document.getElementById("transaction-item-template");
 const dashboardCarryoverTotal = document.getElementById("dashboard-carryover-total");
@@ -55,11 +69,13 @@ let assetForecastDirty = true;
 let assetForecastRenderRafId = 0;
 let recurringEditingId = null;
 let transactionEditingId = null;
+let lifeEventEditingId = null;
 
 const NAV_TARGETS = {
   home: "section-home",
   input: "section-input",
   assets: "section-assets",
+  schedule: "section-life-events",
   history: "section-history",
 };
 
@@ -70,6 +86,11 @@ const LEGACY_EXPENSE_CATEGORY_ALIASES = {
 };
 const LEGACY_EXPENSE_CATEGORIES = ["家賃・マイホーム費", "生命保険"];
 const RECURRING_EXPENSE_CATEGORIES = ["家賃", "通信費", "保険料", "その他固定費"];
+const LIFE_EVENT_TYPES = {
+  income: "臨時収入",
+  expense: "臨時支出",
+};
+const LIFE_EVENT_CATEGORIES = ["車購入", "教育費", "住宅", "リフォーム", "保険満期・解約返戻金", "退職金", "旅行", "その他"];
 const CATEGORY_OPTIONS = {
   expense: EXPENSE_CATEGORIES,
   income: ["定期収入", "臨時収入"],
@@ -148,6 +169,17 @@ function syncRecurringCategoryOptions() {
     option.value = category;
     option.textContent = category;
     recurringCategoryInput.appendChild(option);
+  });
+}
+
+function syncLifeEventCategoryOptions() {
+  if (!lifeEventCategoryInput) return;
+  lifeEventCategoryInput.innerHTML = "";
+  LIFE_EVENT_CATEGORIES.forEach((category) => {
+    const option = document.createElement("option");
+    option.value = category;
+    option.textContent = category;
+    lifeEventCategoryInput.appendChild(option);
   });
 }
 
@@ -557,6 +589,202 @@ function startRecurringExpenseEdit(id) {
   recurringMemoInput.value = recurringExpense.memo || "";
   setRecurringFormMode(true);
   recurringCategoryInput.focus();
+}
+
+function normalizeLifeEvent(item) {
+  const type = item?.type === "income" ? "income" : "expense";
+  return {
+    id: typeof item?.id === "string" ? item.id : crypto.randomUUID(),
+    age: Math.min(Math.max(Number(item?.age) || 0, 0), 120),
+    type,
+    category: LIFE_EVENT_CATEGORIES.includes(item?.category) ? item.category : LIFE_EVENT_CATEGORIES.at(-1),
+    amount: Math.max(Number(item?.amount) || 0, 0),
+    memo: typeof item?.memo === "string" ? item.memo : "",
+    createdAt: typeof item?.createdAt === "string" ? item.createdAt : new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function loadLifeEvents() {
+  const raw = localStorage.getItem(LIFE_EVENTS_KEY);
+  if (!raw) return [];
+  try {
+    const data = JSON.parse(raw);
+    if (!Array.isArray(data)) return [];
+    return data
+      .map((item) => normalizeLifeEvent(item))
+      .filter((item) => item.amount > 0 && Number.isFinite(item.age));
+  } catch {
+    return [];
+  }
+}
+
+function saveLifeEvents(items) {
+  localStorage.setItem(LIFE_EVENTS_KEY, JSON.stringify(items));
+}
+
+function summarizeLifeEventsUpToAge(items, maxAge = 60) {
+  return items.reduce((acc, item) => {
+    if (item.age > maxAge) return acc;
+    if (item.type === "income") acc.income += item.amount;
+    else acc.expense += item.amount;
+    return acc;
+  }, { income: 0, expense: 0, maxAge });
+}
+
+function setLifeEventFormMode(isEditing) {
+  if (lifeEventSubmitButton) {
+    lifeEventSubmitButton.textContent = isEditing ? "更新" : "登録";
+  }
+  if (lifeEventCancelButton) {
+    lifeEventCancelButton.hidden = !isEditing;
+  }
+  if (lifeEventEditStatus) {
+    lifeEventEditStatus.hidden = !isEditing;
+  }
+}
+
+function resetLifeEventFormFields() {
+  if (!lifeEventForm) return;
+  lifeEventForm.reset();
+  lifeEventEditingId = null;
+  lifeEventTypeInput.value = "expense";
+  syncLifeEventCategoryOptions();
+  lifeEventAmountInput.value = "";
+  setLifeEventFormMode(false);
+}
+
+function startLifeEventEdit(id) {
+  const lifeEvent = loadLifeEvents().find((item) => item.id === id);
+  if (!lifeEvent) return;
+  const lifeEventsSection = document.getElementById("section-life-events");
+  if (lifeEventsSection) {
+    setAccordionExpanded(lifeEventsSection, true);
+  }
+  lifeEventEditingId = lifeEvent.id;
+  lifeEventAgeInput.value = String(lifeEvent.age);
+  lifeEventTypeInput.value = lifeEvent.type;
+  syncLifeEventCategoryOptions();
+  lifeEventCategoryInput.value = lifeEvent.category;
+  lifeEventAmountInput.value = numberWithComma.format(lifeEvent.amount);
+  lifeEventMemoInput.value = lifeEvent.memo || "";
+  setLifeEventFormMode(true);
+  lifeEventAgeInput.focus();
+}
+
+function renderLifeEvents(items) {
+  if (!lifeEventList) return;
+  lifeEventList.innerHTML = "";
+
+  if (lifeEventEditingId && !items.some((item) => item.id === lifeEventEditingId)) {
+    lifeEventEditingId = null;
+    setLifeEventFormMode(false);
+  }
+
+  const summary = summarizeLifeEventsUpToAge(items, 60);
+  if (lifeEventIncomeTotal) lifeEventIncomeTotal.textContent = yen.format(summary.income);
+  if (lifeEventExpenseTotal) lifeEventExpenseTotal.textContent = yen.format(summary.expense);
+
+  if (items.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "chart-empty";
+    empty.textContent = "登録済みのライフイベントはありません。";
+    lifeEventList.appendChild(empty);
+    return;
+  }
+
+  items
+    .slice()
+    .sort((a, b) => (a.age !== b.age ? a.age - b.age : a.createdAt.localeCompare(b.createdAt)))
+    .forEach((item) => {
+      const card = document.createElement("article");
+      card.className = "life-event-card";
+      card.innerHTML = `
+        <div class="life-event-card-header">
+          <h4>${item.age}歳 / ${item.category}</h4>
+          <p class="life-event-amount ${item.type}">${item.type === "income" ? "+" : "-"}${yen.format(item.amount)}</p>
+        </div>
+        <ul class="life-event-meta-list">
+          <li><span>区分</span><strong>${LIFE_EVENT_TYPES[item.type]}</strong></li>
+          <li><span>メモ</span><strong>${item.memo || "なし"}</strong></li>
+        </ul>
+      `;
+
+      const actions = document.createElement("div");
+      actions.className = "life-event-actions";
+
+      const editButton = document.createElement("button");
+      editButton.type = "button";
+      editButton.className = "small";
+      editButton.textContent = "修正";
+      editButton.addEventListener("click", () => startLifeEventEdit(item.id));
+
+      const deleteButton = document.createElement("button");
+      deleteButton.type = "button";
+      deleteButton.className = "small danger";
+      deleteButton.textContent = "削除";
+      deleteButton.addEventListener("click", () => {
+        const next = loadLifeEvents().filter((target) => target.id !== item.id);
+        saveLifeEvents(next);
+        if (lifeEventEditingId === item.id) {
+          resetLifeEventFormFields();
+        }
+        render();
+      });
+
+      actions.append(editButton, deleteButton);
+      card.appendChild(actions);
+      lifeEventList.appendChild(card);
+    });
+}
+
+function addLifeEvent(event) {
+  event.preventDefault();
+  const age = Number(lifeEventAgeInput.value);
+  const type = lifeEventTypeInput.value;
+  const category = lifeEventCategoryInput.value;
+  const amount = parseAmountInput(lifeEventAmountInput.value);
+  const memo = lifeEventMemoInput.value.trim();
+
+  if (!Number.isFinite(age) || age < 0 || age > 60) return;
+  if (!(type in LIFE_EVENT_TYPES)) return;
+  if (!LIFE_EVENT_CATEGORIES.includes(category)) return;
+  if (amount <= 0) return;
+
+  const current = loadLifeEvents();
+  if (lifeEventEditingId) {
+    const next = current.map((item) => (item.id === lifeEventEditingId
+      ? normalizeLifeEvent({
+          ...item,
+          age,
+          type,
+          category,
+          amount,
+          memo,
+          updatedAt: new Date().toISOString(),
+        })
+      : item));
+    saveLifeEvents(next);
+  } else {
+    current.push(normalizeLifeEvent({
+      id: crypto.randomUUID(),
+      age,
+      type,
+      category,
+      amount,
+      memo,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }));
+    saveLifeEvents(current);
+  }
+
+  resetLifeEventFormFields();
+  render();
+}
+
+function cancelLifeEventEdit() {
+  resetLifeEventFormFields();
 }
 
 function todayISO() {
@@ -1506,6 +1734,7 @@ function render() {
     resetTransactionFormFields();
   }
   renderRecurringExpenses(recurringExpenses);
+  renderLifeEvents(loadLifeEvents());
 
   entryStartMonthInput.value = resolveEntryStartMonth(settings, transactions);
   birthDateInput.value = settings.birthDate || "";
@@ -1913,11 +2142,6 @@ function setupChildAccordions(root = document) {
 }
 
 function scrollToNavSection(target) {
-  if (target === "schedule") {
-    showNavToast("ライフイベント表は今後追加予定です。");
-    return;
-  }
-
   const sectionId = NAV_TARGETS[target];
   const targetSection = sectionId ? document.getElementById(sectionId) : null;
   if (!targetSection) return;
@@ -1969,8 +2193,10 @@ function init() {
   syncCategoryOptions();
   syncRecurringCategoryOptions();
   syncRecurringDayOptions();
+  syncLifeEventCategoryOptions();
   setTransactionFormMode(false);
   resetRecurringFormFields();
+  resetLifeEventFormFields();
   renderPlans(settings);
 
   form.addEventListener("submit", addTransaction);
@@ -1979,11 +2205,14 @@ function init() {
   monthFilter.addEventListener("change", render);
   setupFormattedAmountInput(amountInput);
   setupFormattedAmountInput(recurringAmountInput);
+  setupFormattedAmountInput(lifeEventAmountInput);
 
   profileForm.addEventListener("submit", saveProfile);
   addPlanButton?.addEventListener("click", addPlanBlockFromProfileButton);
   recurringForm.addEventListener("submit", addRecurringExpense);
   recurringCancelButton?.addEventListener("click", cancelRecurringExpenseEdit);
+  lifeEventForm?.addEventListener("submit", addLifeEvent);
+  lifeEventCancelButton?.addEventListener("click", cancelLifeEventEdit);
   setupSectionAccordions();
   setupChildAccordions();
   setupBottomNavigation();

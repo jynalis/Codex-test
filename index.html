@@ -289,6 +289,65 @@
         </div>
       </section>
 
+
+      <section id="section-life-events" class="card section-tone-life-events accordion-section" data-nav-section="schedule" data-accordion-section>
+        <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-life-events" id="trigger-life-events">
+          <div class="section-heading">
+            <h2>ライフイベント表</h2>
+            <p class="section-description">
+              60歳までの臨時収入・臨時支出を登録し、将来のキャッシュフロー設計の土台を作ります。
+            </p>
+          </div>
+          <span class="accordion-toggle-icon" aria-hidden="true">＋</span>
+        </button>
+        <div class="accordion-panel" id="panel-life-events" role="region" aria-labelledby="trigger-life-events">
+          <div class="accordion-panel-inner">
+            <form id="life-event-form" class="grid life-event-form" autocomplete="off">
+              <p id="life-event-edit-status" class="life-event-edit-status full" aria-live="polite" hidden>
+                ライフイベントを編集中
+              </p>
+              <label>
+                発生年齢
+                <input id="life-event-age" type="number" inputmode="numeric" min="0" max="60" step="1" placeholder="例: 45" required />
+              </label>
+              <label>
+                区分
+                <select id="life-event-type" required>
+                  <option value="expense">臨時支出</option>
+                  <option value="income">臨時収入</option>
+                </select>
+              </label>
+              <label>
+                費目
+                <select id="life-event-category" required></select>
+              </label>
+              <label>
+                金額 (円)
+                <input id="life-event-amount" type="text" inputmode="numeric" placeholder="例: 1,500,000" required />
+              </label>
+              <label class="full">
+                メモ
+                <input id="life-event-memo" type="text" maxlength="80" placeholder="任意" />
+              </label>
+              <div class="full life-event-form-actions">
+                <button type="submit" id="life-event-submit-button">登録</button>
+                <button type="button" id="life-event-cancel-button" class="ghost" hidden>キャンセル</button>
+              </div>
+            </form>
+
+            <section class="life-event-summary" aria-live="polite">
+              <h3>60歳以下の臨時収支サマリー</h3>
+              <ul class="life-event-summary-list">
+                <li><span>臨時収入 合計</span><strong id="life-event-income-total">¥0</strong></li>
+                <li><span>臨時支出 合計</span><strong id="life-event-expense-total">¥0</strong></li>
+              </ul>
+            </section>
+
+            <div id="life-event-list" class="life-event-list"></div>
+          </div>
+        </div>
+      </section>
+
       <section class="card section-tone-chart accordion-section" data-accordion-section>
         <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-chart" id="trigger-chart">
           <div class="section-heading">
