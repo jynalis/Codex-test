@@ -1265,6 +1265,16 @@ button.ghost {
   margin-bottom: 8px;
 }
 
+.history-block + .history-block {
+  margin-top: 12px;
+}
+
+.history-block-title {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #25425f;
+}
+
 .list {
   margin: 14px 0 0;
   padding: 0;
@@ -1282,6 +1292,11 @@ button.ghost {
   gap: 12px;
   background: linear-gradient(180deg, #fff 0%, #f8fbff 100%);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 60%);
+}
+
+.item.is-planned-transaction {
+  border-color: #b8d2c1;
+  background: linear-gradient(180deg, #fcfffd 0%, #f1f8f4 100%);
 }
 
 .meta {
@@ -1818,6 +1833,10 @@ button.ghost {
   .item {
     flex-direction: column;
     gap: 8px;
+  }
+
+  .history-block-title {
+    font-size: 0.92rem;
   }
 
   .amount-wrap {
