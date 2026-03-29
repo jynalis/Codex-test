@@ -16,7 +16,7 @@ const transactionEditStatus = document.getElementById("transaction-edit-status")
 const plannedHistoryBlock = document.getElementById("planned-history-block");
 const sharedViewFilterControls = [
   {
-    mode: document.getElementById("history-view-mode"),
+    mode: null,
     year: document.getElementById("history-year-filter"),
     month: document.getElementById("history-month-filter"),
   },
@@ -103,7 +103,7 @@ let recurringEditingId = null;
 let transactionEditingId = null;
 let lifeEventEditingId = null;
 let sharedViewState = {
-  mode: "month",
+  averageMode: "month",
   year: "",
   month: "",
 };
@@ -409,14 +409,13 @@ function getMonthsWithData(items) {
 function resolveInitialSharedViewState(baseMonth) {
   const parsed = parseMonth(baseMonth) || parseMonth(todayISO().slice(0, 7));
   return {
-    mode: "month",
+    averageMode: "month",
     year: String(parsed.year),
     month: String(parsed.monthIndex + 1).padStart(2, "0"),
   };
 }
 
 function resolveViewMonthFromState() {
-  if (sharedViewState.mode !== "month") return "";
   const year = Number(sharedViewState.year);
   const month = Number(sharedViewState.month);
   if (!Number.isInteger(year) || month < 1 || month > 12) return "";
@@ -442,8 +441,10 @@ function syncSharedViewFilterOptions(availableMonths) {
   }
 
   sharedViewFilterControls.forEach((controls) => {
-    if (!controls.mode || !controls.year || !controls.month) return;
-    controls.mode.value = sharedViewState.mode;
+    if (!controls.year || !controls.month) return;
+    if (controls.mode) {
+      controls.mode.value = sharedViewState.averageMode;
+    }
 
     controls.year.innerHTML = years.map((year) => `<option value="${year}">${year}年</option>`).join("");
     controls.year.value = sharedViewState.year;
@@ -454,7 +455,7 @@ function syncSharedViewFilterOptions(availableMonths) {
     }).join("");
     controls.month.value = sharedViewState.month;
 
-    const isAverage = sharedViewState.mode === "average";
+    const isAverage = sharedViewState.averageMode === "average";
     controls.year.disabled = isAverage;
     controls.month.disabled = isAverage;
   });
@@ -1652,6 +1653,25 @@ function addOneMonth(month) {
   return formatMonth(next.getFullYear(), next.getMonth());
 }
 
+function subtractOneMonth(month) {
+  const parsed = parseMonth(month);
+  if (!parsed) return month;
+  const previous = new Date(parsed.year, parsed.monthIndex - 1, 1);
+  return formatMonth(previous.getFullYear(), previous.getMonth());
+}
+
+function getMonthRangeInclusive(startMonth, endMonth) {
+  if (!parseMonth(startMonth) || !parseMonth(endMonth)) return [];
+  if (compareMonth(startMonth, endMonth) > 0) return [];
+  const months = [];
+  let cursor = startMonth;
+  while (compareMonth(cursor, endMonth) <= 0) {
+    months.push(cursor);
+    cursor = addOneMonth(cursor);
+  }
+  return months;
+}
+
 function monthsBetweenInclusive(startMonth, endMonth) {
   const start = parseMonth(startMonth);
   const end = parseMonth(endMonth);
@@ -1724,6 +1744,13 @@ function resolveEntryStartMonth(settings, transactions) {
     .sort((a, b) => a.localeCompare(b))[0];
   if (earliestManual) return monthISO(earliestManual);
   return todayISO().slice(0, 7);
+}
+
+function resolveAverageTargetMonths(settings, transactions) {
+  const entryStartMonth = resolveEntryStartMonth(settings, transactions);
+  const operationMonth = todayISO().slice(0, 7);
+  const endMonth = subtractOneMonth(operationMonth);
+  return getMonthRangeInclusive(entryStartMonth, endMonth);
 }
 
 function createEligibleAutoExpensesForMonth(settings, transactions, month) {
@@ -3184,10 +3211,10 @@ function render() {
   const dataMonths = getMonthsWithData(transactions);
   syncSharedViewFilterOptions(dataMonths);
   const currentMonth = resolveViewMonthFromState() || fallbackMonth;
-  const isAverageMode = sharedViewState.mode === "average";
+  const isAverageMode = sharedViewState.averageMode === "average";
   const autoTransactions = createEligibleAutoExpensesForMonth(settings, transactions, currentMonth);
   const combinedTransactions = [...transactions, ...autoTransactions];
-  const averageTargetMonths = getMonthsWithData(combinedTransactions);
+  const averageTargetMonths = resolveAverageTargetMonths(settings, transactions);
   const summary = calculateMonthlySummary(transactions, settings, currentMonth);
   if (transactionEditingId && !transactions.some((item) => item.id === transactionEditingId)) {
     resetTransactionFormFields();
@@ -3205,15 +3232,10 @@ function render() {
   const futureTransactionHistoryItems = buildFutureTransactionHistoryItems(transactions, settings, nowMonth);
   const plannedHistoryItems = [...lifeEventPlannedHistoryItems, ...futureTransactionHistoryItems];
 
-  if (isAverageMode) {
-    const averageHistoryItems = buildAverageTransactionHistoryItems(combinedTransactions, averageTargetMonths);
-    renderAverageTransactionHistory(averageHistoryItems, averageTargetMonths);
-  } else {
-    renderTransactionHistory(historyItems);
-  }
+  renderTransactionHistory(historyItems);
   renderPlannedTransactionHistory(plannedHistoryItems);
   if (plannedHistoryBlock) {
-    plannedHistoryBlock.hidden = isAverageMode;
+    plannedHistoryBlock.hidden = false;
   }
 
   const monthlyExpenseComposition = buildMonthlyExpenseComposition(combinedTransactions, currentMonth);
@@ -3782,9 +3804,9 @@ function setupBackToTopButton() {
 function handleSharedViewFilterChange() {
   const active = sharedViewFilterControls.find((controls) => controls.mode?.matches(":focus") || controls.year?.matches(":focus") || controls.month?.matches(":focus"))
     || sharedViewFilterControls[0];
-  if (!active?.mode || !active.year || !active.month) return;
+  if (!active?.year || !active.month) return;
   sharedViewState = {
-    mode: active.mode.value === "average" ? "average" : "month",
+    averageMode: active.mode ? (active.mode.value === "average" ? "average" : "month") : sharedViewState.averageMode,
     year: active.year.value,
     month: active.month.value,
   };
@@ -3793,8 +3815,8 @@ function handleSharedViewFilterChange() {
 
 function setupSharedViewFilters() {
   sharedViewFilterControls.forEach((controls) => {
-    if (!controls.mode || !controls.year || !controls.month) return;
-    controls.mode.addEventListener("change", handleSharedViewFilterChange);
+    if (!controls.year || !controls.month) return;
+    controls.mode?.addEventListener("change", handleSharedViewFilterChange);
     controls.year.addEventListener("change", handleSharedViewFilterChange);
     controls.month.addEventListener("change", handleSharedViewFilterChange);
   });
