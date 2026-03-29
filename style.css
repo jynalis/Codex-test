@@ -1619,35 +1619,6 @@ button.ghost {
   overflow-wrap: anywhere;
 }
 
-#panel-assets-composition .pie-legend {
-  gap: 6px;
-}
-
-#panel-assets-composition .pie-legend-item {
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
-  gap: 8px;
-  align-items: center;
-  padding: 8px 10px;
-}
-
-#panel-assets-composition .pie-legend-item .dot {
-  margin-top: 1px;
-}
-
-#panel-assets-composition .pie-legend-item .category {
-  line-height: 1.3;
-}
-
-#panel-assets-composition .pie-legend-item .category-main,
-#panel-assets-composition .pie-legend-item .category-note {
-  display: block;
-}
-
-#panel-assets-composition .pie-legend-item .category-note {
-  white-space: nowrap;
-}
-
-
 .chart-empty {
   color: var(--muted);
   font-size: 0.9rem;
