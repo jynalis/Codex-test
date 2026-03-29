@@ -1807,6 +1807,7 @@ function renderDashboard(summary, settings, currentMonth, transactions, recurrin
 function renderExpenseChart(transactions, currentMonth) {
   expenseChart.innerHTML = "";
   expenseChart.classList.toggle("has-data", false);
+  expenseChart.classList.add("breakdown-cards");
 
   if (!currentMonth) {
     const empty = document.createElement("p");
@@ -2675,7 +2676,7 @@ function renderAssetForecast(settings) {
       aria-hidden="true"
     >
       <div class="child-accordion-panel-inner">
-        <section class="chart asset-composition">
+        <section class="chart asset-composition breakdown-cards">
           <p class="section-description">現在入力されている資産形成の契約（積立・一括入金）の実績をもとに算出しています（基準日: ${currentAssetBaseDate}）。</p>
         </section>
       </div>

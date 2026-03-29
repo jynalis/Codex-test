@@ -536,27 +536,27 @@ button.danger {
   min-width: 0;
 }
 
-#panel-chart .chart,
-#panel-chart .asset-list,
-#panel-chart .pie-legend,
-#panel-chart .pie-legend-item {
+.breakdown-cards.chart,
+.breakdown-cards .asset-list,
+.breakdown-cards .pie-legend,
+.breakdown-cards .pie-legend-item {
   width: 100%;
   max-width: 100%;
   min-width: 0;
 }
 
-#panel-chart .pie-chart {
+.breakdown-cards .pie-chart {
   width: min(300px, 100%);
   max-width: 100%;
 }
 
-#panel-chart .pie-legend-item > *,
-#panel-chart .asset-list li > span {
+.breakdown-cards .pie-legend-item > *,
+.breakdown-cards .asset-list li > span {
   min-width: 0;
 }
 
-#panel-chart .pie-legend-item .category,
-#panel-chart .asset-list li > span {
+.breakdown-cards .pie-legend-item .category,
+.breakdown-cards .asset-list li > span {
   overflow-wrap: anywhere;
   word-break: break-word;
 }
@@ -2102,11 +2102,11 @@ button.ghost {
     min-height: 44px;
   }
 
-  #panel-chart .pie-legend {
+  .breakdown-cards .pie-legend {
     gap: 6px;
   }
 
-  #panel-chart .pie-legend-item {
+  .breakdown-cards .pie-legend-item {
     grid-template-columns: auto minmax(0, 1fr) auto;
     grid-template-rows: auto auto;
     column-gap: 6px;
@@ -2115,24 +2115,24 @@ button.ghost {
     padding: 6px 8px;
   }
 
-  #panel-chart .pie-legend-item .dot {
+  .breakdown-cards .pie-legend-item .dot {
     margin-top: 1px;
   }
 
-  #panel-chart .pie-legend-item .category {
+  .breakdown-cards .pie-legend-item .category {
     grid-column: 2;
     grid-row: 1;
     line-height: 1.3;
   }
 
-  #panel-chart .pie-legend-item .value {
+  .breakdown-cards .pie-legend-item .value {
     grid-column: 2;
     grid-row: 2;
     line-height: 1.25;
     font-size: 0.84rem;
   }
 
-  #panel-chart .pie-legend-item .ratio {
+  .breakdown-cards .pie-legend-item .ratio {
     grid-column: 3;
     grid-row: 2;
     align-self: end;
