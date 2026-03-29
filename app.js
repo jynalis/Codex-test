@@ -99,6 +99,9 @@ const DEFAULT_CASHFLOW_ASSUMPTIONS = {
   inflationRate: 1,
 };
 
+const RETIREMENT_REFERENCE_AGE = 60;
+const RETIREMENT_REFERENCE_DAY_OFFSET = 2;
+
 const EXPENSE_CATEGORIES = ["日常費", "レジャー費", "ガソリン費", "雑費"];
 const LEGACY_EXPENSE_CATEGORY_ALIASES = {
   "趣味・レジャー費": "レジャー費",
@@ -1690,7 +1693,7 @@ function isPlanHeldUntilAge(plan, age) {
   return withdrawAge >= age;
 }
 
-function calculateLifeEventTotalsThroughAge(lifeEvents, maxAge = 60) {
+function calculateLifeEventTotalsThroughAge(lifeEvents, maxAge = RETIREMENT_REFERENCE_AGE) {
   return (Array.isArray(lifeEvents) ? lifeEvents : []).reduce((totals, event) => {
     const age = Number(event?.age);
     if (!Number.isFinite(age) || age > maxAge) return totals;
@@ -1706,8 +1709,13 @@ function calculateLifeEventTotalsThroughAge(lifeEvents, maxAge = 60) {
 }
 
 function calculateAge60FinancialSummary(settings, lifeEvents) {
-  const assetFormationTotalAt60 = calculateProjectedTotalAtAge(settings, 60);
-  const lifeEventTotals = calculateLifeEventTotalsThroughAge(lifeEvents, 60);
+  const age60CutoffDate = resolveRetirementReferenceDate(settings.birthDate);
+  const age60CutoffMonth = resolveRetirementReferenceMonth(settings.birthDate);
+  const maxLifeEventAge = age60CutoffDate ? RETIREMENT_REFERENCE_AGE - 1 : RETIREMENT_REFERENCE_AGE;
+  const assetFormationTotalAt60 = age60CutoffMonth
+    ? calculateFinancialAssetTotalAtMonth(settings, age60CutoffMonth)
+    : calculateProjectedTotalAtAge(settings, RETIREMENT_REFERENCE_AGE);
+  const lifeEventTotals = calculateLifeEventTotalsThroughAge(lifeEvents, maxLifeEventAge);
   const total = assetFormationTotalAt60
     + lifeEventTotals.income
     - lifeEventTotals.expense;
@@ -2152,9 +2160,14 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
   const birth = parseBirthDate(settings.birthDate);
   if (!birth) return [];
 
+  const retirementReferenceDate = resolveRetirementReferenceDate(settings.birthDate);
+  if (!retirementReferenceDate) return [];
+  const retirementReferenceYear = retirementReferenceDate.getFullYear();
+  const retirementReferenceMonth = formatMonth(retirementReferenceYear, retirementReferenceDate.getMonth());
+
   const currentAge = calculateAge(settings.birthDate);
   const startYear = new Date().getFullYear();
-  const endYear = birth.getFullYear() + 60;
+  const endYear = retirementReferenceYear;
   if (startYear > endYear) return [];
 
   const nowMonth = todayISO().slice(0, 7);
@@ -2189,17 +2202,27 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
   for (let year = startYear; year <= endYear; year += 1) {
     const yearOffset = year - startYear;
     const age = resolveAgeAtYear(settings.birthDate, year);
-    if (!Number.isFinite(age) || age < currentAge || age > 60) continue;
+    if (!Number.isFinite(age) || age < currentAge || age > RETIREMENT_REFERENCE_AGE) continue;
 
-    const annualIncome = Math.round(monthlyIncome * 12 * ((1 + salaryGrowth) ** yearOffset));
-    const annualRegularExpense = Math.round(monthlyRegularExpense * 12 * ((1 + inflationRate) ** yearOffset));
+    const isRetirementReferenceYear = year === retirementReferenceYear;
+    const activeMonthsInYear = isRetirementReferenceYear ? (retirementReferenceDate.getMonth() + 1) : 12;
+    const yearProgressRate = activeMonthsInYear / 12;
 
-    const annualRecurringExpense = Math.round(recurringMonthlyBase * 12);
+    const annualIncome = Math.round(monthlyIncome * activeMonthsInYear * ((1 + salaryGrowth) ** yearOffset));
+    const annualRegularExpense = Math.round(monthlyRegularExpense * activeMonthsInYear * ((1 + inflationRate) ** yearOffset));
 
-    const annualAssetFormationExpense = calculateAnnualAssetFormationExpense(settings, year);
+    const annualRecurringExpense = Math.round(recurringMonthlyBase * activeMonthsInYear);
 
-    const lifeEvent = lifeEventByYear[year] || { income: 0, expense: 0 };
-    const plannedExtra = plannedExtraByYear[year] || { income: 0, expense: 0 };
+    const annualAssetFormationExpense = isRetirementReferenceYear
+      ? Math.round(calculateAnnualAssetFormationExpense(settings, year) * yearProgressRate)
+      : calculateAnnualAssetFormationExpense(settings, year);
+
+    const lifeEvent = (isRetirementReferenceYear || year > retirementReferenceYear)
+      ? { income: 0, expense: 0 }
+      : (lifeEventByYear[year] || { income: 0, expense: 0 });
+    const plannedExtra = isRetirementReferenceYear
+      ? { income: 0, expense: 0 }
+      : (plannedExtraByYear[year] || { income: 0, expense: 0 });
     const annualExtraIncome = lifeEvent.income + plannedExtra.income;
     const annualExtraExpense = lifeEvent.expense + plannedExtra.expense;
     const annualAssetWithdrawalTransfer = assetWithdrawalTransfersByYear[year] || 0;
@@ -2210,8 +2233,8 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
       - annualAssetFormationExpense
       - annualExtraExpense;
     endingBalance += annualBalance;
-    const yearEndMonth = formatMonth(year, 11);
-    const assetFormationBalance = calculateFinancialAssetTotalAtMonth(settings, yearEndMonth);
+    const rowTargetMonth = isRetirementReferenceYear ? retirementReferenceMonth : formatMonth(year, 11);
+    const assetFormationBalance = calculateFinancialAssetTotalAtMonth(settings, rowTargetMonth);
     const financialAssetTotal = endingBalance + assetFormationBalance;
 
     rows.push({
@@ -2365,18 +2388,41 @@ function parseBirthDate(birthDate) {
   return date;
 }
 
-function resolveWithdrawTargetMonth(birthDate, withdrawAge) {
+function resolveTargetAgeDate(birthDate, targetAge) {
   const birth = parseBirthDate(birthDate);
   if (!birth) return null;
 
-  const targetAge = Number(withdrawAge);
-  if (!Number.isFinite(targetAge) || targetAge < 0) return null;
+  const age = Number(targetAge);
+  if (!Number.isFinite(age) || age < 0) return null;
 
-  const withdrawDate = new Date(
-    birth.getFullYear() + targetAge,
+  return new Date(
+    birth.getFullYear() + age,
     birth.getMonth(),
     birth.getDate()
   );
+}
+
+function resolveRetirementReferenceDate(birthDate) {
+  const ageDate = resolveTargetAgeDate(birthDate, RETIREMENT_REFERENCE_AGE);
+  if (!ageDate) return null;
+  const cutoffDate = new Date(ageDate);
+  cutoffDate.setDate(cutoffDate.getDate() - RETIREMENT_REFERENCE_DAY_OFFSET);
+  return cutoffDate;
+}
+
+function resolveRetirementReferenceYear(birthDate) {
+  const cutoffDate = resolveRetirementReferenceDate(birthDate);
+  return cutoffDate ? cutoffDate.getFullYear() : null;
+}
+
+function resolveRetirementReferenceMonth(birthDate) {
+  const cutoffDate = resolveRetirementReferenceDate(birthDate);
+  return cutoffDate ? formatMonth(cutoffDate.getFullYear(), cutoffDate.getMonth()) : null;
+}
+
+function resolveWithdrawTargetMonth(birthDate, withdrawAge) {
+  const withdrawDate = resolveTargetAgeDate(birthDate, withdrawAge);
+  if (!withdrawDate) return null;
   return formatMonth(withdrawDate.getFullYear(), withdrawDate.getMonth());
 }
 
@@ -2417,7 +2463,7 @@ function resolveProjectionStartMonth(plan, targetMonth) {
   return compareMonth(monthlyStart, lumpStart) <= 0 ? monthlyStart : lumpStart;
 }
 
-function resolvePlanSimulationTargetMonth(plan, birthDate, baseTargetMonth, baseAge = 60) {
+function resolvePlanSimulationTargetMonth(plan, birthDate, baseTargetMonth, baseAge = RETIREMENT_REFERENCE_AGE) {
   if (!baseTargetMonth) return null;
 
   const withdrawAge = Number(plan?.withdrawAge);
@@ -2525,16 +2571,16 @@ function renderAssetForecast(settings) {
   const recurringExpenses = loadRecurringExpenses();
   const assumptions = loadCashflowAssumptions();
   const currentAge = calculateAge(settings.birthDate);
-  const age60TargetMonth = resolveWithdrawTargetMonth(settings.birthDate, 60);
+  const age60TargetMonth = resolveRetirementReferenceMonth(settings.birthDate);
   const currentAssetTargetMonth = resolveCurrentAssetTargetMonth();
   const currentAssetBaseDate = todayISO();
 
   const projectedRowsAt60 = settings.plans.map((plan) => {
-    const planTargetMonth = resolvePlanSimulationTargetMonth(plan, settings.birthDate, age60TargetMonth, 60);
+    const planTargetMonth = resolvePlanSimulationTargetMonth(plan, settings.birthDate, age60TargetMonth, RETIREMENT_REFERENCE_AGE);
     const projection = projectPlanAssetDetails(plan, settings.birthDate, planTargetMonth);
     return {
       ...plan,
-      isHeldUntil60: isPlanHeldUntilAge(plan, 60),
+      isHeldUntil60: isPlanHeldUntilAge(plan, RETIREMENT_REFERENCE_AGE),
       projectedAmount: projection.amount,
       projection,
     };
@@ -2567,8 +2613,8 @@ function renderAssetForecast(settings) {
     lifeEvents: loadLifeEvents(),
     assumptions,
   });
-  const age60CashflowRow = cashflowRows.findLast((row) => row.age === 60) || cashflowRows[cashflowRows.length - 1] || null;
-  const age60BalanceTargetMonth = age60CashflowRow ? formatMonth(age60CashflowRow.year, 11) : age60TargetMonth;
+  const age60CashflowRow = cashflowRows.find((row) => row.year === resolveRetirementReferenceYear(settings.birthDate)) || cashflowRows[cashflowRows.length - 1] || null;
+  const age60BalanceTargetMonth = age60TargetMonth || (age60CashflowRow ? formatMonth(age60CashflowRow.year, 11) : null);
   const planBalancesAt60 = buildPlanBalancesAtMonth(settings, age60BalanceTargetMonth)
     .filter((plan) => plan.projectedAmount > 0);
 
