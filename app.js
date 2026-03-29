@@ -2210,8 +2210,7 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
       - annualAssetFormationExpense
       - annualExtraExpense;
     endingBalance += annualBalance;
-    const yearEndMonth = formatMonth(year, 11);
-    const assetFormationBalance = calculateFinancialAssetTotalAtMonth(settings, yearEndMonth);
+    const assetFormationBalance = calculateFinancialAssetTotalAtAge(settings, age);
     const financialAssetTotal = endingBalance + assetFormationBalance;
 
     rows.push({
@@ -2448,6 +2447,13 @@ function calculateFinancialAssetTotalAtMonth(settings, targetMonth) {
   }, 0);
 }
 
+function calculateFinancialAssetTotalAtAge(settings, age) {
+  if (!settings?.birthDate) return 0;
+  const targetMonth = resolveWithdrawTargetMonth(settings.birthDate, age);
+  if (!targetMonth) return 0;
+  return calculateFinancialAssetTotalAtMonth(settings, targetMonth);
+}
+
 function projectPlanAssetDetails(plan, birthDate, explicitTargetMonth = null) {
   const annualReturn = (Number(plan.expectedReturn) || 0) / 100;
   const monthlyRate = Math.pow(1 + annualReturn, 1 / 12) - 1;
@@ -2563,6 +2569,8 @@ function renderAssetForecast(settings) {
       .reduce((sum, plan) => sum + plan.projectedAmount, 0);
     return { type, amount };
   }).filter((item) => item.amount > 0);
+  const contractTotalAt60 = plansHeldUntil60.reduce((sum, plan) => sum + plan.projectedAmount, 0);
+  const typeTotalAt60 = typeTotals.reduce((sum, item) => sum + item.amount, 0);
   const earlyWithdrawHtml = earlyWithdrawPlansForDisplay
     .map((plan) => {
       const withdrawAge = Number(plan.withdrawAge);
@@ -2587,7 +2595,10 @@ function renderAssetForecast(settings) {
     assumptions,
   });
   const age60CashflowRow = cashflowRows.findLast((row) => row.age === 60) || cashflowRows[cashflowRows.length - 1] || null;
-  const totalAt60 = age60CashflowRow?.assetFormationBalance ?? 0;
+  const cashflowAssetFormationAt60 = age60CashflowRow?.assetFormationBalance ?? 0;
+  const totalAt60 = contractTotalAt60;
+  const isTypeTotalMatched = typeTotalAt60 === contractTotalAt60;
+  const isCashflowTotalMatched = cashflowAssetFormationAt60 === contractTotalAt60;
   const typeTotalsHtml = typeTotals
     .map((item) => `<li><span>${item.type} 合計</span><strong>${yen.format(item.amount)}</strong></li>`)
     .join("");
@@ -2624,6 +2635,15 @@ function renderAssetForecast(settings) {
             <h4>60歳時点の想定資産額（種別別）</h4>
             ${typeTotalsHtml ? `<ul class="asset-list">${typeTotalsHtml}</ul>` : '<p class="chart-empty">60歳時点まで継続する契約はありません。</p>'}
             <div class="asset-total">60歳時点の想定総資産額: <strong>${yen.format(totalAt60)}</strong></div>
+            <section class="asset-withdraw-card" aria-label="60歳時点資産額の整合チェック">
+              <h4>60歳時点資産額の整合チェック</h4>
+              <ul class="asset-list">
+                <li><span>契約別合計</span><strong>${yen.format(contractTotalAt60)}</strong></li>
+                <li><span>種別別合計</span><strong>${yen.format(typeTotalAt60)}</strong></li>
+                <li><span>キャッシュフロー表「資産形成額」(60歳行)</span><strong>${yen.format(cashflowAssetFormationAt60)}</strong></li>
+              </ul>
+              <p class="section-description">判定: 契約別合計と種別別合計は <strong>${isTypeTotalMatched ? "一致" : "不一致"}</strong> / 契約別合計とキャッシュフロー表は <strong>${isCashflowTotalMatched ? "一致" : "不一致"}</strong> です。</p>
+            </section>
             <section class="asset-withdraw-card" aria-label="60歳前に取崩す予定の資産">
               <h4>60歳前に取崩す予定の資産</h4>
               ${earlyWithdrawHtml
