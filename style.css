@@ -520,6 +520,10 @@ button.danger {
   padding: 0 12px 12px;
 }
 
+#panel-assets-composition.child-accordion-panel {
+  padding-inline: 2px;
+}
+
 #panel-profile-plan-assets > .child-accordion-panel-inner,
 #panel-recurring-list > .child-accordion-panel-inner,
 #panel-life-event-list > .child-accordion-panel-inner {
