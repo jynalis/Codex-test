@@ -2430,22 +2430,37 @@ function resolvePlanSimulationTargetMonth(plan, birthDate, baseTargetMonth, base
   return compareMonth(withdrawTargetMonth, baseTargetMonth) <= 0 ? withdrawTargetMonth : baseTargetMonth;
 }
 
+function calculatePlanBalanceAtMonth(plan, birthDate, targetMonth) {
+  if (!parseMonth(targetMonth)) return 0;
+
+  const withdrawAge = Number(plan?.withdrawAge);
+  if (Number.isFinite(withdrawAge) && withdrawAge > 0) {
+    const withdrawTargetMonth = resolveWithdrawExecutionMonth(birthDate, withdrawAge);
+    if (withdrawTargetMonth && compareMonth(targetMonth, withdrawTargetMonth) >= 0) {
+      return 0;
+    }
+  }
+
+  const projection = projectPlanAssetDetails(plan, birthDate, targetMonth);
+  return Math.max(Number(projection?.amount) || 0, 0);
+}
+
 function calculateFinancialAssetTotalAtMonth(settings, targetMonth) {
   if (!parseMonth(targetMonth) || !Array.isArray(settings?.plans) || settings.plans.length === 0) return 0;
 
-  return settings.plans.reduce((sum, plan) => {
-    const withdrawAge = Number(plan?.withdrawAge);
-    if (Number.isFinite(withdrawAge) && withdrawAge > 0) {
-      const withdrawTargetMonth = resolveWithdrawExecutionMonth(settings.birthDate, withdrawAge);
-      if (withdrawTargetMonth && compareMonth(targetMonth, withdrawTargetMonth) >= 0) {
-        return sum;
-      }
-    }
+  return settings.plans.reduce(
+    (sum, plan) => sum + calculatePlanBalanceAtMonth(plan, settings.birthDate, targetMonth),
+    0
+  );
+}
 
-    const planTargetMonth = targetMonth;
-    const projection = projectPlanAssetDetails(plan, settings.birthDate, planTargetMonth);
-    return sum + (projection.amount || 0);
-  }, 0);
+function buildPlanBalancesAtMonth(settings, targetMonth) {
+  if (!parseMonth(targetMonth) || !Array.isArray(settings?.plans)) return [];
+
+  return settings.plans.map((plan) => ({
+    ...plan,
+    projectedAmount: calculatePlanBalanceAtMonth(plan, settings.birthDate, targetMonth),
+  }));
 }
 
 function projectPlanAssetDetails(plan, birthDate, explicitTargetMonth = null) {
@@ -2524,7 +2539,6 @@ function renderAssetForecast(settings) {
       projection,
     };
   });
-  const plansHeldUntil60 = projectedRowsAt60.filter((plan) => plan.isHeldUntil60);
   const earlyWithdrawPlans = projectedRowsAt60.filter((plan) => !plan.isHeldUntil60 && plan.projectedAmount > 0);
   const earlyWithdrawPlansForDisplay = earlyWithdrawPlans.map((plan) => {
     const displayTargetMonth = resolveWithdrawTargetMonthAtAgeEnd(settings.birthDate, plan.withdrawAge);
@@ -2546,7 +2560,19 @@ function renderAssetForecast(settings) {
     };
   });
 
-  const rows = plansHeldUntil60
+  const cashflowRows = buildCashflowRows({
+    settings,
+    transactions,
+    recurringExpenses,
+    lifeEvents: loadLifeEvents(),
+    assumptions,
+  });
+  const age60CashflowRow = cashflowRows.findLast((row) => row.age === 60) || cashflowRows[cashflowRows.length - 1] || null;
+  const age60BalanceTargetMonth = age60CashflowRow ? formatMonth(age60CashflowRow.year, 11) : age60TargetMonth;
+  const planBalancesAt60 = buildPlanBalancesAtMonth(settings, age60BalanceTargetMonth)
+    .filter((plan) => plan.projectedAmount > 0);
+
+  const rows = planBalancesAt60
     .map(
       (plan) => `
       <li>
@@ -2558,7 +2584,7 @@ function renderAssetForecast(settings) {
     .join("");
 
   const typeTotals = PLAN_TYPES.map((type) => {
-    const amount = plansHeldUntil60
+    const amount = planBalancesAt60
       .filter((plan) => plan.type === type)
       .reduce((sum, plan) => sum + plan.projectedAmount, 0);
     return { type, amount };
@@ -2579,14 +2605,6 @@ function renderAssetForecast(settings) {
     })
     .join("");
 
-  const cashflowRows = buildCashflowRows({
-    settings,
-    transactions,
-    recurringExpenses,
-    lifeEvents: loadLifeEvents(),
-    assumptions,
-  });
-  const age60CashflowRow = cashflowRows.findLast((row) => row.age === 60) || cashflowRows[cashflowRows.length - 1] || null;
   const totalAt60 = age60CashflowRow?.assetFormationBalance ?? 0;
   const typeTotalsHtml = typeTotals
     .map((item) => `<li><span>${item.type} 合計</span><strong>${yen.format(item.amount)}</strong></li>`)
@@ -2618,11 +2636,11 @@ function renderAssetForecast(settings) {
       >
         <div class="child-accordion-panel-inner">
           <section class="chart asset-outlook">
-            <p class="section-description">現在年齢: <strong>${currentAge}歳</strong> / 60歳時点の一覧は、60歳まで継続する契約のみを表示しています。</p>
+            <p class="section-description">現在年齢: <strong>${currentAge}歳</strong> / 60歳時点の一覧は、キャッシュフロー表の資産形成額と同じ計算条件で表示しています。</p>
             <h4>60歳時点の想定資産額（契約別）</h4>
-            ${rows ? `<ul class="asset-list">${rows}</ul>` : '<p class="chart-empty">60歳時点まで継続する契約はありません。</p>'}
+            ${rows ? `<ul class="asset-list">${rows}</ul>` : '<p class="chart-empty">60歳時点の評価対象となる契約はありません。</p>'}
             <h4>60歳時点の想定資産額（種別別）</h4>
-            ${typeTotalsHtml ? `<ul class="asset-list">${typeTotalsHtml}</ul>` : '<p class="chart-empty">60歳時点まで継続する契約はありません。</p>'}
+            ${typeTotalsHtml ? `<ul class="asset-list">${typeTotalsHtml}</ul>` : '<p class="chart-empty">60歳時点の評価対象となる契約はありません。</p>'}
             <div class="asset-total">60歳時点の想定総資産額: <strong>${yen.format(totalAt60)}</strong></div>
             <section class="asset-withdraw-card" aria-label="60歳前に取崩す予定の資産">
               <h4>60歳前に取崩す予定の資産</h4>
