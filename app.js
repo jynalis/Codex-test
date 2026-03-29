@@ -1718,20 +1718,7 @@ function createAutoExpensesForMonth(settings, month) {
           sourceKind: "monthly",
         }]
       : [];
-
-    const lumpTx = getLumpSumsOnMonth(plan, month).map((amount, index) => ({
-      id: `auto-lump-${plan.id}-${month}-${index}`,
-      date,
-      type: "expense",
-      category: ASSET_FORMATION_CATEGORY,
-      amount,
-      memo: `一括入金: ${plan.type}${plan.name ? `（${plan.name}）` : ""}`,
-      isAuto: true,
-      sourceType: plan.type,
-      sourceKind: "lump",
-    }));
-
-    return [...monthlyTx, ...lumpTx];
+    return monthlyTx;
   });
 }
 
