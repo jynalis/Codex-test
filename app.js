@@ -1901,11 +1901,15 @@ function createPieChartElements(entries, total, options = {}) {
     const item = document.createElement("li");
 
     if (legendLayout === "asset-composition") {
+      const { primaryLabel, secondaryLabel } = splitAssetCompositionLabel(name);
+      const categoryLabelHtml = secondaryLabel
+        ? `<span class="category-label"><span class="category-main">${primaryLabel}</span><span class="category-sub">${secondaryLabel}</span></span>`
+        : `<span class="category-label"><span class="category-main">${primaryLabel}</span></span>`;
       item.className = "pie-legend-item pie-legend-item--asset-composition";
       item.innerHTML = `
         <div class="pie-legend-main">
           <span class="dot" style="background:${chartColors[index % chartColors.length]}"></span>
-          <span class="category">${name}</span>
+          <span class="category">${categoryLabelHtml}</span>
         </div>
         <div class="pie-legend-metrics">
           <span class="value">${yen.format(amount)}</span>
@@ -1926,6 +1930,22 @@ function createPieChartElements(entries, total, options = {}) {
   });
 
   return { pieWrap, legend };
+}
+
+function splitAssetCompositionLabel(name) {
+  const label = typeof name === "string" ? name.trim() : "";
+  const match = label.match(/^(.*?)(（[^（）]+）)$/);
+  if (!match) {
+    return { primaryLabel: label, secondaryLabel: "" };
+  }
+
+  const primaryLabel = match[1].trim();
+  const secondaryLabel = match[2].trim();
+  if (!primaryLabel || !secondaryLabel) {
+    return { primaryLabel: label, secondaryLabel: "" };
+  }
+
+  return { primaryLabel, secondaryLabel };
 }
 
 function setupFormattedAmountInput(input) {
