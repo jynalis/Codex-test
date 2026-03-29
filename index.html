@@ -35,6 +35,14 @@
         </button>
         <div class="accordion-panel" id="panel-home" role="region" aria-labelledby="trigger-home">
           <div class="accordion-panel-inner dashboard-panel-inner">
+            <div class="filters shared-view-filters" data-shared-view-filter="dashboard">
+              <select id="dashboard-view-mode" aria-label="ダッシュボード表示モード">
+                <option value="month">年月</option>
+                <option value="average">平均</option>
+              </select>
+              <select id="dashboard-year-filter" aria-label="ダッシュボード表示年"></select>
+              <select id="dashboard-month-filter" aria-label="ダッシュボード表示月"></select>
+            </div>
             <div class="dashboard-grid">
               <article class="dashboard-card dashboard-card-balance is-primary">
                 <span>当月末残高</span>
@@ -430,6 +438,14 @@
         </button>
         <div class="accordion-panel" id="panel-chart" role="region" aria-labelledby="trigger-chart">
           <div class="accordion-panel-inner">
+            <div class="filters shared-view-filters" data-shared-view-filter="expense">
+              <select id="expense-view-mode" aria-label="支出バランス分析表示モード">
+                <option value="month">年月</option>
+                <option value="average">平均</option>
+              </select>
+              <select id="expense-year-filter" aria-label="支出バランス分析表示年"></select>
+              <select id="expense-month-filter" aria-label="支出バランス分析表示月"></select>
+            </div>
             <div id="expense-chart" class="chart"></div>
           </div>
         </div>
@@ -447,14 +463,19 @@
         </button>
         <div class="accordion-panel" id="panel-history" role="region" aria-labelledby="trigger-history">
           <div class="accordion-panel-inner">
-            <div class="filters history-filters">
-              <input id="month-filter" type="month" />
+            <div class="filters history-filters shared-view-filters" data-shared-view-filter="history">
+              <select id="history-view-mode" aria-label="取引履歴表示モード">
+                <option value="month">年月</option>
+                <option value="average">平均</option>
+              </select>
+              <select id="history-year-filter" aria-label="取引履歴表示年"></select>
+              <select id="history-month-filter" aria-label="取引履歴表示月"></select>
             </div>
             <section class="history-block">
               <h3 class="history-block-title">実績の取引履歴</h3>
               <ul id="transaction-list" class="list transaction-list"></ul>
             </section>
-            <section class="history-block">
+            <section id="planned-history-block" class="history-block">
               <section class="child-accordion history-planned-accordion" data-child-accordion>
                 <button
                   type="button"
