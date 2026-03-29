@@ -2210,8 +2210,7 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
       - annualAssetFormationExpense
       - annualExtraExpense;
     endingBalance += annualBalance;
-    const yearEndMonth = formatMonth(year, 11);
-    const assetFormationBalance = calculateFinancialAssetTotalAtMonth(settings, yearEndMonth);
+    const assetFormationBalance = calculateFinancialAssetTotalAtAge(settings, age);
     const financialAssetTotal = endingBalance + assetFormationBalance;
 
     rows.push({
@@ -2446,6 +2445,13 @@ function calculateFinancialAssetTotalAtMonth(settings, targetMonth) {
     const projection = projectPlanAssetDetails(plan, settings.birthDate, planTargetMonth);
     return sum + (projection.amount || 0);
   }, 0);
+}
+
+function calculateFinancialAssetTotalAtAge(settings, age) {
+  if (!settings?.birthDate) return 0;
+  const targetMonth = resolveWithdrawTargetMonth(settings.birthDate, age);
+  if (!targetMonth) return 0;
+  return calculateFinancialAssetTotalAtMonth(settings, targetMonth);
 }
 
 function projectPlanAssetDetails(plan, birthDate, explicitTargetMonth = null) {
