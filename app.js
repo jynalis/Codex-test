@@ -1907,11 +1907,9 @@ function createPieChartElements(entries, total, options = {}) {
         : `<span class="category-label"><span class="category-main">${primaryLabel}</span></span>`;
       item.className = "pie-legend-item pie-legend-item--asset-composition";
       item.innerHTML = `
-        <div class="pie-legend-main">
-          <span class="dot" style="background:${chartColors[index % chartColors.length]}"></span>
-          <span class="category">${categoryLabelHtml}</span>
-        </div>
-        <div class="pie-legend-metrics">
+        <span class="dot" style="background:${chartColors[index % chartColors.length]}"></span>
+        <span class="category">${categoryLabelHtml}</span>
+        <div class="pie-legend-metrics-stack">
           <span class="value">${yen.format(amount)}</span>
           <strong class="ratio">${ratio.toFixed(1)}%</strong>
         </div>
