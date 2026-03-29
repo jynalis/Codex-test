@@ -1619,6 +1619,51 @@ button.ghost {
   overflow-wrap: anywhere;
 }
 
+
+#panel-assets .pie-legend--asset-composition {
+  gap: 8px;
+}
+
+#panel-assets .pie-legend-item--asset-composition {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+}
+
+#panel-assets .pie-legend-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+#panel-assets .pie-legend-item--asset-composition .category {
+  min-width: 0;
+  overflow-wrap: normal;
+  word-break: keep-all;
+  white-space: nowrap;
+  line-height: 1.35;
+}
+
+#panel-assets .pie-legend-metrics {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  flex: 0 0 auto;
+  min-width: fit-content;
+}
+
+#panel-assets .pie-legend-metrics .value,
+#panel-assets .pie-legend-metrics .ratio {
+  text-align: right;
+  white-space: nowrap;
+}
+
 .chart-empty {
   color: var(--muted);
   font-size: 0.9rem;
@@ -2126,6 +2171,33 @@ button.ghost {
     align-self: end;
     line-height: 1.2;
     font-size: 0.9rem;
+  }
+
+  #panel-assets .pie-legend-item--asset-composition {
+    gap: 10px;
+    padding: 7px 8px;
+  }
+
+  #panel-assets .pie-legend-main {
+    gap: 7px;
+  }
+
+  #panel-assets .pie-legend-item--asset-composition .category {
+    font-size: 0.9rem;
+  }
+
+  #panel-assets .pie-legend-metrics {
+    min-width: 88px;
+  }
+
+  #panel-assets .pie-legend-metrics .value {
+    font-size: 0.84rem;
+    line-height: 1.2;
+  }
+
+  #panel-assets .pie-legend-metrics .ratio {
+    font-size: 0.9rem;
+    line-height: 1.2;
   }
 
   .recurring-actions button {
