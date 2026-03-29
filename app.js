@@ -2490,7 +2490,8 @@ function renderAssetForecast(settings) {
   }
 
   const transactions = loadTransactions();
-  const lifeEvents = loadLifeEvents();
+  const recurringExpenses = loadRecurringExpenses();
+  const assumptions = loadCashflowAssumptions();
   const currentAge = calculateAge(settings.birthDate);
   const age60TargetMonth = resolveWithdrawTargetMonth(settings.birthDate, 60);
   const currentAssetTargetMonth = resolveCurrentAssetTargetMonth();
@@ -2561,28 +2562,18 @@ function renderAssetForecast(settings) {
     })
     .join("");
 
-  const age60Summary = calculateAge60FinancialSummary(settings, lifeEvents);
-  const totalAt60 = age60Summary.total;
-  const breakdownRows = [
-    { label: "資産形成の将来残高", amount: age60Summary.assetFormationTotalAt60, sign: "+" },
-    { label: "臨時収入", amount: age60Summary.lifeEventIncomeTo60, sign: "+" },
-    { label: "臨時支出", amount: age60Summary.lifeEventExpenseTo60, sign: "−" },
-  ].filter((item) => item.amount !== 0);
+  const cashflowRows = buildCashflowRows({
+    settings,
+    transactions,
+    recurringExpenses,
+    lifeEvents: loadLifeEvents(),
+    assumptions,
+  });
+  const age60CashflowRow = cashflowRows.findLast((row) => row.age === 60) || cashflowRows[cashflowRows.length - 1] || null;
+  const totalAt60 = age60CashflowRow?.assetFormationBalance ?? 0;
   const typeTotalsHtml = typeTotals
     .map((item) => `<li><span>${item.type} 合計</span><strong>${yen.format(item.amount)}</strong></li>`)
     .join("");
-  const breakdownHtml = breakdownRows.length === 0
-    ? ""
-    : `
-      <ul class="asset-breakdown-list">
-        ${breakdownRows.map((item) => `
-          <li>
-            <span>${item.label}</span>
-            <strong>${item.sign}${yen.format(Math.abs(item.amount))}</strong>
-          </li>
-        `).join("")}
-      </ul>
-    `;
 
   const outlookPanelId = "panel-assets-outlook";
   const outlookTriggerId = "trigger-assets-outlook";
@@ -2616,7 +2607,6 @@ function renderAssetForecast(settings) {
             <h4>60歳時点の想定資産額（種別別）</h4>
             ${typeTotalsHtml ? `<ul class="asset-list">${typeTotalsHtml}</ul>` : '<p class="chart-empty">60歳時点まで継続する契約はありません。</p>'}
             <div class="asset-total">60歳時点の想定総資産額: <strong>${yen.format(totalAt60)}</strong></div>
-            ${breakdownHtml}
             <section class="asset-withdraw-card" aria-label="60歳前に取崩す予定の資産">
               <h4>60歳前に取崩す予定の資産</h4>
               ${earlyWithdrawHtml
