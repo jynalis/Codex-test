@@ -1894,56 +1894,22 @@ function createPieChartElements(entries, total, options = {}) {
   pieWrap.appendChild(pieChart);
 
   const legend = document.createElement("ul");
-  const legendLayout = options.legendLayout || "default";
-  legend.className = `pie-legend ${legendLayout === "asset-composition" ? "pie-legend--asset-composition" : ""}`.trim();
+  legend.className = "pie-legend";
   entries.forEach(([name, amount], index) => {
     const ratio = total === 0 ? 0 : (amount / total) * 100;
     const item = document.createElement("li");
-
-    if (legendLayout === "asset-composition") {
-      const { primaryLabel, secondaryLabel } = splitAssetCompositionLabel(name);
-      const categoryLabelHtml = secondaryLabel
-        ? `<span class="category-label"><span class="category-main">${primaryLabel}</span><span class="category-sub">${secondaryLabel}</span></span>`
-        : `<span class="category-label"><span class="category-main">${primaryLabel}</span></span>`;
-      item.className = "pie-legend-item pie-legend-item--asset-composition";
-      item.innerHTML = `
-        <span class="dot" style="background:${chartColors[index % chartColors.length]}"></span>
-        <span class="category">${categoryLabelHtml}</span>
-        <div class="pie-legend-metrics-stack">
-          <span class="value">${yen.format(amount)}</span>
-          <strong class="ratio">${ratio.toFixed(1)}%</strong>
-        </div>
-      `;
-    } else {
-      item.className = "pie-legend-item";
-      item.innerHTML = `
-        <span class="dot" style="background:${chartColors[index % chartColors.length]}"></span>
-        <span class="category">${name}</span>
-        <strong class="ratio">${ratio.toFixed(1)}%</strong>
-        <span class="value">${yen.format(amount)}</span>
-      `;
-    }
+    item.className = "pie-legend-item";
+    item.innerHTML = `
+      <span class="dot" style="background:${chartColors[index % chartColors.length]}"></span>
+      <span class="category">${name}</span>
+      <strong class="ratio">${ratio.toFixed(1)}%</strong>
+      <span class="value">${yen.format(amount)}</span>
+    `;
 
     legend.appendChild(item);
   });
 
   return { pieWrap, legend };
-}
-
-function splitAssetCompositionLabel(name) {
-  const label = typeof name === "string" ? name.trim() : "";
-  const match = label.match(/^(.*?)(（[^（）]+）)$/);
-  if (!match) {
-    return { primaryLabel: label, secondaryLabel: "" };
-  }
-
-  const primaryLabel = match[1].trim();
-  const secondaryLabel = match[2].trim();
-  if (!primaryLabel || !secondaryLabel) {
-    return { primaryLabel: label, secondaryLabel: "" };
-  }
-
-  return { primaryLabel, secondaryLabel };
 }
 
 function setupFormattedAmountInput(input) {
@@ -2740,7 +2706,6 @@ function renderAssetForecast(settings) {
   const { pieWrap, legend } = createPieChartElements(contractEntries, currentTotal, {
     centerLabel: "現時点総額",
     colors: ASSET_PIE_COLORS,
-    legendLayout: "asset-composition",
   });
   chartSection.appendChild(pieWrap);
   chartSection.appendChild(legend);
