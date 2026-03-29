@@ -1705,7 +1705,8 @@ function createAutoExpensesForMonth(settings, month) {
     const day = clampDay(year, monthNum, Number(plan.withdrawalDay) || 1);
     const date = `${month}-${String(day).padStart(2, "0")}`;
 
-    const monthlyAmount = findActiveMonthlyContribution(plan, month);
+    const canApplyMonthlyContribution = shouldApplyPlanContributionForMonth(plan, settings.birthDate, month);
+    const monthlyAmount = canApplyMonthlyContribution ? findActiveMonthlyContribution(plan, month) : 0;
     const monthlyTx = monthlyAmount
       ? [{
           id: `auto-monthly-${plan.id}-${month}`,
@@ -2309,9 +2310,9 @@ function resolveAgeAtYear(birthDate, year) {
 }
 
 function shouldApplyPlanContributionForMonth(plan, birthDate, month) {
-  const withdrawTargetMonth = resolveWithdrawExecutionMonth(plan, birthDate);
-  if (!withdrawTargetMonth) return true;
-  return compareMonth(month, withdrawTargetMonth) <= 0;
+  const contributionEndMonth = resolvePlanContributionEndMonth(plan, birthDate);
+  if (!contributionEndMonth) return true;
+  return compareMonth(month, contributionEndMonth) <= 0;
 }
 
 function countPlanContributionMonthsInYear(plan, birthDate, year) {
@@ -2752,6 +2753,28 @@ function resolveWithdrawExecutionMonth(plan, birthDate) {
   const withdrawAge = Number(plan?.withdrawAge);
   return resolveWithdrawTargetMonthAtAgeEnd(birthDate, withdrawAge)
     || resolveWithdrawTargetMonth(birthDate, withdrawAge);
+}
+
+function resolvePlanContributionEndMonth(plan, birthDate) {
+  if (parseMonth(plan?.withdrawMonth)) {
+    const parsed = parseMonth(plan.withdrawMonth);
+    if (!parsed) return null;
+    const cutoffDate = new Date(parsed.year + 1, parsed.monthIndex, 1);
+    cutoffDate.setDate(cutoffDate.getDate() - RETIREMENT_REFERENCE_DAY_OFFSET);
+    return formatMonth(cutoffDate.getFullYear(), cutoffDate.getMonth());
+  }
+
+  const withdrawAge = Number(plan?.withdrawAge);
+  const withdrawDate = resolveTargetAgeDate(birthDate, withdrawAge);
+  if (!withdrawDate) return null;
+
+  const cutoffDate = new Date(
+    withdrawDate.getFullYear() + 1,
+    withdrawDate.getMonth(),
+    withdrawDate.getDate()
+  );
+  cutoffDate.setDate(cutoffDate.getDate() - RETIREMENT_REFERENCE_DAY_OFFSET);
+  return formatMonth(cutoffDate.getFullYear(), cutoffDate.getMonth());
 }
 
 function resolveProjectionStartMonth(plan, targetMonth) {
