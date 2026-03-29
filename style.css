@@ -799,6 +799,13 @@ button.plan-card-trigger {
   gap: 10px;
 }
 
+.plan-withdraw-hint {
+  margin: -2px 0 0;
+  grid-column: 1 / -1;
+  font-size: 0.8rem;
+  color: #5d6f85;
+}
+
 .change-wrap {
   border-top: 1px dashed #d2ddea;
   padding-top: 10px;
