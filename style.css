@@ -1341,12 +1341,26 @@ button.ghost {
   gap: 8px;
 }
 
+.shared-view-filters {
+  flex-wrap: wrap;
+}
+
+.shared-view-filters select {
+  flex: 1 1 110px;
+  min-width: 0;
+}
+
 .history-filters {
   margin-bottom: 8px;
 }
 
 .history-block + .history-block {
   margin-top: 12px;
+}
+
+.history-average-header {
+  font-weight: 700;
+  color: #1e456a;
 }
 
 .history-block-title {
@@ -1981,7 +1995,8 @@ button.ghost {
   }
 
   .filters input,
-  .filters button {
+  .filters button,
+  .filters select {
     flex: 1;
   }
 
