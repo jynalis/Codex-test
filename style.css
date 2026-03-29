@@ -1630,6 +1630,11 @@ button.ghost {
   color: var(--primary-strong);
 }
 
+.asset-composition {
+  border-left: 0;
+  border-right: 0;
+}
+
 #amount,
 .js-amount-field {
   font-variant-numeric: tabular-nums;
