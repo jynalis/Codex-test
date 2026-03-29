@@ -1620,47 +1620,6 @@ button.ghost {
 }
 
 
-#panel-assets .pie-legend-item--asset-composition {
-  grid-template-columns: auto minmax(0, 1fr) auto;
-}
-
-#panel-assets .pie-legend-item--asset-composition .category {
-  min-width: 0;
-  overflow-wrap: normal;
-  word-break: normal;
-  white-space: normal;
-  line-height: 1.35;
-}
-
-#panel-assets .pie-legend-item--asset-composition .category-label {
-  display: grid;
-  gap: 2px;
-}
-
-#panel-assets .pie-legend-item--asset-composition .category-main,
-#panel-assets .pie-legend-item--asset-composition .category-sub {
-  display: block;
-}
-
-#panel-assets .pie-legend-metrics-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 2px;
-  justify-self: end;
-}
-
-#panel-assets .pie-legend-metrics-stack .value,
-#panel-assets .pie-legend-metrics-stack .ratio {
-  text-align: right;
-  white-space: nowrap;
-}
-
-#panel-assets .pie-legend-metrics-stack .ratio {
-  font-weight: 600;
-}
-
 .chart-empty {
   color: var(--muted);
   font-size: 0.9rem;
@@ -2168,25 +2127,6 @@ button.ghost {
     align-self: end;
     line-height: 1.2;
     font-size: 0.9rem;
-  }
-
-  #panel-assets .pie-legend-item--asset-composition {
-    column-gap: 8px;
-    row-gap: 2px;
-  }
-
-  #panel-assets .pie-legend-item--asset-composition .category {
-    font-size: 0.9rem;
-  }
-
-  #panel-assets .pie-legend-metrics-stack .value {
-    font-size: 0.84rem;
-    line-height: 1.2;
-  }
-
-  #panel-assets .pie-legend-metrics-stack .ratio {
-    font-size: 0.9rem;
-    line-height: 1.2;
   }
 
   .recurring-actions button {
