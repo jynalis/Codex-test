@@ -2136,14 +2136,18 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
   const retirementReferenceYear = retirementReferenceDate.getFullYear();
   const retirementReferenceMonth = formatMonth(retirementReferenceYear, retirementReferenceDate.getMonth());
 
-  const currentAge = calculateAge(settings.birthDate);
-  const startYear = new Date().getFullYear();
+  const cashflowStartMonth = resolveEntryStartMonth(settings, transactions);
+  const parsedCashflowStartMonth = parseMonth(cashflowStartMonth);
+  if (!parsedCashflowStartMonth) return [];
+  const startYear = parsedCashflowStartMonth.year;
   const endYear = retirementReferenceYear;
   if (startYear > endYear) return [];
 
   const nowMonth = todayISO().slice(0, 7);
-  const averageStartMonth = resolveEntryStartMonth(settings, transactions);
-  const averageEndMonth = nowMonth;
+  const averageStartMonth = cashflowStartMonth;
+  const averageEndMonth = compareMonth(averageStartMonth, nowMonth) <= 0 ? nowMonth : averageStartMonth;
+  const cashflowStartDate = `${cashflowStartMonth}-01`;
+  const currentAge = resolveAgeAtDate(settings.birthDate, cashflowStartDate) ?? calculateAge(settings.birthDate);
 
   const monthlyIncome = calculateAverageMonthlyAmount(transactions, {
     startMonth: averageStartMonth,
@@ -2158,15 +2162,15 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
     categories: EXPENSE_CATEGORIES,
   });
 
-  const recurringMonthlyBase = calculateCurrentRecurringExpenseMonthlyTotal(recurringExpenses, nowMonth);
+  const recurringMonthlyBase = calculateCurrentRecurringExpenseMonthlyTotal(recurringExpenses, cashflowStartMonth);
 
   const salaryGrowth = (Number(assumptions?.salaryGrowthRate) || 0) / 100;
   const inflationRate = (Number(assumptions?.inflationRate) || 0) / 100;
   const lifeEventByYear = buildLifeEventTotalsByYear(lifeEvents, settings.birthDate);
-  const plannedExtraByYear = buildPlannedExtraTotalsByYear(transactions, nowMonth);
+  const plannedExtraByYear = buildPlannedExtraTotalsByYear(transactions, averageStartMonth);
   const assetWithdrawalTransfersByYear = buildAssetWithdrawalTransfersByYear(settings);
 
-  const initialBalance = calculateMonthlySummary(transactions, settings, nowMonth).endingBalance;
+  const initialBalance = calculateCarryover(transactions, settings, cashflowStartMonth);
   const rows = [];
   let endingBalance = initialBalance;
 
