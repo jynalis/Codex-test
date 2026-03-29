@@ -1631,9 +1631,14 @@ button.ghost {
 }
 
 .asset-composition {
-  border-left: 0;
-  border-right: 0;
+  border: 0;
   background: transparent;
+  box-shadow: none;
+}
+
+.asset-composition::before,
+.asset-composition::after {
+  content: none;
 }
 
 #amount,
