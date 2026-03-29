@@ -509,6 +509,7 @@ function normalizePlan(rawPlan) {
     expectedReturn: Number(plan.expectedReturn) || 0,
     withdrawalDay: Math.max(Number(plan.withdrawalDay) || 1, 1),
     withdrawAge: Math.max(Number(plan.withdrawAge) || 0, 0),
+    withdrawMonth: parseMonth(plan.withdrawMonth) ? plan.withdrawMonth : "",
     lumpSums: normalizeLumpSumHistory(plan),
     monthlyContributions: normalizeMonthlyContributionHistory(plan),
   };
@@ -1731,7 +1732,27 @@ function createAutoExpensesForMonth(settings, month) {
       sourceKind: "lump",
     }));
 
-    return [...monthlyTx, ...lumpTx];
+    const withdrawTargetMonth = resolveWithdrawExecutionMonth(plan, settings.birthDate);
+    const withdrawTx = [];
+    if (withdrawTargetMonth && isSameMonth(withdrawTargetMonth, month)) {
+      const projection = projectPlanAssetDetails(plan, settings.birthDate, withdrawTargetMonth);
+      const amount = Math.max(Number(projection?.amount) || 0, 0);
+      if (amount > 0) {
+        withdrawTx.push({
+          id: `auto-withdraw-${plan.id}-${month}`,
+          date,
+          type: "income",
+          category: "臨時収入",
+          amount,
+          memo: `資産取崩: ${plan.type}${plan.name ? `（${plan.name}）` : ""}`,
+          isAuto: true,
+          sourceType: plan.type,
+          sourceKind: "withdraw",
+        });
+      }
+    }
+
+    return [...monthlyTx, ...lumpTx, ...withdrawTx];
   });
 }
 
@@ -1762,9 +1783,9 @@ function createEligibleAutoExpensesForMonth(settings, transactions, month) {
   return generated.filter((autoTx) => {
     return !transactions.some((item) => {
       return (
-        item.type === "expense" &&
+        item.type === autoTx.type &&
         item.date === autoTx.date &&
-        item.category === ASSET_FORMATION_CATEGORY &&
+        item.category === autoTx.category &&
         item.amount === autoTx.amount &&
         item.memo === autoTx.memo
       );
@@ -1811,7 +1832,7 @@ function calculateCarryover(transactions, settings, targetMonth) {
     let month = autoStartMonth;
     while (compareMonth(month, targetMonth) < 0) {
       const autoTransactions = createEligibleAutoExpensesForMonth(settings, transactions, month);
-      auto -= autoTransactions.reduce((sum, item) => sum + item.amount, 0);
+      auto += autoTransactions.reduce((sum, item) => sum + (item.type === "income" ? item.amount : -item.amount), 0);
       month = addOneMonth(month);
     }
   }
@@ -1908,7 +1929,12 @@ function calculateMonthlyContributionTotal(settings, month) {
   return settings.plans.reduce((sum, plan) => sum + findActiveMonthlyContribution(plan, month), 0);
 }
 
-function isPlanHeldUntilAge(plan, age) {
+function isPlanHeldUntilAge(plan, age, birthDate = "") {
+  if (parseMonth(plan?.withdrawMonth) && parseBirthDate(birthDate)) {
+    const withdrawDate = `${plan.withdrawMonth}-01`;
+    const withdrawAgeByMonth = resolveAgeAtDate(birthDate, withdrawDate);
+    if (Number.isFinite(withdrawAgeByMonth)) return withdrawAgeByMonth >= age;
+  }
   const withdrawAge = Number(plan?.withdrawAge);
   if (!Number.isFinite(withdrawAge) || withdrawAge <= 0) return true;
   return withdrawAge >= age;
@@ -2283,9 +2309,7 @@ function resolveAgeAtYear(birthDate, year) {
 }
 
 function shouldApplyPlanContributionForMonth(plan, birthDate, month) {
-  const withdrawAge = Number(plan?.withdrawAge);
-  if (!Number.isFinite(withdrawAge) || withdrawAge <= 0) return true;
-  const withdrawTargetMonth = resolveWithdrawExecutionMonth(birthDate, withdrawAge);
+  const withdrawTargetMonth = resolveWithdrawExecutionMonth(plan, birthDate);
   if (!withdrawTargetMonth) return true;
   return compareMonth(month, withdrawTargetMonth) <= 0;
 }
@@ -2369,25 +2393,45 @@ function buildPlannedExtraTotalsByYear(transactions, nowMonth) {
   }, {});
 }
 
-function buildAssetWithdrawalTransfersByYear(settings) {
+function buildAssetWithdrawalTransfersByMonth(settings) {
   if (!Array.isArray(settings?.plans) || settings.plans.length === 0) return {};
   return settings.plans.reduce((map, plan) => {
-    const withdrawAge = Number(plan?.withdrawAge);
-    if (!Number.isFinite(withdrawAge) || withdrawAge <= 0) return map;
-
-    const withdrawTargetMonth = resolveWithdrawExecutionMonth(settings.birthDate, withdrawAge);
+    const withdrawTargetMonth = resolveWithdrawExecutionMonth(plan, settings.birthDate);
     if (!withdrawTargetMonth) return map;
 
     const projection = projectPlanAssetDetails(plan, settings.birthDate, withdrawTargetMonth);
     const amount = Math.max(Number(projection?.amount) || 0, 0);
     if (amount <= 0) return map;
 
-    const year = Number(withdrawTargetMonth.slice(0, 4));
-    if (!Number.isFinite(year)) return map;
-
-    map[year] = (map[year] || 0) + amount;
+    map[withdrawTargetMonth] = (map[withdrawTargetMonth] || 0) + amount;
     return map;
   }, {});
+}
+
+function buildAssetLumpInvestmentsByMonth(settings) {
+  if (!Array.isArray(settings?.plans) || settings.plans.length === 0) return {};
+  return settings.plans.reduce((map, plan) => {
+    const lumpSums = Array.isArray(plan?.lumpSums) ? plan.lumpSums : [];
+    lumpSums.forEach((history) => {
+      if (!parseMonth(history.month)) return;
+      const amount = Math.max(Number(history.amount) || 0, 0);
+      if (amount <= 0) return;
+      map[history.month] = (map[history.month] || 0) + amount;
+    });
+    return map;
+  }, {});
+}
+
+function sumMonthlyAmountsInYear(monthlyMap, year, startMonth, endMonth) {
+  if (!monthlyMap || !Number.isFinite(year)) return 0;
+  let total = 0;
+  for (let monthIndex = 0; monthIndex < 12; monthIndex += 1) {
+    const month = formatMonth(year, monthIndex);
+    if (startMonth && compareMonth(month, startMonth) < 0) continue;
+    if (endMonth && compareMonth(month, endMonth) > 0) continue;
+    total += monthlyMap[month] || 0;
+  }
+  return total;
 }
 
 function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEvents, assumptions }) {
@@ -2431,7 +2475,8 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
   const inflationRate = (Number(assumptions?.inflationRate) || 0) / 100;
   const lifeEventByYear = buildLifeEventTotalsByYear(lifeEvents, settings.birthDate);
   const plannedExtraByYear = buildPlannedExtraTotalsByYear(transactions, averageStartMonth);
-  const assetWithdrawalTransfersByYear = buildAssetWithdrawalTransfersByYear(settings);
+  const assetWithdrawalTransfersByMonth = buildAssetWithdrawalTransfersByMonth(settings);
+  const assetLumpInvestmentsByMonth = buildAssetLumpInvestmentsByMonth(settings);
 
   const initialBalance = calculateCarryover(transactions, settings, cashflowStartMonth);
   const rows = [];
@@ -2454,6 +2499,9 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
     const annualAssetFormationExpense = isRetirementReferenceYear
       ? Math.round(calculateAnnualAssetFormationExpense(settings, year) * yearProgressRate)
       : calculateAnnualAssetFormationExpense(settings, year);
+    const yearStartMonth = year === startYear ? cashflowStartMonth : formatMonth(year, 0);
+    const yearEndMonth = isRetirementReferenceYear ? retirementReferenceMonth : formatMonth(year, 11);
+    const annualLumpInvestmentExpense = sumMonthlyAmountsInYear(assetLumpInvestmentsByMonth, year, yearStartMonth, yearEndMonth);
 
     const lifeEvent = (isRetirementReferenceYear || year > retirementReferenceYear)
       ? { income: 0, expense: 0 }
@@ -2463,12 +2511,18 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
       : (plannedExtraByYear[year] || { income: 0, expense: 0 });
     const annualExtraIncome = lifeEvent.income + plannedExtra.income;
     const annualExtraExpense = lifeEvent.expense + plannedExtra.expense;
-    const annualAssetWithdrawalTransfer = assetWithdrawalTransfersByYear[year] || 0;
+    const annualAssetWithdrawalTransfer = sumMonthlyAmountsInYear(
+      assetWithdrawalTransfersByMonth,
+      year,
+      yearStartMonth,
+      yearEndMonth
+    );
     const annualBalance = annualIncome
       + annualAssetWithdrawalTransfer
       - annualRegularExpense
       - annualRecurringExpense
       - annualAssetFormationExpense
+      - annualLumpInvestmentExpense
       - annualExtraExpense;
     endingBalance += annualBalance;
     const rowTargetMonth = isRetirementReferenceYear ? retirementReferenceMonth : formatMonth(year, 11);
@@ -2482,6 +2536,7 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
       annualRegularExpense,
       annualRecurringExpense,
       annualAssetFormationExpense,
+      annualLumpInvestmentExpense,
       annualExtraIncome,
       annualExtraExpense,
       annualAssetWithdrawalTransfer,
@@ -2522,6 +2577,7 @@ function renderCashflowTable({ settings, transactions, recurringExpenses, lifeEv
         <th>通常支出</th>
         <th>定期支出</th>
         <th>積立支出</th>
+        <th>一括投資額</th>
         <th>臨時収入</th>
         <th>臨時支出</th>
         <th>収支</th>
@@ -2540,6 +2596,7 @@ function renderCashflowTable({ settings, transactions, recurringExpenses, lifeEv
           <td class="is-amount">${yen.format(row.annualRegularExpense)}</td>
           <td class="is-amount">${yen.format(row.annualRecurringExpense)}</td>
           <td class="is-amount">${yen.format(row.annualAssetFormationExpense)}</td>
+          <td class="is-amount">${yen.format(row.annualLumpInvestmentExpense)}</td>
           <td class="is-amount">${yen.format(row.annualExtraIncome)}</td>
           <td class="is-amount">${yen.format(row.annualExtraExpense)}</td>
           <td class="is-amount is-annual-balance ${row.annualBalance >= 0 ? 'is-positive' : 'is-negative'}">${yen.format(row.annualBalance)}</td>
@@ -2574,6 +2631,7 @@ function downloadCashflowPdf() {
       <td>${yen.format(row.annualRegularExpense)}</td>
       <td>${yen.format(row.annualRecurringExpense)}</td>
       <td>${yen.format(row.annualAssetFormationExpense)}</td>
+      <td>${yen.format(row.annualLumpInvestmentExpense)}</td>
       <td>${yen.format(row.annualExtraIncome)}</td>
       <td>${yen.format(row.annualExtraExpense)}</td>
       <td>${yen.format(row.annualBalance)}</td>
@@ -2599,7 +2657,7 @@ function downloadCashflowPdf() {
     <h1>キャッシュフロー表</h1>
     <p class="meta">作成日時: ${generatedAt}</p>
     <table>
-      <thead><tr><th>年</th><th>年齢</th><th>年収</th><th>資産取崩金</th><th>通常支出</th><th>定期支出</th><th>積立支出</th><th>臨時収入</th><th>臨時支出</th><th>収支</th><th>残高</th><th>資産形成額</th><th>金融資産合計</th></tr></thead>
+      <thead><tr><th>年</th><th>年齢</th><th>年収</th><th>資産取崩金</th><th>通常支出</th><th>定期支出</th><th>積立支出</th><th>一括投資額</th><th>臨時収入</th><th>臨時支出</th><th>収支</th><th>残高</th><th>資産形成額</th><th>金融資産合計</th></tr></thead>
       <tbody>${bodyRows}</tbody>
     </table></body></html>`);
   win.document.close();
@@ -2680,7 +2738,9 @@ function resolveWithdrawTargetMonthAtAgeEnd(birthDate, withdrawAge) {
   return formatMonth(nextBirthday.getFullYear(), nextBirthday.getMonth());
 }
 
-function resolveWithdrawExecutionMonth(birthDate, withdrawAge) {
+function resolveWithdrawExecutionMonth(plan, birthDate) {
+  if (parseMonth(plan?.withdrawMonth)) return plan.withdrawMonth;
+  const withdrawAge = Number(plan?.withdrawAge);
   return resolveWithdrawTargetMonthAtAgeEnd(birthDate, withdrawAge)
     || resolveWithdrawTargetMonth(birthDate, withdrawAge);
 }
@@ -2704,12 +2764,13 @@ function resolveProjectionStartMonth(plan, targetMonth) {
 function resolvePlanSimulationTargetMonth(plan, birthDate, baseTargetMonth, baseAge = RETIREMENT_REFERENCE_AGE) {
   if (!baseTargetMonth) return null;
 
-  const withdrawAge = Number(plan?.withdrawAge);
-  const hasEarlyWithdrawAge = Number.isFinite(withdrawAge) && withdrawAge > 0 && withdrawAge < baseAge;
-  if (!hasEarlyWithdrawAge) return baseTargetMonth;
-
-  const withdrawTargetMonth = resolveWithdrawExecutionMonth(birthDate, withdrawAge);
+  const withdrawTargetMonth = resolveWithdrawExecutionMonth(plan, birthDate);
   if (!withdrawTargetMonth) return baseTargetMonth;
+  const withdrawAge = Number(plan?.withdrawAge);
+  if (!parseMonth(plan?.withdrawMonth)) {
+    const hasEarlyWithdrawAge = Number.isFinite(withdrawAge) && withdrawAge > 0 && withdrawAge < baseAge;
+    if (!hasEarlyWithdrawAge) return baseTargetMonth;
+  }
 
   return compareMonth(withdrawTargetMonth, baseTargetMonth) <= 0 ? withdrawTargetMonth : baseTargetMonth;
 }
@@ -2717,12 +2778,9 @@ function resolvePlanSimulationTargetMonth(plan, birthDate, baseTargetMonth, base
 function calculatePlanBalanceAtMonth(plan, birthDate, targetMonth) {
   if (!parseMonth(targetMonth)) return 0;
 
-  const withdrawAge = Number(plan?.withdrawAge);
-  if (Number.isFinite(withdrawAge) && withdrawAge > 0) {
-    const withdrawTargetMonth = resolveWithdrawExecutionMonth(birthDate, withdrawAge);
-    if (withdrawTargetMonth && compareMonth(targetMonth, withdrawTargetMonth) >= 0) {
-      return 0;
-    }
+  const withdrawTargetMonth = resolveWithdrawExecutionMonth(plan, birthDate);
+  if (withdrawTargetMonth && compareMonth(targetMonth, withdrawTargetMonth) >= 0) {
+    return 0;
   }
 
   const projection = projectPlanAssetDetails(plan, birthDate, targetMonth);
@@ -2818,14 +2876,14 @@ function renderAssetForecast(settings) {
     const projection = projectPlanAssetDetails(plan, settings.birthDate, planTargetMonth);
     return {
       ...plan,
-      isHeldUntil60: isPlanHeldUntilAge(plan, RETIREMENT_REFERENCE_AGE),
+      isHeldUntil60: isPlanHeldUntilAge(plan, RETIREMENT_REFERENCE_AGE, settings.birthDate),
       projectedAmount: projection.amount,
       projection,
     };
   });
   const earlyWithdrawPlans = projectedRowsAt60.filter((plan) => !plan.isHeldUntil60 && plan.projectedAmount > 0);
   const earlyWithdrawPlansForDisplay = earlyWithdrawPlans.map((plan) => {
-    const displayTargetMonth = resolveWithdrawTargetMonthAtAgeEnd(settings.birthDate, plan.withdrawAge);
+    const displayTargetMonth = resolveWithdrawExecutionMonth(plan, settings.birthDate);
     const displayProjection = displayTargetMonth
       ? projectPlanAssetDetails(plan, settings.birthDate, displayTargetMonth)
       : null;
@@ -2876,7 +2934,9 @@ function renderAssetForecast(settings) {
   const earlyWithdrawHtml = earlyWithdrawPlansForDisplay
     .map((plan) => {
       const withdrawAge = Number(plan.withdrawAge);
-      const withdrawLabel = Number.isFinite(withdrawAge) && withdrawAge > 0 ? `${withdrawAge}歳` : "取崩し時";
+      const withdrawLabel = parseMonth(plan.withdrawMonth)
+        ? formatScheduledMonthLabel(plan.withdrawMonth)
+        : (Number.isFinite(withdrawAge) && withdrawAge > 0 ? `${withdrawAge}歳` : "取崩し時");
       return `
         <li>
           <div class="asset-withdraw-item-main">
@@ -3052,7 +3112,8 @@ function createPlanBlock(plan = {}) {
           <label>種類<select class="plan-type">${typeOptions}</select></label>
           <label>識別名<input class="plan-name" type="text" maxlength="30" placeholder="例: つみたて枠" value="${normalizedPlan.name || ""}" /></label>
           <label>想定利回り(年%)<input class="plan-expected-return" type="number" step="0.1" value="${normalizedPlan.expectedReturn ?? ""}" /></label>
-          <label>取崩年齢<input class="plan-withdraw-age" type="number" min="0" max="120" step="1" value="${normalizedPlan.withdrawAge ?? ""}" /></label>
+          <label>取崩年月<input class="plan-withdraw-month" type="month" value="${normalizedPlan.withdrawMonth || ""}" /></label>
+          <label>取崩年齢（未指定時）<input class="plan-withdraw-age" type="number" min="0" max="120" step="1" value="${normalizedPlan.withdrawAge ?? ""}" /></label>
           <label>引き落とし日<input class="plan-withdrawal-day" type="number" min="1" max="31" step="1" value="${normalizedPlan.withdrawalDay ?? 1}" /></label>
         </div>
         <div class="change-wrap">
@@ -3168,6 +3229,7 @@ function collectPlansFromForm() {
         name: block.querySelector(".plan-name").value.trim(),
         expectedReturn: Number(block.querySelector(".plan-expected-return").value),
         withdrawAge: Number(block.querySelector(".plan-withdraw-age").value),
+        withdrawMonth: block.querySelector(".plan-withdraw-month").value,
         withdrawalDay: Number(block.querySelector(".plan-withdrawal-day").value),
         lumpSums,
         monthlyContributions,

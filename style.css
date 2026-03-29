@@ -467,6 +467,12 @@ button.danger {
   gap: 14px;
 }
 
+.profile-plan-note {
+  margin: 0 0 10px;
+  color: #b45309;
+  font-size: 0.86rem;
+}
+
 .split-title h3 {
   background: linear-gradient(90deg, #ffffff 0%, #f3f8ff 100%);
   border: 1px solid #9dbad9;
