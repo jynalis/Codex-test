@@ -1870,6 +1870,9 @@ function renderExpenseChart(transactions, currentMonth) {
 
 function createPieChartElements(entries, total, options = {}) {
   const chartColors = options.colors || ASSET_PIE_COLORS;
+  const formatCategoryLabel = typeof options.formatCategoryLabel === "function"
+    ? options.formatCategoryLabel
+    : (name) => name;
   let currentDegree = 0;
   const segments = entries.map(([, amount], index) => {
     const ratio = amount / total;
@@ -1899,9 +1902,10 @@ function createPieChartElements(entries, total, options = {}) {
     const ratio = total === 0 ? 0 : (amount / total) * 100;
     const item = document.createElement("li");
     item.className = "pie-legend-item";
+    const formattedName = formatCategoryLabel(name);
     item.innerHTML = `
       <span class="dot" style="background:${chartColors[index % chartColors.length]}"></span>
-      <span class="category">${name}</span>
+      <span class="category">${formattedName}</span>
       <span class="value">${yen.format(amount)}</span>
       <strong class="ratio">${ratio.toFixed(1)}%</strong>
     `;
@@ -1937,6 +1941,19 @@ function calculateAge(birthDate) {
     (today.getMonth() === birth.getMonth() && today.getDate() >= birth.getDate());
   if (!hadBirthday) age -= 1;
   return Math.max(age, 0);
+}
+
+function formatAssetCompositionCategoryLabel(name) {
+  if (typeof name !== "string") return "";
+  const parenStart = name.indexOf("（");
+  const parenEnd = name.lastIndexOf("）");
+  if (parenStart <= 0 || parenEnd <= parenStart) {
+    return name;
+  }
+
+  const main = name.slice(0, parenStart);
+  const note = name.slice(parenStart);
+  return `<span class="category-main">${main}</span><span class="category-note">${note}</span>`;
 }
 
 function calculateAverageMonthlyAmount(transactions, {
@@ -2706,6 +2723,7 @@ function renderAssetForecast(settings) {
   const { pieWrap, legend } = createPieChartElements(contractEntries, currentTotal, {
     centerLabel: "現時点総額",
     colors: ASSET_PIE_COLORS,
+    formatCategoryLabel: formatAssetCompositionCategoryLabel,
   });
   chartSection.appendChild(pieWrap);
   chartSection.appendChild(legend);
