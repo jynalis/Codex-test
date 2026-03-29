@@ -1868,6 +1868,21 @@ function renderExpenseChart(transactions, currentMonth) {
   expenseChart.appendChild(legend);
 }
 
+function splitLegendLabel(name) {
+  const match = name.match(/^(.*?)([（(][^（）()]+[）)])$/);
+  if (!match) {
+    return {
+      main: name,
+      detail: "",
+    };
+  }
+
+  return {
+    main: match[1].trim(),
+    detail: match[2],
+  };
+}
+
 function createPieChartElements(entries, total, options = {}) {
   const chartColors = options.colors || ASSET_PIE_COLORS;
   let currentDegree = 0;
@@ -1897,13 +1912,17 @@ function createPieChartElements(entries, total, options = {}) {
   legend.className = "pie-legend";
   entries.forEach(([name, amount], index) => {
     const ratio = total === 0 ? 0 : (amount / total) * 100;
+    const label = splitLegendLabel(name);
+    const categoryHtml = label.detail
+      ? `<span class="category-main">${label.main}</span><span class="category-note">${label.detail}</span>`
+      : `${label.main}`;
     const item = document.createElement("li");
     item.className = "pie-legend-item";
     item.innerHTML = `
       <span class="dot" style="background:${chartColors[index % chartColors.length]}"></span>
-      <span class="category">${name}</span>
-      <strong class="ratio">${ratio.toFixed(1)}%</strong>
+      <span class="category">${categoryHtml}</span>
       <span class="value">${yen.format(amount)}</span>
+      <strong class="ratio">${ratio.toFixed(1)}%</strong>
     `;
 
     legend.appendChild(item);
