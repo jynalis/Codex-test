@@ -2333,12 +2333,6 @@ function calculateAnnualAssetFormationExpense(settings, year) {
   return settings.plans.reduce((sum, plan) => {
     const monthlyContribution = findActiveMonthlyContribution(plan, nowMonth);
     if (monthlyContribution <= 0) return sum;
-
-    const withdrawAge = Number(plan?.withdrawAge);
-    if (!Number.isFinite(withdrawAge) || withdrawAge <= 0) {
-      return sum + (monthlyContribution * 12);
-    }
-
     const activeMonths = countPlanContributionMonthsInYear(plan, settings.birthDate, year);
     return sum + (monthlyContribution * activeMonths);
   }, 0);
@@ -3146,6 +3140,7 @@ function createPlanBlock(plan = {}) {
           <label>想定利回り(年%)<input class="plan-expected-return" type="number" step="0.1" value="${normalizedPlan.expectedReturn ?? ""}" /></label>
           <label>取崩年月<input class="plan-withdraw-month" type="month" value="${normalizedPlan.withdrawMonth || ""}" /></label>
           <label>取崩年齢（未指定時）<input class="plan-withdraw-age" type="number" min="0" max="120" step="1" value="${normalizedPlan.withdrawAge ?? ""}" /></label>
+          <p class="plan-withdraw-hint">※取崩年月を入力した場合はその年月を優先。未入力時は取崩年齢で判定します。</p>
           <label>引き落とし日<input class="plan-withdrawal-day" type="number" min="1" max="31" step="1" value="${normalizedPlan.withdrawalDay ?? 1}" /></label>
         </div>
         <div class="change-wrap">
