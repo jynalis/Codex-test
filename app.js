@@ -54,7 +54,8 @@ const recurringFormAccordion = document.getElementById("trigger-recurring-form")
 const inputSection = document.getElementById("section-input");
 
 const lifeEventForm = document.getElementById("life-event-form");
-const lifeEventAgeInput = document.getElementById("life-event-age");
+const lifeEventMonthInput = document.getElementById("life-event-month");
+const lifeEventAgePreview = document.getElementById("life-event-age-preview");
 const lifeEventTypeInput = document.getElementById("life-event-type");
 const lifeEventCategoryInput = document.getElementById("life-event-category");
 const lifeEventAmountInput = document.getElementById("life-event-amount");
@@ -742,9 +743,15 @@ function normalizeLifeEvent(item) {
   const type = item?.type === "income" ? "income" : "expense";
   const validCategories = LIFE_EVENT_CATEGORY_OPTIONS[type] ?? [];
   const normalizedCategory = normalizeLegacyLifeEventCategory(item?.category);
+  const settings = loadSettings();
+  const birth = parseBirthDate(settings?.birthDate);
+  const legacyAge = Math.min(Math.max(Number(item?.age) || 0, 0), 120);
+  const normalizedMonth = parseMonth(item?.month)
+    ? item.month
+    : (birth ? formatMonth(birth.getFullYear() + legacyAge, birth.getMonth()) : "");
   return {
     id: typeof item?.id === "string" ? item.id : crypto.randomUUID(),
-    age: Math.min(Math.max(Number(item?.age) || 0, 0), 120),
+    month: normalizedMonth,
     type,
     category: validCategories.includes(normalizedCategory) ? normalizedCategory : "その他",
     amount: Math.max(Number(item?.amount) || 0, 0),
@@ -776,7 +783,7 @@ function loadLifeEvents() {
     if (!Array.isArray(data)) return [];
     return data
       .map((item) => normalizeLifeEvent(item))
-      .filter((item) => item.amount > 0 && Number.isFinite(item.age));
+      .filter((item) => item.amount > 0 && parseMonth(item.month));
   } catch {
     return [];
   }
@@ -837,8 +844,12 @@ function resetLifeEventFormFields() {
   lifeEventForm.reset();
   lifeEventEditingId = null;
   lifeEventTypeInput.value = "";
+  if (lifeEventMonthInput) {
+    lifeEventMonthInput.value = "";
+  }
   syncLifeEventCategoryOptions();
   lifeEventAmountInput.value = "";
+  updateLifeEventAgePreview();
   setLifeEventError("");
   setLifeEventFormMode(false);
 }
@@ -853,38 +864,32 @@ function startLifeEventEdit(id) {
     setChildAccordionExpanded(lifeEventFormAccordion, true);
   }
   lifeEventEditingId = lifeEvent.id;
-  lifeEventAgeInput.value = String(lifeEvent.age);
+  lifeEventMonthInput.value = lifeEvent.month;
   lifeEventTypeInput.value = lifeEvent.type;
   syncLifeEventCategoryOptions();
   lifeEventCategoryInput.value = normalizeLegacyLifeEventCategory(lifeEvent.category);
   lifeEventAmountInput.value = numberWithComma.format(lifeEvent.amount);
   lifeEventMemoInput.value = lifeEvent.memo || "";
+  updateLifeEventAgePreview();
   setLifeEventError("");
   setLifeEventFormMode(true);
   if (lifeEventsSection) {
     lifeEventsSection.scrollIntoView({ behavior: "smooth", block: "start" });
   }
-  lifeEventAgeInput.focus();
+  lifeEventMonthInput.focus();
 }
 
 function resolveLifeEventHistoryPeriodLabel(item, settings) {
-  const ageLabel = `${item.age}歳時`;
-  const birth = parseBirthDate(settings?.birthDate);
-  if (!birth) {
-    return `${ageLabel}の予定`;
-  }
-
-  const scheduledYear = birth.getFullYear() + item.age;
-  if (!Number.isFinite(scheduledYear)) {
-    return `${ageLabel}の予定`;
-  }
-  return `${scheduledYear}年（${ageLabel}）の予定`;
+  const monthLabel = formatScheduledMonthLabel(item.month);
+  const age = resolveAgeAtDate(settings?.birthDate, `${item.month}-01`);
+  if (!Number.isFinite(age)) return `${monthLabel}の予定`;
+  return `${monthLabel}（${age}歳）の予定`;
 }
 
 function buildLifeEventHistoryItems(lifeEvents, settings) {
   return lifeEvents
     .slice()
-    .sort((a, b) => (a.age !== b.age ? a.age - b.age : a.createdAt.localeCompare(b.createdAt)))
+    .sort((a, b) => (a.month !== b.month ? compareMonth(a.month, b.month) : a.createdAt.localeCompare(b.createdAt)))
     .map((item, index) => ({
       id: `life-event-history-${item.id}`,
       source: "lifeEvent",
@@ -893,14 +898,10 @@ function buildLifeEventHistoryItems(lifeEvents, settings) {
       category: item.category,
       amount: item.amount,
       memo: item.memo,
-      age: item.age,
+      age: resolveAgeAtDate(settings?.birthDate, `${item.month}-01`),
       classificationLabel: LIFE_EVENT_TYPES[item.type],
       scheduledLabel: resolveLifeEventHistoryPeriodLabel(item, settings),
-      scheduledMonth: (() => {
-        const birth = parseBirthDate(settings?.birthDate);
-        if (!birth) return "";
-        return formatMonth(birth.getFullYear() + item.age, birth.getMonth());
-      })(),
+      scheduledMonth: item.month,
       date: "",
       order: index,
     }));
@@ -1192,8 +1193,8 @@ function createPlannedTransactionItemNode(item) {
 
   if (item.source === "lifeEvent") {
     memo.textContent = item.memo
-      ? `発生年齢: ${item.age}歳 / メモ: ${item.memo}`
-      : `発生年齢: ${item.age}歳`;
+      ? `発生年月: ${item.scheduledMonth} / メモ: ${item.memo}`
+      : `発生年月: ${item.scheduledMonth}`;
   } else {
     const ageText = Number.isFinite(item.age) ? `予定時年齢: ${item.age}歳 / ` : "";
     memo.textContent = item.memo
@@ -1505,6 +1506,7 @@ function restoreChildAccordionState(root, state) {
 function renderLifeEvents(items) {
   if (!lifeEventList) return;
   lifeEventList.innerHTML = "";
+  const settings = loadSettings();
 
   if (lifeEventEditingId && !items.some((item) => item.id === lifeEventEditingId)) {
     lifeEventEditingId = null;
@@ -1521,13 +1523,16 @@ function renderLifeEvents(items) {
 
   items
     .slice()
-    .sort((a, b) => (a.age !== b.age ? a.age - b.age : a.createdAt.localeCompare(b.createdAt)))
+    .sort((a, b) => (a.month !== b.month ? compareMonth(a.month, b.month) : a.createdAt.localeCompare(b.createdAt)))
     .forEach((item) => {
+      const monthLabel = formatScheduledMonthLabel(item.month);
+      const age = resolveAgeAtDate(settings?.birthDate, `${item.month}-01`);
+      const monthWithAgeLabel = Number.isFinite(age) ? `${monthLabel}（${age}歳）` : monthLabel;
       const card = document.createElement("article");
       card.className = "life-event-card";
       card.innerHTML = `
         <div class="life-event-card-header">
-          <h4>${item.age}歳 / ${item.category}</h4>
+          <h4>${monthWithAgeLabel} / ${item.category}</h4>
           <p class="life-event-amount ${item.type}">${yen.format(item.amount)}</p>
         </div>
         <ul class="life-event-meta-list">
@@ -1568,20 +1573,15 @@ function renderLifeEvents(items) {
 
 function addLifeEvent(event) {
   event.preventDefault();
-  const age = Number(lifeEventAgeInput.value);
+  const month = lifeEventMonthInput.value;
   const type = lifeEventTypeInput.value;
   const category = lifeEventCategoryInput.value;
   const amount = parseAmountInput(lifeEventAmountInput.value);
   const memo = lifeEventMemoInput.value.trim();
 
-  if (!Number.isFinite(age)) {
-    setLifeEventError("発生年齢を入力してください。");
-    lifeEventAgeInput.focus();
-    return;
-  }
-  if (age < 0 || age > 120) {
-    setLifeEventError("発生年齢は0〜120の範囲で入力してください。");
-    lifeEventAgeInput.focus();
+  if (!parseMonth(month)) {
+    setLifeEventError("発生年月を入力してください。");
+    lifeEventMonthInput.focus();
     return;
   }
   if (!(type in LIFE_EVENT_TYPES)) {
@@ -1606,7 +1606,7 @@ function addLifeEvent(event) {
     const next = current.map((item) => (item.id === lifeEventEditingId
       ? normalizeLifeEvent({
           ...item,
-          age,
+          month,
           type,
           category: normalizeLegacyLifeEventCategory(category),
           amount,
@@ -1618,7 +1618,7 @@ function addLifeEvent(event) {
   } else {
     current.push(normalizeLifeEvent({
       id: crypto.randomUUID(),
-      age,
+      month,
       type,
       category: normalizeLegacyLifeEventCategory(category),
       amount,
@@ -1635,6 +1635,20 @@ function addLifeEvent(event) {
 
 function cancelLifeEventEdit() {
   resetLifeEventFormFields();
+}
+
+function updateLifeEventAgePreview() {
+  if (!lifeEventAgePreview || !lifeEventMonthInput) return;
+  const month = lifeEventMonthInput.value;
+  if (!parseMonth(month)) {
+    lifeEventAgePreview.textContent = "";
+    return;
+  }
+  const monthLabel = formatScheduledMonthLabel(month);
+  const age = resolveAgeAtDate(loadSettings()?.birthDate, `${month}-01`);
+  lifeEventAgePreview.textContent = Number.isFinite(age)
+    ? `想定年齢: ${monthLabel}（${age}歳）`
+    : `予定: ${monthLabel}`;
 }
 
 function todayISO() {
@@ -2343,14 +2357,11 @@ function calculateAnnualAssetFormationExpense(settings, year) {
 }
 
 function buildLifeEventTotalsByMonth(lifeEvents, birthDate) {
-  const birth = parseBirthDate(birthDate);
-  if (!birth) return { income: {}, expense: {} };
-  const birthMonthIndex = birth.getMonth();
+  if (!parseBirthDate(birthDate)) return { income: {}, expense: {} };
   return (Array.isArray(lifeEvents) ? lifeEvents : []).reduce((map, event) => {
-    const age = Number(event?.age);
+    const month = parseMonth(event?.month) ? event.month : "";
     const amount = Math.max(Number(event?.amount) || 0, 0);
-    if (!Number.isFinite(age) || amount <= 0) return map;
-    const month = formatMonth(birth.getFullYear() + age, birthMonthIndex);
+    if (!month || amount <= 0) return map;
     if (event.type === 'income') {
       map.income[month] = (map.income[month] || 0) + amount;
     } else if (event.type === 'expense') {
@@ -3895,6 +3906,7 @@ function init() {
   recurringCancelButton?.addEventListener("click", cancelRecurringExpenseEdit);
   lifeEventForm?.addEventListener("submit", addLifeEvent);
   lifeEventTypeInput?.addEventListener("change", handleLifeEventTypeChange);
+  lifeEventMonthInput?.addEventListener("change", updateLifeEventAgePreview);
   lifeEventCancelButton?.addEventListener("click", cancelLifeEventEdit);
   cashflowSettingsForm?.addEventListener("input", () => {
     const assumptions = {
