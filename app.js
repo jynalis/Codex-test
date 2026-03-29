@@ -1676,56 +1676,19 @@ function calculateMonthlyContributionTotal(settings, month) {
   return settings.plans.reduce((sum, plan) => sum + findActiveMonthlyContribution(plan, month), 0);
 }
 
-function calculateProjectedTotalAtAge(settings, age) {
-  if (!settings.birthDate || !Array.isArray(settings.plans) || settings.plans.length === 0) return 0;
-  const baseTargetMonth = resolveWithdrawTargetMonth(settings.birthDate, age);
-  return settings.plans.reduce((sum, plan) => {
-    if (!isPlanHeldUntilAge(plan, age)) return sum;
-    const targetMonth = resolvePlanSimulationTargetMonth(plan, settings.birthDate, baseTargetMonth, age);
-    const projection = projectPlanAssetDetails(plan, settings.birthDate, targetMonth);
-    return sum + (projection.amount || 0);
-  }, 0);
-}
-
 function isPlanHeldUntilAge(plan, age) {
   const withdrawAge = Number(plan?.withdrawAge);
   if (!Number.isFinite(withdrawAge) || withdrawAge <= 0) return true;
   return withdrawAge >= age;
 }
 
-function calculateLifeEventTotalsThroughAge(lifeEvents, maxAge = RETIREMENT_REFERENCE_AGE) {
-  return (Array.isArray(lifeEvents) ? lifeEvents : []).reduce((totals, event) => {
-    const age = Number(event?.age);
-    if (!Number.isFinite(age) || age > maxAge) return totals;
-    const amount = Math.max(Number(event?.amount) || 0, 0);
-    if (amount <= 0) return totals;
-    if (event.type === "income") {
-      totals.income += amount;
-    } else if (event.type === "expense") {
-      totals.expense += amount;
-    }
-    return totals;
-  }, { income: 0, expense: 0 });
-}
-
-function calculateAge60FinancialSummary(settings, lifeEvents) {
-  const age60CutoffDate = resolveRetirementReferenceDate(settings.birthDate);
-  const age60CutoffMonth = resolveRetirementReferenceMonth(settings.birthDate);
-  const maxLifeEventAge = age60CutoffDate ? RETIREMENT_REFERENCE_AGE - 1 : RETIREMENT_REFERENCE_AGE;
-  const assetFormationTotalAt60 = age60CutoffMonth
-    ? calculateFinancialAssetTotalAtMonth(settings, age60CutoffMonth)
-    : calculateProjectedTotalAtAge(settings, RETIREMENT_REFERENCE_AGE);
-  const lifeEventTotals = calculateLifeEventTotalsThroughAge(lifeEvents, maxLifeEventAge);
-  const total = assetFormationTotalAt60
-    + lifeEventTotals.income
-    - lifeEventTotals.expense;
-
-  return {
-    assetFormationTotalAt60,
-    lifeEventIncomeTo60: lifeEventTotals.income,
-    lifeEventExpenseTo60: lifeEventTotals.expense,
-    total,
-  };
+function resolveAge60AssetFormationBalance({ settings, transactions, recurringExpenses, lifeEvents, assumptions }) {
+  const cashflowRows = buildCashflowRows({ settings, transactions, recurringExpenses, lifeEvents, assumptions });
+  const retirementReferenceYear = resolveRetirementReferenceYear(settings.birthDate);
+  const age60CashflowRow = cashflowRows.find((row) => row.year === retirementReferenceYear)
+    || cashflowRows[cashflowRows.length - 1]
+    || null;
+  return age60CashflowRow?.assetFormationBalance ?? 0;
 }
 
 function normalizeExpenseCompositionCategory(item) {
@@ -1819,13 +1782,20 @@ function createDashboardDiagnosisComment({ summary, monthlySavingTotal, manualTr
 function renderDashboard(summary, settings, currentMonth, transactions, recurringExpenses, lifeEvents, expenseComposition) {
   const monthlySavingTotal = calculateMonthlyContributionTotal(settings, currentMonth);
   const manualTransactionCount = transactions.filter((item) => monthISO(item.date) === currentMonth).length;
+  const assumptions = loadCashflowAssumptions();
   dashboardCarryoverTotal.textContent = yen.format(summary.carryover);
   dashboardIncomeTotal.textContent = yen.format(summary.income);
   dashboardExpenseTotal.textContent = yen.format(summary.expense);
   dashboardBalanceTotal.textContent = yen.format(summary.endingBalance);
   dashboardMonthlySavingTotal.textContent = yen.format(monthlySavingTotal);
-  const age60Summary = calculateAge60FinancialSummary(settings, lifeEvents);
-  dashboardAge60Total.textContent = yen.format(age60Summary.total);
+  const age60AssetFormationBalance = resolveAge60AssetFormationBalance({
+    settings,
+    transactions,
+    recurringExpenses,
+    lifeEvents,
+    assumptions,
+  });
+  dashboardAge60Total.textContent = yen.format(age60AssetFormationBalance);
   dashboardDiagnosisComment.textContent = createDashboardDiagnosisComment({
     summary,
     monthlySavingTotal,
@@ -2606,15 +2576,15 @@ function renderAssetForecast(settings) {
     };
   });
 
-  const cashflowRows = buildCashflowRows({
+  const totalAt60 = resolveAge60AssetFormationBalance({
     settings,
     transactions,
     recurringExpenses,
     lifeEvents: loadLifeEvents(),
     assumptions,
   });
-  const age60CashflowRow = cashflowRows.find((row) => row.year === resolveRetirementReferenceYear(settings.birthDate)) || cashflowRows[cashflowRows.length - 1] || null;
-  const age60BalanceTargetMonth = age60TargetMonth || (age60CashflowRow ? formatMonth(age60CashflowRow.year, 11) : null);
+  const retirementReferenceYear = resolveRetirementReferenceYear(settings.birthDate);
+  const age60BalanceTargetMonth = age60TargetMonth || (retirementReferenceYear ? formatMonth(retirementReferenceYear, 11) : null);
   const planBalancesAt60 = buildPlanBalancesAtMonth(settings, age60BalanceTargetMonth)
     .filter((plan) => plan.projectedAmount > 0);
 
@@ -2651,7 +2621,6 @@ function renderAssetForecast(settings) {
     })
     .join("");
 
-  const totalAt60 = age60CashflowRow?.assetFormationBalance ?? 0;
   const typeTotalsHtml = typeTotals
     .map((item) => `<li><span>${item.type} 合計</span><strong>${yen.format(item.amount)}</strong></li>`)
     .join("");
