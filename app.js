@@ -1916,17 +1916,34 @@ function createPieChartElements(entries, total, options = {}) {
   pieWrap.appendChild(pieChart);
 
   const legend = document.createElement("ul");
-  legend.className = "pie-legend";
+  const legendLayout = options.legendLayout || "default";
+  legend.className = `pie-legend ${legendLayout === "asset-composition" ? "pie-legend--asset-composition" : ""}`.trim();
   entries.forEach(([name, amount], index) => {
     const ratio = total === 0 ? 0 : (amount / total) * 100;
     const item = document.createElement("li");
-    item.className = "pie-legend-item";
-    item.innerHTML = `
-      <span class="dot" style="background:${chartColors[index % chartColors.length]}"></span>
-      <span class="category">${name}</span>
-      <strong class="ratio">${ratio.toFixed(1)}%</strong>
-      <span class="value">${yen.format(amount)}</span>
-    `;
+
+    if (legendLayout === "asset-composition") {
+      item.className = "pie-legend-item pie-legend-item--asset-composition";
+      item.innerHTML = `
+        <div class="pie-legend-main">
+          <span class="dot" style="background:${chartColors[index % chartColors.length]}"></span>
+          <span class="category">${name}</span>
+        </div>
+        <div class="pie-legend-metrics">
+          <span class="value">${yen.format(amount)}</span>
+          <strong class="ratio">${ratio.toFixed(1)}%</strong>
+        </div>
+      `;
+    } else {
+      item.className = "pie-legend-item";
+      item.innerHTML = `
+        <span class="dot" style="background:${chartColors[index % chartColors.length]}"></span>
+        <span class="category">${name}</span>
+        <strong class="ratio">${ratio.toFixed(1)}%</strong>
+        <span class="value">${yen.format(amount)}</span>
+      `;
+    }
+
     legend.appendChild(item);
   });
 
@@ -2672,6 +2689,7 @@ function renderAssetForecast(settings) {
   const { pieWrap, legend } = createPieChartElements(contractEntries, currentTotal, {
     centerLabel: "現時点総額",
     colors: ASSET_PIE_COLORS,
+    legendLayout: "asset-composition",
   });
   chartSection.appendChild(pieWrap);
   chartSection.appendChild(legend);
