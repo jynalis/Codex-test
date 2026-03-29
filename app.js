@@ -2537,13 +2537,15 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
       yearStartMonth,
       yearEndMonth
     );
-    const annualBalance = annualIncome
+    const annualTotalIncome = annualIncome
       + annualAssetWithdrawalTransfer
-      - annualRegularExpense
-      - annualRecurringExpense
-      - annualAssetFormationExpense
-      - annualLumpInvestmentExpense
-      - annualExtraExpense;
+      + annualExtraIncome;
+    const annualTotalExpense = annualRegularExpense
+      + annualRecurringExpense
+      + annualAssetFormationExpense
+      + annualLumpInvestmentExpense
+      + annualExtraExpense;
+    const annualBalance = annualTotalIncome - annualTotalExpense;
     endingBalance += annualBalance;
     const rowTargetMonth = isRetirementReferenceYear ? retirementReferenceMonth : formatMonth(year, 11);
     const assetFormationBalance = calculateFinancialAssetTotalAtMonth(settings, rowTargetMonth);
