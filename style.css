@@ -1834,6 +1834,13 @@ button.ghost {
   padding: 8px 10px;
 }
 
+.life-event-age-preview {
+  display: block;
+  margin-top: 6px;
+  color: #3f5f4e;
+  font-size: 0.8rem;
+}
+
 .life-event-form-actions {
   display: flex;
   gap: 10px;
