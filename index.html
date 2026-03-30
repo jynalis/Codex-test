@@ -44,33 +44,30 @@
               <select id="dashboard-month-filter" aria-label="ダッシュボード表示月"></select>
             </div>
             <div class="dashboard-grid">
-              <article class="dashboard-card dashboard-card-balance is-primary">
+              <article class="dashboard-card dashboard-card-balance">
                 <span>当月末残高</span>
                 <strong id="dashboard-balance-total">¥0</strong>
               </article>
-              <article class="dashboard-card dashboard-card-future is-primary">
+              <article class="dashboard-card dashboard-card-future">
                 <span>60歳時点の想定総資産額</span>
                 <strong id="dashboard-age60-total">¥0</strong>
               </article>
-              <article class="dashboard-card dashboard-card-income is-secondary">
+              <article class="dashboard-card dashboard-card-income">
                 <span>当月収入</span>
                 <strong id="dashboard-income-total">¥0</strong>
               </article>
-              <article class="dashboard-card dashboard-card-expense is-secondary">
+              <article class="dashboard-card dashboard-card-expense">
                 <span>当月支出</span>
                 <strong id="dashboard-expense-total">¥0</strong>
               </article>
             </div>
-            <article class="dashboard-chart-card" aria-label="年ごとの資産形成額グラフ">
+            <article class="dashboard-chart-card" aria-label="60歳までの資産形成額グラフ">
               <div class="dashboard-chart-header">
                 <div>
-                  <p class="dashboard-chart-title">年ごとの資産形成額</p>
-                  <p class="dashboard-chart-caption">積立額・一括投資額（縦軸：万円）</p>
+                  <p class="dashboard-chart-title">60歳までの資産形成額</p>
+                  <p class="dashboard-chart-caption">年齢ごとの累計資産形成額（縦軸：万円）</p>
                 </div>
-                <div class="dashboard-chart-supporting">
-                  <span class="dashboard-support-chip">毎月の積立額: <strong id="dashboard-monthly-saving-total">¥0</strong></span>
-                  <span class="dashboard-support-chip">前月末残高: <strong id="dashboard-carryover-total">¥0</strong></span>
-                </div>
+                <p class="dashboard-chart-meta" id="dashboard-asset-formation-meta">生年月日と積立設定を保存すると表示されます。</p>
               </div>
               <div id="dashboard-asset-formation-chart" class="dashboard-asset-formation-chart"></div>
             </article>

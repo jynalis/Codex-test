@@ -72,14 +72,13 @@ const list = document.getElementById("transaction-list");
 const plannedList = document.getElementById("planned-transaction-list");
 const plannedHistoryTitle = document.getElementById("planned-history-title");
 const template = document.getElementById("transaction-item-template");
-const dashboardCarryoverTotal = document.getElementById("dashboard-carryover-total");
 const dashboardIncomeTotal = document.getElementById("dashboard-income-total");
 const dashboardExpenseTotal = document.getElementById("dashboard-expense-total");
 const dashboardBalanceTotal = document.getElementById("dashboard-balance-total");
-const dashboardMonthlySavingTotal = document.getElementById("dashboard-monthly-saving-total");
 const dashboardAge60Total = document.getElementById("dashboard-age60-total");
 const dashboardDiagnosisComment = document.getElementById("dashboard-diagnosis-comment");
 const dashboardAssetFormationChart = document.getElementById("dashboard-asset-formation-chart");
+const dashboardAssetFormationMeta = document.getElementById("dashboard-asset-formation-meta");
 const expenseChart = document.getElementById("expense-chart");
 const bottomNavButtons = Array.from(document.querySelectorAll(".bottom-nav-btn"));
 const navToast = document.getElementById("nav-toast");
@@ -2101,39 +2100,37 @@ function createDashboardDiagnosisComment({ summary, monthlySavingTotal, manualTr
   return "今月は黒字ですが、月末の余裕はやや小さめです。支出バランスを確認してみましょう。";
 }
 
-function buildYearlyAssetFormationData({ settings, transactions }) {
+function resolveAgeCheckpointMonth(birthDate, age) {
+  const ageDate = resolveTargetAgeDate(birthDate, age);
+  if (!ageDate) return null;
+  const checkpointDate = new Date(ageDate);
+  checkpointDate.setDate(checkpointDate.getDate() - RETIREMENT_REFERENCE_DAY_OFFSET);
+  return formatMonth(checkpointDate.getFullYear(), checkpointDate.getMonth());
+}
+
+function buildYearlyAssetFormationData({ settings }) {
+  if (!parseBirthDate(settings?.birthDate) || !Array.isArray(settings?.plans) || settings.plans.length === 0) {
+    return [];
+  }
+
+  const currentAge = calculateAge(settings.birthDate);
+  const endAge = currentAge <= RETIREMENT_REFERENCE_AGE ? RETIREMENT_REFERENCE_AGE : currentAge;
   const nowMonth = todayISO().slice(0, 7);
-  const startMonth = resolveEntryStartMonth(settings, transactions);
-  if (!parseMonth(startMonth)) return [];
+  const data = [];
 
-  const endMonth = compareMonth(startMonth, nowMonth) <= 0 ? nowMonth : startMonth;
-  const targetMonths = getMonthRangeInclusive(startMonth, endMonth);
-  if (targetMonths.length === 0) return [];
+  for (let age = currentAge; age <= endAge; age += 1) {
+    const checkpointMonth = age === currentAge
+      ? nowMonth
+      : resolveAgeCheckpointMonth(settings.birthDate, age);
+    if (!parseMonth(checkpointMonth)) continue;
 
-  const yearlyTotals = targetMonths.reduce((acc, month) => {
-    const [year] = month.split("-");
-    if (!acc[year]) {
-      acc[year] = {
-        year,
-        monthly: 0,
-        lump: 0,
-      };
-    }
-    const autoTransactions = createEligibleAutoExpensesForMonth(settings, transactions, month);
-    autoTransactions.forEach((item) => {
-      if (item.type !== "expense" || item.category !== ASSET_FORMATION_CATEGORY) return;
-      if (item.sourceKind === "monthly") {
-        acc[year].monthly += item.amount;
-      } else if (item.sourceKind === "lump") {
-        acc[year].lump += item.amount;
-      }
+    data.push({
+      age,
+      total: calculateFinancialAssetTotalAtMonth(settings, checkpointMonth),
     });
-    return acc;
-  }, {});
+  }
 
-  return Object.values(yearlyTotals)
-    .sort((a, b) => Number(a.year) - Number(b.year))
-    .map((item) => ({ ...item, total: item.monthly + item.lump }));
+  return data;
 }
 
 function renderDashboardAssetFormationChart(data) {
@@ -2169,32 +2166,21 @@ function renderDashboardAssetFormationChart(data) {
   const bars = document.createElement("div");
   bars.className = "asset-yearly-bars";
 
-  data.forEach((item) => {
+  const labelStep = data.length > 18 ? 2 : 1;
+  data.forEach((item, index) => {
     const barItem = document.createElement("div");
     barItem.className = "asset-yearly-bar-item";
 
-    const stack = document.createElement("div");
-    stack.className = "asset-yearly-bar-stack";
-    stack.title = `${item.year}年 積立額 ${yen.format(item.monthly)} / 一括投資額 ${yen.format(item.lump)}`;
-
-    const monthlyHeightRatio = item.monthly / maxTotal;
-    const lumpHeightRatio = item.lump / maxTotal;
-
-    const monthlyBar = document.createElement("div");
-    monthlyBar.className = "asset-yearly-bar-segment is-monthly";
-    monthlyBar.style.height = `${Math.max(monthlyHeightRatio * 100, item.monthly > 0 ? 4 : 0)}%`;
-
-    const lumpBar = document.createElement("div");
-    lumpBar.className = "asset-yearly-bar-segment is-lump";
-    lumpBar.style.height = `${Math.max(lumpHeightRatio * 100, item.lump > 0 ? 4 : 0)}%`;
-
-    stack.append(monthlyBar, lumpBar);
+    const bar = document.createElement("div");
+    bar.className = "asset-yearly-bar";
+    bar.title = `${item.age}歳時点の累計資産形成額 ${yen.format(item.total)}`;
+    bar.style.height = `${Math.max((item.total / maxTotal) * 100, item.total > 0 ? 4 : 0)}%`;
 
     const yearLabel = document.createElement("span");
     yearLabel.className = "asset-yearly-year";
-    yearLabel.textContent = `${item.year}年`;
+    yearLabel.textContent = index % labelStep === 0 || index === data.length - 1 ? `${item.age}歳` : "";
 
-    barItem.append(stack, yearLabel);
+    barItem.append(bar, yearLabel);
     bars.appendChild(barItem);
   });
 
@@ -2202,22 +2188,13 @@ function renderDashboardAssetFormationChart(data) {
   graphBody.appendChild(barsWrap);
   dashboardAssetFormationChart.appendChild(graphBody);
 
-  const legend = document.createElement("ul");
-  legend.className = "asset-yearly-legend";
-  legend.innerHTML = `
-    <li><span class="dot is-monthly"></span>積立額</li>
-    <li><span class="dot is-lump"></span>一括投資額</li>
-  `;
-  dashboardAssetFormationChart.appendChild(legend);
 }
 
 function renderDashboard({ summary, settings, transactions, recurringExpenses, lifeEvents, expenseComposition, monthlySavingTotal, manualTransactionCount, monthCount }) {
   const assumptions = loadCashflowAssumptions();
-  dashboardCarryoverTotal.textContent = yen.format(summary.carryover);
   dashboardIncomeTotal.textContent = yen.format(summary.income);
   dashboardExpenseTotal.textContent = yen.format(summary.expense);
   dashboardBalanceTotal.textContent = yen.format(summary.endingBalance);
-  dashboardMonthlySavingTotal.textContent = yen.format(monthlySavingTotal);
   const age60AssetFormationBalance = resolveAge60AssetFormationBalance({
     settings,
     transactions,
@@ -2235,7 +2212,17 @@ function renderDashboard({ summary, settings, transactions, recurringExpenses, l
   if (monthCount > 0) {
     dashboardDiagnosisComment.textContent = `平均対象 ${monthCount}か月。${dashboardDiagnosisComment.textContent}`;
   }
-  renderDashboardAssetFormationChart(buildYearlyAssetFormationData({ settings, transactions }));
+  const assetFormationData = buildYearlyAssetFormationData({ settings });
+  if (dashboardAssetFormationMeta) {
+    if (assetFormationData.length === 0) {
+      dashboardAssetFormationMeta.textContent = "生年月日と積立設定を保存すると表示されます。";
+    } else {
+      const firstAge = assetFormationData[0].age;
+      const lastAge = assetFormationData[assetFormationData.length - 1].age;
+      dashboardAssetFormationMeta.textContent = `${firstAge}歳〜${lastAge}歳時点の累計資産形成額`;
+    }
+  }
+  renderDashboardAssetFormationChart(assetFormationData);
 }
 
 function renderExpenseChart(expenseComposition, isAverageMode) {
