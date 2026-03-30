@@ -1091,7 +1091,7 @@ button.plan-card-trigger {
 }
 
 .dashboard-asset-formation-chart {
-  min-height: 270px;
+  min-height: 232px;
 }
 
 .asset-yearly-bar-chart {
@@ -1099,7 +1099,7 @@ button.plan-card-trigger {
   grid-template-columns: auto 1fr;
   align-items: stretch;
   gap: 10px;
-  min-height: 250px;
+  min-height: 214px;
 }
 
 .asset-yearly-axis {
@@ -1127,13 +1127,13 @@ button.plan-card-trigger {
   grid-auto-flow: column;
   grid-auto-columns: minmax(40px, 40px);
   gap: 10px;
-  min-height: 220px;
+  min-height: 188px;
   align-items: end;
   border-left: 1px solid #d2e0ee;
   border-bottom: 1px solid #d2e0ee;
   padding: 10px 12px 0 10px;
   background-image: linear-gradient(to top, rgb(186 206 227 / 36%) 1px, transparent 1px);
-  background-size: 100% calc((220px - 22px) / 4);
+  background-size: 100% calc((188px - 22px) / var(--axis-steps, 4));
 }
 
 .asset-yearly-bar-item {
@@ -1143,7 +1143,7 @@ button.plan-card-trigger {
 }
 
 .asset-yearly-bar {
-  height: 200px;
+  height: 170px;
   width: 24px;
   border-radius: 8px 8px 4px 4px;
   background: linear-gradient(180deg, #3b8cf0 0%, #2f73cb 100%);
@@ -2156,7 +2156,7 @@ button.ghost {
   }
 
   .dashboard-asset-formation-chart {
-    min-height: 238px;
+    min-height: 204px;
   }
 
   .asset-yearly-axis {
@@ -2167,11 +2167,12 @@ button.ghost {
   .asset-yearly-bars {
     grid-auto-columns: minmax(36px, 36px);
     gap: 8px;
+    min-height: 170px;
   }
 
   .asset-yearly-bar {
     width: 22px;
-    height: 180px;
+    height: 152px;
   }
 
   .asset-yearly-year {
