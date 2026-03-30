@@ -430,11 +430,15 @@ function syncSharedViewFilterOptions(availableMonths) {
     if (!parsed) return;
     yearSet.add(parsed.year);
   });
+  const selectedYear = Number(sharedViewState.year);
+  if (Number.isInteger(selectedYear)) {
+    yearSet.add(selectedYear);
+  }
   if (yearSet.size === 0) {
     yearSet.add(Number(sharedViewState.year) || Number(todayISO().slice(0, 4)));
   }
   const years = Array.from(yearSet).sort((a, b) => b - a);
-  if (!years.includes(Number(sharedViewState.year))) {
+  if (!Number.isInteger(selectedYear)) {
     sharedViewState.year = String(years[0]);
   }
   if (!/^\d{2}$/.test(sharedViewState.month)) {
@@ -3879,8 +3883,7 @@ function setupSharedViewFilters() {
 
 function init() {
   const settings = loadSettings();
-  const initialTransactions = loadTransactions();
-  const initialMonth = getLatestMonthFromTransactions(initialTransactions) || todayISO().slice(0, 7);
+  const initialMonth = todayISO().slice(0, 7);
   sharedViewState = resolveInitialSharedViewState(initialMonth);
 
   dateInput.value = todayISO();
