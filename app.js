@@ -2145,7 +2145,16 @@ function buildYAxisScale(maxTotal) {
 function renderDashboardAssetFormationChart(data) {
   if (!dashboardAssetFormationChart) return;
   dashboardAssetFormationChart.innerHTML = "";
-  if (!Array.isArray(data) || data.length === 0) {
+  const normalizedData = Array.isArray(data)
+    ? data
+      .map((item) => ({
+        age: Number(item?.age),
+        total: Math.max(Number(item?.total) || 0, 0),
+      }))
+      .filter((item) => Number.isFinite(item.age) && Number.isFinite(item.total))
+    : [];
+
+  if (normalizedData.length === 0) {
     const empty = document.createElement("p");
     empty.className = "chart-empty";
     empty.textContent = "資産形成データがありません。";
@@ -2153,7 +2162,7 @@ function renderDashboardAssetFormationChart(data) {
     return;
   }
 
-  const maxTotal = Math.max(...data.map((item) => item.total), 1);
+  const maxTotal = Math.max(...normalizedData.map((item) => item.total), 1);
   const yAxisScale = buildYAxisScale(maxTotal);
   const graphBody = document.createElement("div");
   graphBody.className = "asset-yearly-bar-chart";
@@ -2176,8 +2185,8 @@ function renderDashboardAssetFormationChart(data) {
   const bars = document.createElement("div");
   bars.className = "asset-yearly-bars";
 
-  const labelStep = data.length > 18 ? 2 : 1;
-  data.forEach((item, index) => {
+  const labelStep = normalizedData.length > 18 ? 2 : 1;
+  normalizedData.forEach((item, index) => {
     const barItem = document.createElement("div");
     barItem.className = "asset-yearly-bar-item";
 
@@ -2188,7 +2197,7 @@ function renderDashboardAssetFormationChart(data) {
 
     const yearLabel = document.createElement("span");
     yearLabel.className = "asset-yearly-year";
-    yearLabel.textContent = index % labelStep === 0 || index === data.length - 1 ? `${item.age}歳` : "";
+    yearLabel.textContent = index % labelStep === 0 || index === normalizedData.length - 1 ? `${item.age}歳` : "";
 
     barItem.append(bar, yearLabel);
     bars.appendChild(barItem);

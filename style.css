@@ -1127,7 +1127,7 @@ button.plan-card-trigger {
   grid-auto-flow: column;
   grid-auto-columns: minmax(40px, 40px);
   gap: 10px;
-  min-height: 188px;
+  height: 188px;
   align-items: end;
   border-left: 1px solid #d2e0ee;
   border-bottom: 1px solid #d2e0ee;
@@ -1138,6 +1138,8 @@ button.plan-card-trigger {
 
 .asset-yearly-bar-item {
   display: grid;
+  height: 100%;
+  align-content: end;
   justify-items: center;
   gap: 6px;
 }
@@ -2167,7 +2169,7 @@ button.ghost {
   .asset-yearly-bars {
     grid-auto-columns: minmax(36px, 36px);
     gap: 8px;
-    min-height: 170px;
+    height: 170px;
   }
 
   .asset-yearly-bar {
