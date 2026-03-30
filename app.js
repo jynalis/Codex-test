@@ -79,6 +79,7 @@ const dashboardBalanceTotal = document.getElementById("dashboard-balance-total")
 const dashboardMonthlySavingTotal = document.getElementById("dashboard-monthly-saving-total");
 const dashboardAge60Total = document.getElementById("dashboard-age60-total");
 const dashboardDiagnosisComment = document.getElementById("dashboard-diagnosis-comment");
+const dashboardAssetFormationChart = document.getElementById("dashboard-asset-formation-chart");
 const expenseChart = document.getElementById("expense-chart");
 const bottomNavButtons = Array.from(document.querySelectorAll(".bottom-nav-btn"));
 const navToast = document.getElementById("nav-toast");
@@ -2100,6 +2101,116 @@ function createDashboardDiagnosisComment({ summary, monthlySavingTotal, manualTr
   return "今月は黒字ですが、月末の余裕はやや小さめです。支出バランスを確認してみましょう。";
 }
 
+function buildYearlyAssetFormationData({ settings, transactions }) {
+  const nowMonth = todayISO().slice(0, 7);
+  const startMonth = resolveEntryStartMonth(settings, transactions);
+  if (!parseMonth(startMonth)) return [];
+
+  const endMonth = compareMonth(startMonth, nowMonth) <= 0 ? nowMonth : startMonth;
+  const targetMonths = getMonthRangeInclusive(startMonth, endMonth);
+  if (targetMonths.length === 0) return [];
+
+  const yearlyTotals = targetMonths.reduce((acc, month) => {
+    const [year] = month.split("-");
+    if (!acc[year]) {
+      acc[year] = {
+        year,
+        monthly: 0,
+        lump: 0,
+      };
+    }
+    const autoTransactions = createEligibleAutoExpensesForMonth(settings, transactions, month);
+    autoTransactions.forEach((item) => {
+      if (item.type !== "expense" || item.category !== ASSET_FORMATION_CATEGORY) return;
+      if (item.sourceKind === "monthly") {
+        acc[year].monthly += item.amount;
+      } else if (item.sourceKind === "lump") {
+        acc[year].lump += item.amount;
+      }
+    });
+    return acc;
+  }, {});
+
+  return Object.values(yearlyTotals)
+    .sort((a, b) => Number(a.year) - Number(b.year))
+    .map((item) => ({ ...item, total: item.monthly + item.lump }));
+}
+
+function renderDashboardAssetFormationChart(data) {
+  if (!dashboardAssetFormationChart) return;
+  dashboardAssetFormationChart.innerHTML = "";
+  if (!Array.isArray(data) || data.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "chart-empty";
+    empty.textContent = "資産形成データがありません。";
+    dashboardAssetFormationChart.appendChild(empty);
+    return;
+  }
+
+  const maxTotal = Math.max(...data.map((item) => item.total), 1);
+  const graphBody = document.createElement("div");
+  graphBody.className = "asset-yearly-bar-chart";
+
+  const yAxis = document.createElement("ul");
+  yAxis.className = "asset-yearly-axis";
+  const axisSteps = 4;
+  for (let step = axisSteps; step >= 0; step -= 1) {
+    const value = (maxTotal * step) / axisSteps;
+    const label = `${numberWithComma.format(Math.round(value / 10000))}万円`;
+    const item = document.createElement("li");
+    item.textContent = label;
+    yAxis.appendChild(item);
+  }
+  graphBody.appendChild(yAxis);
+
+  const barsWrap = document.createElement("div");
+  barsWrap.className = "asset-yearly-bars-wrap";
+
+  const bars = document.createElement("div");
+  bars.className = "asset-yearly-bars";
+
+  data.forEach((item) => {
+    const barItem = document.createElement("div");
+    barItem.className = "asset-yearly-bar-item";
+
+    const stack = document.createElement("div");
+    stack.className = "asset-yearly-bar-stack";
+    stack.title = `${item.year}年 積立額 ${yen.format(item.monthly)} / 一括投資額 ${yen.format(item.lump)}`;
+
+    const monthlyHeightRatio = item.monthly / maxTotal;
+    const lumpHeightRatio = item.lump / maxTotal;
+
+    const monthlyBar = document.createElement("div");
+    monthlyBar.className = "asset-yearly-bar-segment is-monthly";
+    monthlyBar.style.height = `${Math.max(monthlyHeightRatio * 100, item.monthly > 0 ? 4 : 0)}%`;
+
+    const lumpBar = document.createElement("div");
+    lumpBar.className = "asset-yearly-bar-segment is-lump";
+    lumpBar.style.height = `${Math.max(lumpHeightRatio * 100, item.lump > 0 ? 4 : 0)}%`;
+
+    stack.append(monthlyBar, lumpBar);
+
+    const yearLabel = document.createElement("span");
+    yearLabel.className = "asset-yearly-year";
+    yearLabel.textContent = `${item.year}年`;
+
+    barItem.append(stack, yearLabel);
+    bars.appendChild(barItem);
+  });
+
+  barsWrap.appendChild(bars);
+  graphBody.appendChild(barsWrap);
+  dashboardAssetFormationChart.appendChild(graphBody);
+
+  const legend = document.createElement("ul");
+  legend.className = "asset-yearly-legend";
+  legend.innerHTML = `
+    <li><span class="dot is-monthly"></span>積立額</li>
+    <li><span class="dot is-lump"></span>一括投資額</li>
+  `;
+  dashboardAssetFormationChart.appendChild(legend);
+}
+
 function renderDashboard({ summary, settings, transactions, recurringExpenses, lifeEvents, expenseComposition, monthlySavingTotal, manualTransactionCount, monthCount }) {
   const assumptions = loadCashflowAssumptions();
   dashboardCarryoverTotal.textContent = yen.format(summary.carryover);
@@ -2124,6 +2235,7 @@ function renderDashboard({ summary, settings, transactions, recurringExpenses, l
   if (monthCount > 0) {
     dashboardDiagnosisComment.textContent = `平均対象 ${monthCount}か月。${dashboardDiagnosisComment.textContent}`;
   }
+  renderDashboardAssetFormationChart(buildYearlyAssetFormationData({ settings, transactions }));
 }
 
 function renderExpenseChart(expenseComposition, isAverageMode) {
