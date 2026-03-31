@@ -1123,27 +1123,32 @@ button.plan-card-trigger {
 }
 
 .dashboard-bar-chart-grid-line {
-  stroke: #d4deea;
+  stroke: #c9d6e6;
   stroke-width: 1;
 }
 
 .dashboard-bar-chart-axis {
-  stroke: #6d88a7;
+  stroke: #8fa6bf;
   stroke-width: 1.2;
 }
 
 .dashboard-bar-chart-bar {
-  fill: #3f82c7;
+  fill: #3f7fc4;
+  transition: fill 160ms ease;
+}
+
+.dashboard-bar-chart-bar:hover {
+  fill: #3573b7;
 }
 
 .dashboard-bar-chart-x-label {
-  fill: #2b4767;
+  fill: #36516e;
   font-size: 12px;
   font-weight: 700;
 }
 
 .dashboard-bar-chart-y-label {
-  fill: #375676;
+  fill: #36516e;
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
@@ -1151,8 +1156,8 @@ button.plan-card-trigger {
 
 .diagnosis-card {
   margin-top: 14px;
-  border: 1px solid #9db6d1;
-  background: linear-gradient(145deg, #f4f8ff 0%, #dbe7f4 100%);
+  border: 1px solid #b8cce3;
+  background: #f4f8fd;
   border-radius: 14px;
   padding: 14px 14px 14px 16px;
   display: grid;
@@ -1166,20 +1171,20 @@ button.plan-card-trigger {
   left: 0;
   top: 12px;
   bottom: 12px;
-  width: 4px;
+  width: 5px;
   border-radius: 999px;
-  background: linear-gradient(180deg, #2d5b8f 0%, #6a9ec7 100%);
+  background: #5b8fc9;
 }
 
 .diagnosis-label {
   font-size: 0.76rem;
-  color: #244d79;
+  color: #1e3f66;
   letter-spacing: 0.08em;
   font-weight: 800;
 }
 
 .diagnosis-text {
-  color: #0f2946;
+  color: #2d4663;
   line-height: 1.72;
   font-size: 0.98rem;
   font-weight: 500;
