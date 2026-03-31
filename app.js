@@ -77,8 +77,6 @@ const dashboardExpenseTotal = document.getElementById("dashboard-expense-total")
 const dashboardBalanceTotal = document.getElementById("dashboard-balance-total");
 const dashboardAge60Total = document.getElementById("dashboard-age60-total");
 const dashboardDiagnosisComment = document.getElementById("dashboard-diagnosis-comment");
-const dashboardAssetFormationChart = document.getElementById("dashboard-asset-formation-chart");
-const dashboardAssetFormationMeta = document.getElementById("dashboard-asset-formation-meta");
 const expenseChart = document.getElementById("expense-chart");
 const bottomNavButtons = Array.from(document.querySelectorAll(".bottom-nav-btn"));
 const navToast = document.getElementById("nav-toast");
@@ -2100,128 +2098,6 @@ function createDashboardDiagnosisComment({ summary, monthlySavingTotal, manualTr
   return "今月は黒字ですが、月末の余裕はやや小さめです。支出バランスを確認してみましょう。";
 }
 
-function resolveAgeCheckpointMonth(birthDate, age) {
-  const ageDate = resolveTargetAgeDate(birthDate, age);
-  if (!ageDate) return null;
-  const checkpointDate = new Date(ageDate);
-  checkpointDate.setDate(checkpointDate.getDate() - RETIREMENT_REFERENCE_DAY_OFFSET);
-  return formatMonth(checkpointDate.getFullYear(), checkpointDate.getMonth());
-}
-
-function extractAssetFormationBarsFromCashflowRows(cashflowRows) {
-  if (!Array.isArray(cashflowRows) || cashflowRows.length === 0) return [];
-  return cashflowRows.map((row) => {
-    const rawTotal = Number(row?.assetFormationBalance);
-    return {
-      yearLabel: String(row?.year ?? ""),
-      total: Number.isFinite(rawTotal) ? rawTotal : NaN,
-    };
-  });
-}
-
-function chooseNiceAxisStep(unitMaxValue) {
-  if (!Number.isFinite(unitMaxValue) || unitMaxValue <= 0) return 100;
-
-  const roughStep = unitMaxValue / 4;
-  const magnitude = 10 ** Math.floor(Math.log10(Math.max(roughStep, 1)));
-  const normalized = roughStep / magnitude;
-  const niceFactors = [1, 2, 5, 10];
-  const factor = niceFactors.find((item) => normalized <= item) || 10;
-  const step = factor * magnitude;
-  return Math.max(100, step);
-}
-
-function buildYAxisScale(maxTotal) {
-  const maxInManYen = Math.ceil((Math.max(Number(maxTotal) || 0, 0) || 1) / 10000);
-  const stepInManYen = chooseNiceAxisStep(maxInManYen);
-  const axisSteps = Math.max(4, Math.ceil(maxInManYen / stepInManYen));
-  const axisMaxInManYen = stepInManYen * axisSteps;
-  return {
-    axisMax: axisMaxInManYen * 10000,
-    stepInManYen,
-    axisSteps,
-  };
-}
-
-function renderDashboardAssetFormationChart(data) {
-  if (!dashboardAssetFormationChart) return;
-  dashboardAssetFormationChart.innerHTML = "";
-  const normalizedData = Array.isArray(data)
-    ? data.map((item) => ({
-      yearLabel: String(item?.yearLabel ?? ""),
-      total: Number(item?.total),
-    }))
-    : [];
-  const invalidItems = normalizedData.filter((item) => !item.yearLabel || !Number.isFinite(item.total));
-  const validData = normalizedData.filter((item) => item.yearLabel && Number.isFinite(item.total));
-
-  if (validData.length === 0) {
-    const empty = document.createElement("p");
-    empty.className = "chart-empty";
-    empty.textContent = "資産形成データがありません。";
-    dashboardAssetFormationChart.appendChild(empty);
-    console.warn("[dashboard-asset-formation] no valid data", {
-      inputLength: Array.isArray(data) ? data.length : 0,
-      invalidItems,
-    });
-    return;
-  }
-
-  const maxTotal = Math.max(...validData.map((item) => item.total), 1);
-  const yAxisScale = buildYAxisScale(maxTotal);
-  const graphBody = document.createElement("div");
-  graphBody.className = "asset-yearly-bar-chart";
-  graphBody.style.setProperty("--axis-steps", String(yAxisScale.axisSteps));
-
-  const yAxis = document.createElement("ul");
-  yAxis.className = "asset-yearly-axis";
-  for (let step = yAxisScale.axisSteps; step >= 0; step -= 1) {
-    const valueInManYen = yAxisScale.stepInManYen * step;
-    const label = `${numberWithComma.format(valueInManYen)}万円`;
-    const item = document.createElement("li");
-    item.textContent = label;
-    yAxis.appendChild(item);
-  }
-  graphBody.appendChild(yAxis);
-
-  const barsWrap = document.createElement("div");
-  barsWrap.className = "asset-yearly-bars-wrap";
-
-  const bars = document.createElement("div");
-  bars.className = "asset-yearly-bars";
-
-  const labelStep = validData.length > 18 ? 2 : 1;
-  validData.forEach((item, index) => {
-    const barItem = document.createElement("div");
-    barItem.className = "asset-yearly-bar-item";
-
-    const bar = document.createElement("div");
-    bar.className = "asset-yearly-bar";
-    bar.title = `${item.yearLabel}年の資産形成額 ${yen.format(item.total)}`;
-    const visiblePercent = Math.max((Math.max(item.total, 0) / yAxisScale.axisMax) * 100, 2);
-    bar.style.height = `${visiblePercent}%`;
-
-    const yearLabel = document.createElement("span");
-    yearLabel.className = "asset-yearly-year";
-    yearLabel.textContent = index % labelStep === 0 || index === validData.length - 1 ? `${item.yearLabel}年` : "";
-
-    barItem.append(bar, yearLabel);
-    bars.appendChild(barItem);
-  });
-
-  barsWrap.appendChild(bars);
-  graphBody.appendChild(barsWrap);
-  dashboardAssetFormationChart.appendChild(graphBody);
-  console.info("[dashboard-asset-formation] bars rendered", {
-    inputLength: Array.isArray(data) ? data.length : 0,
-    validCount: validData.length,
-    invalidCount: invalidItems.length,
-    hasAllZero: validData.every((item) => item.total === 0),
-    barNodeCount: bars.querySelectorAll(".asset-yearly-bar").length,
-  });
-
-}
-
 function renderDashboard({ summary, settings, transactions, recurringExpenses, lifeEvents, expenseComposition, monthlySavingTotal, manualTransactionCount, monthCount }) {
   const assumptions = loadCashflowAssumptions();
   const cashflowRows = buildCashflowRows({ settings, transactions, recurringExpenses, lifeEvents, assumptions });
@@ -2242,17 +2118,6 @@ function renderDashboard({ summary, settings, transactions, recurringExpenses, l
   if (monthCount > 0) {
     dashboardDiagnosisComment.textContent = `平均対象 ${monthCount}か月。${dashboardDiagnosisComment.textContent}`;
   }
-  const assetFormationData = extractAssetFormationBarsFromCashflowRows(cashflowRows);
-  if (dashboardAssetFormationMeta) {
-    if (assetFormationData.length === 0) {
-      dashboardAssetFormationMeta.textContent = "生年月日と積立設定を保存すると表示されます。";
-    } else {
-      const firstYear = assetFormationData[0].yearLabel;
-      const lastYear = assetFormationData[assetFormationData.length - 1].yearLabel;
-      dashboardAssetFormationMeta.textContent = `${firstYear}年〜${lastYear}年の資産形成額`;
-    }
-  }
-  renderDashboardAssetFormationChart(assetFormationData);
 }
 
 function renderExpenseChart(expenseComposition, isAverageMode) {
