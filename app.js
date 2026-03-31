@@ -2138,8 +2138,8 @@ function renderDashboardAssetFormationChart(cashflowRows) {
     return;
   }
 
-  const MIN_BAR_SLOT_WIDTH = 38;
-  const MIN_PLOT_WIDTH = 520;
+  const MIN_BAR_SLOT_WIDTH = 32;
+  const MIN_PLOT_WIDTH = 560;
   const chartHeight = 280;
   const margin = { top: 24, right: 12, bottom: 56, left: 0 };
   const yAxisWidth = 76;
@@ -2150,7 +2150,7 @@ function renderDashboardAssetFormationChart(cashflowRows) {
   const yMax = Math.max(yStep, Math.ceil(Math.max(...points.map((item) => item.amount)) / yStep) * yStep);
   const yTickCount = Math.max(2, Math.ceil(yMax / yStep));
   const slotWidth = plotWidth / points.length;
-  const barWidth = Math.max(6, Math.min(24, slotWidth * 0.46));
+  const barWidth = Math.max(8, Math.min(22, slotWidth * 0.42));
   const xLabelStep = Math.max(1, Math.ceil(34 / Math.max(slotWidth, 1)));
 
   const svgNS = "http://www.w3.org/2000/svg";
@@ -2168,7 +2168,6 @@ function renderDashboardAssetFormationChart(cashflowRows) {
   plotSvg.setAttribute("aria-label", "年ごとの資産形成額棒グラフ");
   plotSvg.classList.add("dashboard-asset-formation-chart-svg", "dashboard-asset-formation-plot-svg");
   plotSvg.style.width = `${plotWidth + margin.right}px`;
-  plotSvg.style.minWidth = "100%";
   plotSvg.style.height = `${chartHeight}px`;
 
   for (let tick = 0; tick <= yTickCount; tick += 1) {
