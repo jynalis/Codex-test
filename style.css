@@ -1113,7 +1113,9 @@ button.plan-card-trigger {
 }
 
 .dashboard-asset-formation-chart-scroll-content {
-  min-width: max-content;
+  display: inline-block;
+  width: max-content;
+  min-width: 100%;
 }
 
 .dashboard-asset-formation-chart-svg {
