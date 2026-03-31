@@ -2138,8 +2138,8 @@ function renderDashboardAssetFormationChart(cashflowRows) {
     return;
   }
 
-  const BAR_WIDTH_PX = 28;
-  const YEAR_SLOT_WIDTH_PX = 60;
+  const BAR_WIDTH_PX = 24;
+  const YEAR_SLOT_WIDTH_PX = 52;
   const chartHeight = 280;
   const margin = { top: 24, right: 16, bottom: 56 };
   const fixedAxisWidth = 92;
