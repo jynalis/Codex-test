@@ -2151,8 +2151,8 @@ function renderDashboardAssetFormationChart(cashflowRows) {
   const BAR_WIDTH_PX = 24;
   const YEAR_SLOT_WIDTH_PX = 52;
   const chartHeight = 280;
-  const margin = { top: 24, right: 16, bottom: 56 };
-  const fixedAxisWidth = 92;
+  const margin = { top: 24, right: 12, bottom: 56 };
+  const fixedAxisWidth = 84;
   const visibleYearCount = points.length;
   const minScrollableWidth = visibleYearCount * YEAR_SLOT_WIDTH_PX;
   const plotWidth = minScrollableWidth;
@@ -2186,7 +2186,7 @@ function renderDashboardAssetFormationChart(cashflowRows) {
     const y = margin.top + plotHeight - (value / yMax) * plotHeight;
 
     const yLabel = document.createElementNS(svgNS, "text");
-    yLabel.setAttribute("x", String(fixedAxisWidth - 12));
+    yLabel.setAttribute("x", String(fixedAxisWidth - 8));
     yLabel.setAttribute("y", String(y + 4));
     yLabel.setAttribute("text-anchor", "end");
     yLabel.setAttribute("class", "dashboard-bar-chart-y-label");
@@ -2225,8 +2225,8 @@ function renderDashboardAssetFormationChart(cashflowRows) {
   });
 
   const axisY = document.createElementNS(svgNS, "line");
-  axisY.setAttribute("x1", String(fixedAxisWidth - 4));
-  axisY.setAttribute("x2", String(fixedAxisWidth - 4));
+  axisY.setAttribute("x1", String(fixedAxisWidth - 2));
+  axisY.setAttribute("x2", String(fixedAxisWidth - 2));
   axisY.setAttribute("y1", String(margin.top));
   axisY.setAttribute("y2", String(margin.top + plotHeight));
   axisY.setAttribute("class", "dashboard-bar-chart-axis");
