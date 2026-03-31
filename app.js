@@ -2138,7 +2138,7 @@ function renderDashboardAssetFormationChart(cashflowRows) {
     return;
   }
 
-  const MIN_BAR_SLOT_WIDTH = 56;
+  const MIN_BAR_SLOT_WIDTH = 52;
   const MIN_PLOT_WIDTH = 880;
   const chartHeight = 280;
   const margin = { top: 24, right: 16, bottom: 56 };
@@ -2151,7 +2151,7 @@ function renderDashboardAssetFormationChart(cashflowRows) {
   const yMax = Math.max(yStep, Math.ceil(Math.max(...points.map((item) => item.amount)) / yStep) * yStep);
   const yTickCount = Math.max(2, Math.ceil(yMax / yStep));
   const slotWidth = plotWidth / points.length;
-  const barWidth = Math.max(8, Math.min(40, slotWidth * 0.62));
+  const barWidth = Math.max(8, Math.min(40, slotWidth * 0.56));
 
   const svgNS = "http://www.w3.org/2000/svg";
   const yAxisSvg = document.createElementNS(svgNS, "svg");
