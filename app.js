@@ -1980,6 +1980,13 @@ function normalizeExpenseCompositionCategory(item) {
   return normalizeLegacyExpenseCategory(item.category || "");
 }
 
+function shouldExcludeFromExpenseComposition(item) {
+  if (item?.type !== "expense") return false;
+  return item.category === ASSET_FORMATION_CATEGORY
+    && item.sourceType === "NISA"
+    && item.sourceKind === "lump";
+}
+
 function buildMonthlyExpenseComposition(transactions, targetMonth) {
   const baseTotals = EXPENSE_COMPOSITION_ITEMS.reduce((acc, name) => {
     acc[name] = 0;
@@ -1996,6 +2003,7 @@ function buildMonthlyExpenseComposition(transactions, targetMonth) {
 
   const totals = transactions.reduce((acc, item) => {
     if (item.type !== "expense" || monthISO(item.date) !== targetMonth) return acc;
+    if (shouldExcludeFromExpenseComposition(item)) return acc;
     const category = normalizeExpenseCompositionCategory(item);
     if (!category) return acc;
     if (!(category in acc)) {
@@ -2051,6 +2059,7 @@ function buildAverageExpenseComposition(transactions, targetMonths) {
   transactions.forEach((item) => {
     if (item.type !== "expense") return;
     if (!monthSet.has(monthISO(item.date))) return;
+    if (shouldExcludeFromExpenseComposition(item)) return;
     const category = normalizeExpenseCompositionCategory(item);
     if (!category) return;
     if (!(category in totals)) totals[category] = 0;
