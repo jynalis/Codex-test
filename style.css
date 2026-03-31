@@ -1086,6 +1086,27 @@ button.plan-card-trigger {
   font-weight: 600;
 }
 
+.asset-growth-card__meta {
+  display: flex;
+  align-items: center;
+}
+
+.asset-growth-card__chip {
+  margin: 0;
+  width: fit-content;
+  max-width: 100%;
+  border-radius: 999px;
+  border: 1px solid #b8cce3;
+  background: #f4f8fd;
+  color: #1e3f66;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  padding: 9px 15px;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgb(30 63 102 / 10%);
+}
+
 .dashboard-asset-formation-chart {
   width: 100%;
   min-height: 286px;
