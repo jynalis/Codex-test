@@ -1419,6 +1419,10 @@ button.ghost {
   flex-wrap: wrap;
 }
 
+.dashboard-panel-inner > .shared-view-filters[data-shared-view-filter="dashboard"] {
+  margin-bottom: 16px;
+}
+
 .shared-view-filters select {
   flex: 1 1 110px;
   min-width: 0;
