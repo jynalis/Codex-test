@@ -2111,10 +2111,14 @@ function resolveAgeCheckpointMonth(birthDate, age) {
 function buildYearlyAssetFormationData(cashflowRows) {
   if (!Array.isArray(cashflowRows) || cashflowRows.length === 0) return [];
   return cashflowRows
-    .filter((row) => Number.isFinite(row?.age))
     .map((row) => ({
-      age: row.age,
-      total: Math.max(Number(row.assetFormationBalance) || 0, 0),
+      year: Number(row?.year),
+      total: Number(row?.assetFormationBalance),
+    }))
+    .filter((item) => Number.isFinite(item.year) && Number.isFinite(item.total))
+    .map((item) => ({
+      year: item.year,
+      total: Math.max(item.total, 0),
     }));
 }
 
@@ -2148,10 +2152,10 @@ function renderDashboardAssetFormationChart(data) {
   const normalizedData = Array.isArray(data)
     ? data
       .map((item) => ({
-        age: Number(item?.age),
+        year: Number(item?.year),
         total: Math.max(Number(item?.total) || 0, 0),
       }))
-      .filter((item) => Number.isFinite(item.age) && Number.isFinite(item.total))
+      .filter((item) => Number.isFinite(item.year) && Number.isFinite(item.total))
     : [];
 
   if (normalizedData.length === 0) {
@@ -2192,12 +2196,12 @@ function renderDashboardAssetFormationChart(data) {
 
     const bar = document.createElement("div");
     bar.className = "asset-yearly-bar";
-    bar.title = `${item.age}歳時点の累計資産形成額 ${yen.format(item.total)}`;
+    bar.title = `${item.year}年の資産形成額 ${yen.format(item.total)}`;
     bar.style.height = `${Math.max((item.total / yAxisScale.axisMax) * 100, item.total > 0 ? 4 : 0)}%`;
 
     const yearLabel = document.createElement("span");
     yearLabel.className = "asset-yearly-year";
-    yearLabel.textContent = index % labelStep === 0 || index === normalizedData.length - 1 ? `${item.age}歳` : "";
+    yearLabel.textContent = index % labelStep === 0 || index === normalizedData.length - 1 ? `${item.year}年` : "";
 
     barItem.append(bar, yearLabel);
     bars.appendChild(barItem);
@@ -2234,9 +2238,9 @@ function renderDashboard({ summary, settings, transactions, recurringExpenses, l
     if (assetFormationData.length === 0) {
       dashboardAssetFormationMeta.textContent = "生年月日と積立設定を保存すると表示されます。";
     } else {
-      const firstAge = assetFormationData[0].age;
-      const lastAge = assetFormationData[assetFormationData.length - 1].age;
-      dashboardAssetFormationMeta.textContent = `${firstAge}歳〜${lastAge}歳時点の累計資産形成額`;
+      const firstYear = assetFormationData[0].year;
+      const lastYear = assetFormationData[assetFormationData.length - 1].year;
+      dashboardAssetFormationMeta.textContent = `${firstYear}年〜${lastYear}年の資産形成額`;
     }
   }
   renderDashboardAssetFormationChart(assetFormationData);
