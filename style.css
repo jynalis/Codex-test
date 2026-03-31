@@ -1085,12 +1085,17 @@ button.plan-card-trigger {
 .dashboard-asset-formation-chart {
   width: 100%;
   min-height: 286px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
-.dashboard-asset-formation-chart svg {
-  width: 100%;
-  height: auto;
-  max-height: 300px;
+.dashboard-asset-formation-chart-scroll-content {
+  min-width: 100%;
+}
+
+.dashboard-asset-formation-chart-svg {
   display: block;
 }
 

@@ -2138,9 +2138,12 @@ function renderDashboardAssetFormationChart(cashflowRows) {
     return;
   }
 
-  const chartWidth = 980;
+  const MIN_BAR_SLOT_WIDTH = 56;
+  const MIN_CHART_WIDTH = 980;
   const chartHeight = 280;
   const margin = { top: 24, right: 16, bottom: 56, left: 100 };
+  const dynamicPlotWidth = points.length * MIN_BAR_SLOT_WIDTH;
+  const chartWidth = Math.max(MIN_CHART_WIDTH, margin.left + margin.right + dynamicPlotWidth);
   const plotWidth = chartWidth - margin.left - margin.right;
   const plotHeight = chartHeight - margin.top - margin.bottom;
   const yStep = calculateNiceYAxisStep(Math.max(...points.map((item) => item.amount)));
@@ -2154,6 +2157,10 @@ function renderDashboardAssetFormationChart(cashflowRows) {
   svg.setAttribute("viewBox", `0 0 ${chartWidth} ${chartHeight}`);
   svg.setAttribute("role", "img");
   svg.setAttribute("aria-label", "年ごとの資産形成額棒グラフ");
+  svg.classList.add("dashboard-asset-formation-chart-svg");
+  svg.style.width = `${chartWidth}px`;
+  svg.style.minWidth = "100%";
+  svg.style.height = `${chartHeight}px`;
 
   for (let tick = 0; tick <= yTickCount; tick += 1) {
     const value = tick * yStep;
@@ -2213,7 +2220,10 @@ function renderDashboardAssetFormationChart(cashflowRows) {
   axisX.setAttribute("class", "dashboard-bar-chart-axis");
   svg.appendChild(axisX);
 
-  dashboardAssetFormationChart.appendChild(svg);
+  const scrollContent = document.createElement("div");
+  scrollContent.className = "dashboard-asset-formation-chart-scroll-content";
+  scrollContent.appendChild(svg);
+  dashboardAssetFormationChart.appendChild(scrollContent);
 }
 
 function renderDashboard({ summary, settings, transactions, recurringExpenses, lifeEvents, expenseComposition, monthlySavingTotal, manualTransactionCount, monthCount }) {
