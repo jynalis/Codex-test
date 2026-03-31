@@ -2138,20 +2138,21 @@ function renderDashboardAssetFormationChart(cashflowRows) {
     return;
   }
 
-  const MIN_BAR_SLOT_WIDTH = 52;
-  const MIN_PLOT_WIDTH = 880;
+  const BAR_WIDTH_PX = 36;
+  const YEAR_SLOT_WIDTH_PX = 72;
   const chartHeight = 280;
   const margin = { top: 24, right: 16, bottom: 56 };
   const fixedAxisWidth = 92;
-  const dynamicPlotWidth = points.length * MIN_BAR_SLOT_WIDTH;
-  const plotWidth = Math.max(MIN_PLOT_WIDTH, dynamicPlotWidth);
+  const visibleYearCount = points.length;
+  const minScrollableWidth = visibleYearCount * YEAR_SLOT_WIDTH_PX;
+  const plotWidth = minScrollableWidth;
   const scrollChartWidth = plotWidth + margin.right;
   const plotHeight = chartHeight - margin.top - margin.bottom;
   const yStep = calculateNiceYAxisStep(Math.max(...points.map((item) => item.amount)));
   const yMax = Math.max(yStep, Math.ceil(Math.max(...points.map((item) => item.amount)) / yStep) * yStep);
   const yTickCount = Math.max(2, Math.ceil(yMax / yStep));
-  const slotWidth = plotWidth / points.length;
-  const barWidth = Math.max(8, Math.min(40, slotWidth * 0.56));
+  const slotWidth = YEAR_SLOT_WIDTH_PX;
+  const barWidth = BAR_WIDTH_PX;
 
   const svgNS = "http://www.w3.org/2000/svg";
   const yAxisSvg = document.createElementNS(svgNS, "svg");
@@ -2167,7 +2168,7 @@ function renderDashboardAssetFormationChart(cashflowRows) {
   plotSvg.setAttribute("aria-label", "年ごとの資産形成額棒グラフ");
   plotSvg.classList.add("dashboard-asset-formation-chart-svg");
   plotSvg.style.width = `${scrollChartWidth}px`;
-  plotSvg.style.minWidth = "100%";
+  plotSvg.style.minWidth = `${minScrollableWidth}px`;
   plotSvg.style.height = `${chartHeight}px`;
 
   for (let tick = 0; tick <= yTickCount; tick += 1) {
@@ -2248,6 +2249,7 @@ function renderDashboardAssetFormationChart(cashflowRows) {
   scrollPane.className = "dashboard-asset-formation-chart-scroll-pane";
   const scrollContent = document.createElement("div");
   scrollContent.className = "dashboard-asset-formation-chart-scroll-content";
+  scrollContent.style.minWidth = `${minScrollableWidth}px`;
   scrollContent.appendChild(plotSvg);
   scrollPane.appendChild(scrollContent);
   chartLayout.appendChild(scrollPane);
