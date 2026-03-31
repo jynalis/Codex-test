@@ -2138,13 +2138,12 @@ function renderDashboardAssetFormationChart(cashflowRows) {
     return;
   }
 
-  const MIN_BAR_SLOT_WIDTH = 32;
-  const MIN_PLOT_WIDTH = 560;
+  const BAR_SLOT_WIDTH_PER_YEAR = 32;
   const chartHeight = 280;
   const margin = { top: 24, right: 12, bottom: 56, left: 0 };
   const yAxisWidth = 76;
-  const dynamicPlotWidth = points.length * MIN_BAR_SLOT_WIDTH;
-  const plotWidth = Math.max(MIN_PLOT_WIDTH, dynamicPlotWidth);
+  const plotWidth = points.length * BAR_SLOT_WIDTH_PER_YEAR;
+  const plotContentWidth = plotWidth + margin.right;
   const plotHeight = chartHeight - margin.top - margin.bottom;
   const yStep = calculateNiceYAxisStep(Math.max(...points.map((item) => item.amount)));
   const yMax = Math.max(yStep, Math.ceil(Math.max(...points.map((item) => item.amount)) / yStep) * yStep);
@@ -2163,11 +2162,11 @@ function renderDashboardAssetFormationChart(cashflowRows) {
   yAxisSvg.style.height = `${chartHeight}px`;
 
   const plotSvg = document.createElementNS(svgNS, "svg");
-  plotSvg.setAttribute("viewBox", `0 0 ${plotWidth + margin.right} ${chartHeight}`);
+  plotSvg.setAttribute("viewBox", `0 0 ${plotContentWidth} ${chartHeight}`);
   plotSvg.setAttribute("role", "img");
   plotSvg.setAttribute("aria-label", "年ごとの資産形成額棒グラフ");
   plotSvg.classList.add("dashboard-asset-formation-chart-svg", "dashboard-asset-formation-plot-svg");
-  plotSvg.style.width = `${plotWidth + margin.right}px`;
+  plotSvg.style.width = `${plotContentWidth}px`;
   plotSvg.style.height = `${chartHeight}px`;
 
   for (let tick = 0; tick <= yTickCount; tick += 1) {
@@ -2191,7 +2190,7 @@ function renderDashboardAssetFormationChart(cashflowRows) {
 
     const plotGrid = document.createElementNS(svgNS, "line");
     plotGrid.setAttribute("x1", "0");
-    plotGrid.setAttribute("x2", String(plotWidth + margin.right));
+    plotGrid.setAttribute("x2", String(plotContentWidth));
     plotGrid.setAttribute("y1", String(y));
     plotGrid.setAttribute("y2", String(y));
     plotGrid.setAttribute("class", "dashboard-bar-chart-grid-line");
@@ -2232,7 +2231,7 @@ function renderDashboardAssetFormationChart(cashflowRows) {
 
   const axisX = document.createElementNS(svgNS, "line");
   axisX.setAttribute("x1", "0");
-  axisX.setAttribute("x2", String(plotWidth + margin.right));
+  axisX.setAttribute("x2", String(plotContentWidth));
   axisX.setAttribute("y1", String(margin.top + plotHeight));
   axisX.setAttribute("y2", String(margin.top + plotHeight));
   axisX.setAttribute("class", "dashboard-bar-chart-axis");
@@ -2248,6 +2247,7 @@ function renderDashboardAssetFormationChart(cashflowRows) {
   scrollPane.className = "dashboard-asset-formation-chart-scroll-pane";
   const scrollContent = document.createElement("div");
   scrollContent.className = "dashboard-asset-formation-chart-scroll-content";
+  scrollContent.style.minWidth = `${plotContentWidth}px`;
   scrollContent.appendChild(plotSvg);
   scrollPane.appendChild(scrollContent);
 
