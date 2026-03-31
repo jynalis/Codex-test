@@ -1091,7 +1091,6 @@ button.plan-card-trigger {
   display: flex;
   align-items: stretch;
   min-height: 286px;
-  min-width: 0;
 }
 
 .dashboard-asset-formation-chart-y-axis-pane {
@@ -1114,8 +1113,9 @@ button.plan-card-trigger {
 }
 
 .dashboard-asset-formation-chart-scroll-content {
-  display: block;
+  display: inline-block;
   width: max-content;
+  min-width: 100%;
 }
 
 .dashboard-asset-formation-chart-svg {
