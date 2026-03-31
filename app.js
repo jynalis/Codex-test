@@ -77,6 +77,7 @@ const dashboardExpenseTotal = document.getElementById("dashboard-expense-total")
 const dashboardBalanceTotal = document.getElementById("dashboard-balance-total");
 const dashboardAge60Total = document.getElementById("dashboard-age60-total");
 const dashboardDiagnosisComment = document.getElementById("dashboard-diagnosis-comment");
+const dashboardAssetFormationChart = document.getElementById("dashboard-asset-formation-chart");
 const expenseChart = document.getElementById("expense-chart");
 const bottomNavButtons = Array.from(document.querySelectorAll(".bottom-nav-btn"));
 const navToast = document.getElementById("nav-toast");
@@ -2098,6 +2099,123 @@ function createDashboardDiagnosisComment({ summary, monthlySavingTotal, manualTr
   return "今月は黒字ですが、月末の余裕はやや小さめです。支出バランスを確認してみましょう。";
 }
 
+function formatYenAsManYenLabel(value) {
+  const manYen = Math.round((Number(value) || 0) / 10000);
+  return `${numberWithComma.format(manYen)}万円`;
+}
+
+function calculateNiceYAxisStep(maxValue) {
+  if (!Number.isFinite(maxValue) || maxValue <= 0) return 1000000;
+  const roughStep = maxValue / 4;
+  const exponent = 10 ** Math.floor(Math.log10(roughStep));
+  const fraction = roughStep / exponent;
+  let niceFraction = 1;
+  if (fraction <= 1) {
+    niceFraction = 1;
+  } else if (fraction <= 2) {
+    niceFraction = 2;
+  } else if (fraction <= 5) {
+    niceFraction = 5;
+  } else {
+    niceFraction = 10;
+  }
+  return Math.max(niceFraction * exponent, 1000000);
+}
+
+function renderDashboardAssetFormationChart(cashflowRows) {
+  if (!dashboardAssetFormationChart) return;
+  dashboardAssetFormationChart.innerHTML = "";
+  const points = (Array.isArray(cashflowRows) ? cashflowRows : [])
+    .map((row) => ({ year: row.year, amount: row.assetFormationBalance }))
+    .filter((row) => Number.isFinite(row.year) && Number.isFinite(row.amount) && row.amount >= 0);
+
+  const hasPositiveValue = points.some((item) => item.amount > 0);
+  if (points.length === 0 || !hasPositiveValue) {
+    const empty = document.createElement("p");
+    empty.className = "chart-empty";
+    empty.textContent = "資産形成額データがないため、グラフを表示できません。";
+    dashboardAssetFormationChart.appendChild(empty);
+    return;
+  }
+
+  const chartWidth = 980;
+  const chartHeight = 280;
+  const margin = { top: 24, right: 16, bottom: 56, left: 100 };
+  const plotWidth = chartWidth - margin.left - margin.right;
+  const plotHeight = chartHeight - margin.top - margin.bottom;
+  const yStep = calculateNiceYAxisStep(Math.max(...points.map((item) => item.amount)));
+  const yMax = Math.max(yStep, Math.ceil(Math.max(...points.map((item) => item.amount)) / yStep) * yStep);
+  const yTickCount = Math.max(2, Math.ceil(yMax / yStep));
+  const slotWidth = plotWidth / points.length;
+  const barWidth = Math.max(8, Math.min(40, slotWidth * 0.62));
+
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNS, "svg");
+  svg.setAttribute("viewBox", `0 0 ${chartWidth} ${chartHeight}`);
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", "年ごとの資産形成額棒グラフ");
+
+  for (let tick = 0; tick <= yTickCount; tick += 1) {
+    const value = tick * yStep;
+    const y = margin.top + plotHeight - (value / yMax) * plotHeight;
+    const grid = document.createElementNS(svgNS, "line");
+    grid.setAttribute("x1", String(margin.left));
+    grid.setAttribute("x2", String(chartWidth - margin.right));
+    grid.setAttribute("y1", String(y));
+    grid.setAttribute("y2", String(y));
+    grid.setAttribute("class", "dashboard-bar-chart-grid-line");
+    svg.appendChild(grid);
+
+    const label = document.createElementNS(svgNS, "text");
+    label.setAttribute("x", String(margin.left - 12));
+    label.setAttribute("y", String(y + 4));
+    label.setAttribute("text-anchor", "end");
+    label.setAttribute("class", "dashboard-bar-chart-y-label");
+    label.textContent = formatYenAsManYenLabel(value);
+    svg.appendChild(label);
+  }
+
+  points.forEach((item, index) => {
+    const xCenter = margin.left + slotWidth * index + slotWidth / 2;
+    const barHeight = item.amount > 0 ? Math.max(1, (item.amount / yMax) * plotHeight) : 0;
+    const y = margin.top + plotHeight - barHeight;
+    const rect = document.createElementNS(svgNS, "rect");
+    rect.setAttribute("x", String(xCenter - barWidth / 2));
+    rect.setAttribute("y", String(y));
+    rect.setAttribute("width", String(barWidth));
+    rect.setAttribute("height", String(barHeight));
+    rect.setAttribute("rx", "4");
+    rect.setAttribute("class", "dashboard-bar-chart-bar");
+    svg.appendChild(rect);
+
+    const xLabel = document.createElementNS(svgNS, "text");
+    xLabel.setAttribute("x", String(xCenter));
+    xLabel.setAttribute("y", String(chartHeight - 24));
+    xLabel.setAttribute("text-anchor", "middle");
+    xLabel.setAttribute("class", "dashboard-bar-chart-x-label");
+    xLabel.textContent = String(item.year);
+    svg.appendChild(xLabel);
+  });
+
+  const axisY = document.createElementNS(svgNS, "line");
+  axisY.setAttribute("x1", String(margin.left));
+  axisY.setAttribute("x2", String(margin.left));
+  axisY.setAttribute("y1", String(margin.top));
+  axisY.setAttribute("y2", String(margin.top + plotHeight));
+  axisY.setAttribute("class", "dashboard-bar-chart-axis");
+  svg.appendChild(axisY);
+
+  const axisX = document.createElementNS(svgNS, "line");
+  axisX.setAttribute("x1", String(margin.left));
+  axisX.setAttribute("x2", String(chartWidth - margin.right));
+  axisX.setAttribute("y1", String(margin.top + plotHeight));
+  axisX.setAttribute("y2", String(margin.top + plotHeight));
+  axisX.setAttribute("class", "dashboard-bar-chart-axis");
+  svg.appendChild(axisX);
+
+  dashboardAssetFormationChart.appendChild(svg);
+}
+
 function renderDashboard({ summary, settings, transactions, recurringExpenses, lifeEvents, expenseComposition, monthlySavingTotal, manualTransactionCount, monthCount }) {
   const assumptions = loadCashflowAssumptions();
   const cashflowRows = buildCashflowRows({ settings, transactions, recurringExpenses, lifeEvents, assumptions });
@@ -2118,6 +2236,7 @@ function renderDashboard({ summary, settings, transactions, recurringExpenses, l
   if (monthCount > 0) {
     dashboardDiagnosisComment.textContent = `平均対象 ${monthCount}か月。${dashboardDiagnosisComment.textContent}`;
   }
+  renderDashboardAssetFormationChart(cashflowRows);
 }
 
 function renderExpenseChart(expenseComposition, isAverageMode) {
