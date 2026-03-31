@@ -1054,6 +1054,73 @@ button.plan-card-trigger {
   background: linear-gradient(160deg, #f2fff9 0%, #e4f8ef 100%);
 }
 
+.dashboard-chart-card {
+  margin-top: 14px;
+  border: 1px solid #9db6d1;
+  background: linear-gradient(170deg, #f9fcff 0%, #ebf2fb 100%);
+  border-radius: 14px;
+  padding: 12px 12px 10px;
+  display: grid;
+  gap: 10px;
+}
+
+.dashboard-chart-card-header {
+  display: grid;
+  gap: 4px;
+}
+
+.dashboard-chart-title {
+  color: #11365e;
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.dashboard-chart-subtitle {
+  color: #456386;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.dashboard-asset-formation-chart {
+  width: 100%;
+  min-height: 286px;
+}
+
+.dashboard-asset-formation-chart svg {
+  width: 100%;
+  height: auto;
+  max-height: 300px;
+  display: block;
+}
+
+.dashboard-bar-chart-grid-line {
+  stroke: #d4deea;
+  stroke-width: 1;
+}
+
+.dashboard-bar-chart-axis {
+  stroke: #6d88a7;
+  stroke-width: 1.2;
+}
+
+.dashboard-bar-chart-bar {
+  fill: #3f82c7;
+}
+
+.dashboard-bar-chart-x-label {
+  fill: #2b4767;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.dashboard-bar-chart-y-label {
+  fill: #375676;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .diagnosis-card {
   margin-top: 14px;
   border: 1px solid #9db6d1;
@@ -2035,6 +2102,15 @@ button.ghost {
   .diagnosis-card {
     margin-top: 10px;
     padding: 14px 12px;
+  }
+
+  .dashboard-chart-card {
+    margin-top: 10px;
+    padding: 12px 10px 8px;
+  }
+
+  .dashboard-asset-formation-chart {
+    min-height: 250px;
   }
 
   .diagnosis-label {
