@@ -78,6 +78,7 @@ const dashboardBalanceTotal = document.getElementById("dashboard-balance-total")
 const dashboardAge60Total = document.getElementById("dashboard-age60-total");
 const dashboardDiagnosisComment = document.getElementById("dashboard-diagnosis-comment");
 const dashboardAssetFormationChart = document.getElementById("dashboard-asset-formation-chart");
+const assetGrowthMonthlyChip = document.getElementById("asset-growth-monthly-chip");
 const expenseChart = document.getElementById("expense-chart");
 const bottomNavButtons = Array.from(document.querySelectorAll(".bottom-nav-btn"));
 const navToast = document.getElementById("nav-toast");
@@ -2257,6 +2258,10 @@ function renderDashboardAssetFormationChart(cashflowRows) {
 }
 
 function renderDashboard({ summary, settings, transactions, recurringExpenses, lifeEvents, expenseComposition, monthlySavingTotal, manualTransactionCount, monthCount }) {
+  const normalizedMonthlySavingTotal = Math.max(Number(monthlySavingTotal) || 0, 0);
+  if (assetGrowthMonthlyChip) {
+    assetGrowthMonthlyChip.textContent = `毎月の積立額: ¥${numberWithComma.format(normalizedMonthlySavingTotal)}`;
+  }
   const assumptions = loadCashflowAssumptions();
   const cashflowRows = buildCashflowRows({ settings, transactions, recurringExpenses, lifeEvents, assumptions });
   dashboardIncomeTotal.textContent = yen.format(summary.income);
