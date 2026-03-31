@@ -1085,6 +1085,25 @@ button.plan-card-trigger {
 .dashboard-asset-formation-chart {
   width: 100%;
   min-height: 286px;
+}
+
+.dashboard-asset-formation-chart-layout {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: stretch;
+  min-height: 286px;
+}
+
+.dashboard-asset-formation-chart-fixed-axis {
+  flex: 0 0 auto;
+}
+
+.dashboard-asset-formation-chart-y-axis-svg {
+  display: block;
+}
+
+.dashboard-asset-formation-chart-scroll-pane {
+  min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
@@ -2115,6 +2134,10 @@ button.ghost {
   }
 
   .dashboard-asset-formation-chart {
+    min-height: 250px;
+  }
+
+  .dashboard-asset-formation-chart-layout {
     min-height: 250px;
   }
 
