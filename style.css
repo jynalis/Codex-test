@@ -1013,31 +1013,35 @@ button.plan-card-trigger {
 }
 
 .dashboard-card-balance {
-  background: linear-gradient(160deg, #f8fcff 0%, #ebf4ff 100%);
-  border-color: #9cb7d6;
+  background: linear-gradient(180deg, #2563a6 0%, #163e6d 100%);
+  border: 1px solid #7fb3e6;
+  box-shadow: 0 8px 20px rgb(29 78 137 / 18%);
 }
 
 .dashboard-card-balance span {
-  color: #2f4f75;
+  color: #eaf4ff;
   font-size: 0.82rem;
 }
 
 .dashboard-card-balance strong {
-  color: #11365e;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 12%);
 }
 
 .dashboard-card-future {
-  background: linear-gradient(160deg, #f7fbff 0%, #e9f1ff 100%);
-  border-color: #a6bddb;
+  background: linear-gradient(180deg, #6c4aa8 0%, #4a3273 100%);
+  border: 1px solid #b9a3e6;
+  box-shadow: 0 8px 20px rgb(91 63 140 / 18%);
 }
 
 .dashboard-card-future span {
-  color: #2f4f75;
+  color: #f3ecff;
   font-size: 0.82rem;
 }
 
 .dashboard-card-future strong {
-  color: #11365e;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 12%);
   line-height: 1.15;
 }
 
