@@ -2341,40 +2341,18 @@ button.ghost {
 }
 
 .cashflow-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid #bfcbe0;
   border-radius: 12px;
   background: #fff;
-  overflow: hidden;
-}
-
-.cashflow-split-table {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-}
-
-.cashflow-fixed-pane {
-  border-right: 1px solid #d8e1ee;
-  background: #fff;
-  width: fit-content;
-}
-
-.cashflow-scroll-pane {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 .cashflow-table {
+  width: 100%;
+  min-width: 1110px;
   border-collapse: collapse;
   font-size: 0.86rem;
-}
-
-.cashflow-table-fixed {
-  width: auto;
-}
-
-.cashflow-table-scroll {
-  width: max-content;
-  min-width: 960px;
 }
 
 .cashflow-table th,
@@ -2382,13 +2360,6 @@ button.ghost {
   border-bottom: 1px solid #d8e1ee;
   padding: 10px 8px;
   white-space: nowrap;
-  height: 44px;
-  box-sizing: border-box;
-}
-
-.cashflow-table-fixed th,
-.cashflow-table-fixed td {
-  min-width: 72px;
 }
 
 .cashflow-table th {
@@ -2410,7 +2381,8 @@ button.ghost {
   font-variant-numeric: tabular-nums;
 }
 
-.cashflow-table-fixed td {
+.cashflow-table td:first-child,
+.cashflow-table td:nth-child(2) {
   text-align: center;
 }
 
@@ -2467,11 +2439,8 @@ button.ghost {
   }
 
   .cashflow-table {
+    min-width: 1030px;
     font-size: 0.82rem;
-  }
-
-  .cashflow-table-scroll {
-    min-width: 890px;
   }
 
   .cashflow-table th,
