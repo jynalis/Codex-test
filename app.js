@@ -1800,6 +1800,23 @@ function resolveAverageTargetMonths(settings, transactions) {
   return getMonthRangeInclusive(entryStartMonth, endMonth);
 }
 
+function buildAverageModeDataset(settings, transactions, targetMonths) {
+  const averageTransactions = [...transactions];
+  targetMonths.forEach((month) => {
+    const autoTransactions = createEligibleAutoExpensesForMonth(settings, transactions, month);
+    averageTransactions.push(...autoTransactions);
+  });
+
+  const expenseComposition = buildAverageExpenseComposition(averageTransactions, targetMonths);
+  const summary = calculateAverageMonthlySummary(transactions, settings, targetMonths);
+
+  return {
+    targetMonths,
+    expenseComposition,
+    summary,
+  };
+}
+
 function createEligibleAutoExpensesForMonth(settings, transactions, month) {
   if (!month) return [];
   const entryStartMonth = resolveEntryStartMonth(settings, transactions);
@@ -3465,19 +3482,18 @@ function render() {
   }
 
   const monthlyExpenseComposition = buildMonthlyExpenseComposition(combinedTransactions, currentMonth);
-  const averageExpenseComposition = buildAverageExpenseComposition(combinedTransactions, averageTargetMonths);
-  const averageSummary = calculateAverageMonthlySummary(transactions, settings, averageTargetMonths);
+  const averageDataset = buildAverageModeDataset(settings, transactions, averageTargetMonths);
   renderDashboard(isAverageMode
     ? {
-        summary: averageSummary.summary,
+        summary: averageDataset.summary.summary,
         settings,
         transactions,
         recurringExpenses,
         lifeEvents,
-        expenseComposition: averageExpenseComposition,
-        monthlySavingTotal: averageSummary.monthlySavingTotal,
-        manualTransactionCount: averageSummary.manualTransactionCount,
-        monthCount: averageSummary.monthCount,
+        expenseComposition: averageDataset.expenseComposition,
+        monthlySavingTotal: averageDataset.summary.monthlySavingTotal,
+        manualTransactionCount: averageDataset.summary.manualTransactionCount,
+        monthCount: averageDataset.summary.monthCount,
       }
     : {
         summary,
@@ -3491,7 +3507,7 @@ function render() {
         monthCount: 0,
       });
 
-  renderExpenseChart(isAverageMode ? averageExpenseComposition : monthlyExpenseComposition, isAverageMode);
+  renderExpenseChart(isAverageMode ? averageDataset.expenseComposition : monthlyExpenseComposition, isAverageMode);
   renderCashflowTable({ settings, transactions, recurringExpenses, lifeEvents, assumptions });
   markAssetForecastDirty(settings);
   if (isAssetsSectionExpanded()) {
