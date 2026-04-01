@@ -2775,49 +2775,80 @@ function renderCashflowTable({ settings, transactions, recurringExpenses, lifeEv
     return;
   }
 
-  const table = document.createElement('table');
-  table.className = 'cashflow-table';
-  table.innerHTML = `
-    <thead>
-      <tr>
-        <th>年</th>
-        <th>年齢</th>
-        <th>年収</th>
-        <th>資産取崩金</th>
-        <th>通常支出</th>
-        <th>定期支出</th>
-        <th>積立支出</th>
-        <th>一括投資額</th>
-        <th>臨時収入</th>
-        <th>臨時支出</th>
-        <th>収支</th>
-        <th>残高</th>
-        <th>資産形成額</th>
-        <th>金融資産合計</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${rows.map((row) => `
+  const fixedColumns = [
+    {
+      label: '年',
+      render: (row) => row.year,
+    },
+    {
+      label: '年齢',
+      render: (row) => `${row.age}歳`,
+    },
+  ];
+  const scrollColumns = [
+    { label: '年収', className: 'is-amount', render: (row) => yen.format(row.annualIncome) },
+    { label: '資産取崩金', className: 'is-amount', render: (row) => yen.format(row.annualAssetWithdrawalTransfer) },
+    { label: '通常支出', className: 'is-amount', render: (row) => yen.format(row.annualRegularExpense) },
+    { label: '定期支出', className: 'is-amount', render: (row) => yen.format(row.annualRecurringExpense) },
+    { label: '積立支出', className: 'is-amount', render: (row) => yen.format(row.annualAssetFormationExpense) },
+    { label: '一括投資額', className: 'is-amount', render: (row) => yen.format(row.annualLumpInvestmentExpense) },
+    { label: '臨時収入', className: 'is-amount', render: (row) => yen.format(row.annualExtraIncome) },
+    { label: '臨時支出', className: 'is-amount', render: (row) => yen.format(row.annualExtraExpense) },
+    {
+      label: '収支',
+      className: (row) => `is-amount is-annual-balance ${row.annualBalance >= 0 ? 'is-positive' : 'is-negative'}`,
+      render: (row) => yen.format(row.annualBalance),
+    },
+    {
+      label: '残高',
+      className: (row) => `is-amount is-ending-balance ${row.endingBalance >= 0 ? 'is-positive' : 'is-negative'}`,
+      render: (row) => yen.format(row.endingBalance),
+    },
+    { label: '資産形成額', className: 'is-amount is-asset-formation-balance', render: (row) => yen.format(row.assetFormationBalance) },
+    { label: '金融資産合計', className: 'is-amount is-financial-asset-total', render: (row) => yen.format(row.financialAssetTotal) },
+  ];
+  const renderHeaderCells = (columns) => columns.map((column) => `<th>${column.label}</th>`).join('');
+  const renderBodyRows = (columns) => rows.map((row) => `
+    <tr>
+      ${columns.map((column) => {
+        const className = typeof column.className === 'function' ? column.className(row) : (column.className || '');
+        return `<td${className ? ` class="${className}"` : ''}>${column.render(row)}</td>`;
+      }).join('')}
+    </tr>
+  `).join('');
+
+  const shell = document.createElement('div');
+  shell.className = 'cashflow-table-shell';
+  const fixedPane = document.createElement('div');
+  fixedPane.className = 'cashflow-table-fixed';
+  fixedPane.innerHTML = `
+    <table class="cashflow-table cashflow-table-fixed-grid">
+      <thead>
         <tr>
-          <td>${row.year}</td>
-          <td>${row.age}歳</td>
-          <td class="is-amount">${yen.format(row.annualIncome)}</td>
-          <td class="is-amount">${yen.format(row.annualAssetWithdrawalTransfer)}</td>
-          <td class="is-amount">${yen.format(row.annualRegularExpense)}</td>
-          <td class="is-amount">${yen.format(row.annualRecurringExpense)}</td>
-          <td class="is-amount">${yen.format(row.annualAssetFormationExpense)}</td>
-          <td class="is-amount">${yen.format(row.annualLumpInvestmentExpense)}</td>
-          <td class="is-amount">${yen.format(row.annualExtraIncome)}</td>
-          <td class="is-amount">${yen.format(row.annualExtraExpense)}</td>
-          <td class="is-amount is-annual-balance ${row.annualBalance >= 0 ? 'is-positive' : 'is-negative'}">${yen.format(row.annualBalance)}</td>
-          <td class="is-amount is-ending-balance ${row.endingBalance >= 0 ? 'is-positive' : 'is-negative'}">${yen.format(row.endingBalance)}</td>
-          <td class="is-amount is-asset-formation-balance">${yen.format(row.assetFormationBalance)}</td>
-          <td class="is-amount is-financial-asset-total">${yen.format(row.financialAssetTotal)}</td>
+          ${renderHeaderCells(fixedColumns)}
         </tr>
-      `).join('')}
-    </tbody>
+      </thead>
+      <tbody>
+        ${renderBodyRows(fixedColumns)}
+      </tbody>
+    </table>
   `;
-  cashflowTableWrap.appendChild(table);
+  const scrollPane = document.createElement('div');
+  scrollPane.className = 'cashflow-table-scroll';
+  scrollPane.innerHTML = `
+    <table class="cashflow-table cashflow-table-scroll-grid">
+      <thead>
+        <tr>
+          ${renderHeaderCells(scrollColumns)}
+        </tr>
+      </thead>
+      <tbody>
+        ${renderBodyRows(scrollColumns)}
+      </tbody>
+    </table>
+  `;
+  shell.append(fixedPane, scrollPane);
+  cashflowTableWrap.appendChild(shell);
 }
 
 function downloadCashflowPdf() {
