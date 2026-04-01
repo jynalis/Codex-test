@@ -2574,7 +2574,8 @@ function buildPlannedExtraTotalsByMonth(transactions, startMonth) {
     const amount = Math.max(Number(item.amount) || 0, 0);
     if (amount <= 0) return map;
 
-    const isPlannedExtraIncome = item.type === "income" && item.category === "臨時収入";
+    const isPlannedExtraIncome = item.type === "income"
+      && (item.category === "臨時収入" || item.category === "入金");
     const isPlannedExtraExpense = item.type === "expense" && item.category === "臨時支出";
     if (!isPlannedExtraIncome && !isPlannedExtraExpense) return map;
 
