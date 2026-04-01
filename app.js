@@ -2283,8 +2283,19 @@ function renderDashboardAssetFormationChart(cashflowRows) {
   dashboardAssetFormationChart.appendChild(chartLayout);
 }
 
-function renderDashboard({ summary, settings, transactions, recurringExpenses, lifeEvents, expenseComposition, monthlySavingTotal, manualTransactionCount, monthCount }) {
-  const normalizedMonthlySavingTotal = Math.max(Number(monthlySavingTotal) || 0, 0);
+function renderDashboard({
+  summary,
+  settings,
+  transactions,
+  recurringExpenses,
+  lifeEvents,
+  expenseComposition,
+  monthlySavingTotal,
+  chipMonthlySavingTotal,
+  manualTransactionCount,
+  monthCount,
+}) {
+  const normalizedMonthlySavingTotal = Math.max(Number(chipMonthlySavingTotal) || 0, 0);
   if (assetGrowthMonthlyChip) {
     assetGrowthMonthlyChip.textContent = `毎月の積立額: ¥${numberWithComma.format(normalizedMonthlySavingTotal)}`;
   }
@@ -3514,6 +3525,7 @@ function render() {
 
   const monthlyExpenseComposition = buildMonthlyExpenseComposition(combinedTransactions, currentMonth);
   const averageDataset = buildAverageModeDataset(settings, transactions, averageTargetMonths);
+  const chipMonthlySavingTotal = calculateMonthlyContributionTotal(settings, currentMonth);
   renderDashboard(isAverageMode
     ? {
         summary: averageDataset.summary.summary,
@@ -3523,6 +3535,7 @@ function render() {
         lifeEvents,
         expenseComposition: averageDataset.expenseComposition,
         monthlySavingTotal: averageDataset.summary.monthlySavingTotal,
+        chipMonthlySavingTotal,
         manualTransactionCount: averageDataset.summary.manualTransactionCount,
         monthCount: averageDataset.summary.monthCount,
       }
@@ -3534,6 +3547,7 @@ function render() {
         lifeEvents,
         expenseComposition: monthlyExpenseComposition,
         monthlySavingTotal: calculateMonthlyContributionTotal(settings, currentMonth),
+        chipMonthlySavingTotal,
         manualTransactionCount: transactions.filter((item) => monthISO(item.date) === currentMonth).length,
         monthCount: 0,
       });
