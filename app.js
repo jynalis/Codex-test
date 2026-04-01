@@ -2775,49 +2775,117 @@ function renderCashflowTable({ settings, transactions, recurringExpenses, lifeEv
     return;
   }
 
-  const table = document.createElement('table');
-  table.className = 'cashflow-table';
-  table.innerHTML = `
-    <thead>
-      <tr>
-        <th>年</th>
-        <th>年齢</th>
-        <th>年収</th>
-        <th>資産取崩金</th>
-        <th>通常支出</th>
-        <th>定期支出</th>
-        <th>積立支出</th>
-        <th>一括投資額</th>
-        <th>臨時収入</th>
-        <th>臨時支出</th>
-        <th>収支</th>
-        <th>残高</th>
-        <th>資産形成額</th>
-        <th>金融資産合計</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${rows.map((row) => `
-        <tr>
-          <td>${row.year}</td>
-          <td>${row.age}歳</td>
-          <td class="is-amount">${yen.format(row.annualIncome)}</td>
-          <td class="is-amount">${yen.format(row.annualAssetWithdrawalTransfer)}</td>
-          <td class="is-amount">${yen.format(row.annualRegularExpense)}</td>
-          <td class="is-amount">${yen.format(row.annualRecurringExpense)}</td>
-          <td class="is-amount">${yen.format(row.annualAssetFormationExpense)}</td>
-          <td class="is-amount">${yen.format(row.annualLumpInvestmentExpense)}</td>
-          <td class="is-amount">${yen.format(row.annualExtraIncome)}</td>
-          <td class="is-amount">${yen.format(row.annualExtraExpense)}</td>
-          <td class="is-amount is-annual-balance ${row.annualBalance >= 0 ? 'is-positive' : 'is-negative'}">${yen.format(row.annualBalance)}</td>
-          <td class="is-amount is-ending-balance ${row.endingBalance >= 0 ? 'is-positive' : 'is-negative'}">${yen.format(row.endingBalance)}</td>
-          <td class="is-amount is-asset-formation-balance">${yen.format(row.assetFormationBalance)}</td>
-          <td class="is-amount is-financial-asset-total">${yen.format(row.financialAssetTotal)}</td>
-        </tr>
-      `).join('')}
-    </tbody>
+  const fixedColumns = [
+    {
+      label: '年',
+      value: (row) => String(row.year),
+    },
+    {
+      label: '年齢',
+      value: (row) => `${row.age}歳`,
+    },
+  ];
+
+  const scrollColumns = [
+    {
+      label: '資産取崩額',
+      className: 'is-amount',
+      value: (row) => yen.format(row.annualAssetWithdrawalTransfer),
+    },
+    {
+      label: '通常支出',
+      className: 'is-amount',
+      value: (row) => yen.format(row.annualRegularExpense),
+    },
+    {
+      label: '定期支出',
+      className: 'is-amount',
+      value: (row) => yen.format(row.annualRecurringExpense),
+    },
+    {
+      label: '積立支出',
+      className: 'is-amount',
+      value: (row) => yen.format(row.annualAssetFormationExpense),
+    },
+    {
+      label: '一括投資額',
+      className: 'is-amount',
+      value: (row) => yen.format(row.annualLumpInvestmentExpense),
+    },
+    {
+      label: '臨時収入',
+      className: 'is-amount',
+      value: (row) => yen.format(row.annualExtraIncome),
+    },
+    {
+      label: '臨時支出',
+      className: 'is-amount',
+      value: (row) => yen.format(row.annualExtraExpense),
+    },
+    {
+      label: '収支',
+      className: (row) => `is-amount is-annual-balance ${row.annualBalance >= 0 ? 'is-positive' : 'is-negative'}`,
+      value: (row) => yen.format(row.annualBalance),
+    },
+    {
+      label: '残高',
+      className: (row) => `is-amount is-ending-balance ${row.endingBalance >= 0 ? 'is-positive' : 'is-negative'}`,
+      value: (row) => yen.format(row.endingBalance),
+    },
+    {
+      label: '資産形成額',
+      className: 'is-amount is-asset-formation-balance',
+      value: (row) => yen.format(row.assetFormationBalance),
+    },
+    {
+      label: '金融資産合計',
+      className: 'is-amount is-financial-asset-total',
+      value: (row) => yen.format(row.financialAssetTotal),
+    },
+  ];
+
+  const renderHeaderCells = (columns) => columns
+    .map((column) => `<th>${column.label}</th>`)
+    .join('');
+
+  const resolveColumnClassName = (column, row) => {
+    if (typeof column.className === 'function') {
+      return column.className(row);
+    }
+    return column.className || '';
+  };
+
+  const renderBodyRows = (columns) => rows
+    .map((row) => {
+      const cells = columns
+        .map((column) => {
+          const className = resolveColumnClassName(column, row);
+          const classAttr = className ? ` class="${className}"` : '';
+          return `<td${classAttr}>${column.value(row)}</td>`;
+        })
+        .join('');
+      return `<tr>${cells}</tr>`;
+    })
+    .join('');
+
+  const tableLayout = document.createElement('div');
+  tableLayout.className = 'cashflow-split-table';
+  tableLayout.innerHTML = `
+    <div class="cashflow-fixed-pane">
+      <table class="cashflow-table cashflow-table-fixed">
+        <thead><tr>${renderHeaderCells(fixedColumns)}</tr></thead>
+        <tbody>${renderBodyRows(fixedColumns)}</tbody>
+      </table>
+    </div>
+    <div class="cashflow-scroll-pane">
+      <table class="cashflow-table cashflow-table-scroll">
+        <thead><tr>${renderHeaderCells(scrollColumns)}</tr></thead>
+        <tbody>${renderBodyRows(scrollColumns)}</tbody>
+      </table>
+    </div>
   `;
-  cashflowTableWrap.appendChild(table);
+
+  cashflowTableWrap.appendChild(tableLayout);
 }
 
 function downloadCashflowPdf() {
