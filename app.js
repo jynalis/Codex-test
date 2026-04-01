@@ -2642,7 +2642,7 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
 
   const nowMonth = todayISO().slice(0, 7);
   const averageStartMonth = cashflowStartMonth;
-  const averageEndMonth = compareMonth(averageStartMonth, nowMonth) <= 0 ? nowMonth : averageStartMonth;
+  const averageEndMonth = subtractOneMonth(nowMonth);
   const cashflowStartDate = `${cashflowStartMonth}-01`;
   const currentAge = resolveAgeAtDate(settings.birthDate, cashflowStartDate) ?? calculateAge(settings.birthDate);
 
