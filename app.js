@@ -14,23 +14,20 @@ const transactionSubmitButton = document.getElementById("transaction-submit-butt
 const transactionCancelButton = document.getElementById("transaction-cancel-button");
 const transactionEditStatus = document.getElementById("transaction-edit-status");
 const plannedHistoryBlock = document.getElementById("planned-history-block");
-const sharedViewFilterControls = [
-  {
-    mode: null,
-    year: document.getElementById("history-year-filter"),
-    month: document.getElementById("history-month-filter"),
-  },
-  {
-    mode: document.getElementById("dashboard-view-mode"),
-    year: document.getElementById("dashboard-year-filter"),
-    month: document.getElementById("dashboard-month-filter"),
-  },
-  {
-    mode: document.getElementById("expense-view-mode"),
-    year: document.getElementById("expense-year-filter"),
-    month: document.getElementById("expense-month-filter"),
-  },
-];
+const historyViewFilterControls = {
+  year: document.getElementById("history-year-filter"),
+  month: document.getElementById("history-month-filter"),
+};
+const dashboardViewFilterControls = {
+  mode: document.getElementById("dashboard-view-mode"),
+  year: document.getElementById("dashboard-year-filter"),
+  month: document.getElementById("dashboard-month-filter"),
+};
+const expenseViewFilterControls = {
+  mode: document.getElementById("expense-view-mode"),
+  year: document.getElementById("expense-year-filter"),
+  month: document.getElementById("expense-month-filter"),
+};
 
 const profileForm = document.getElementById("profile-form");
 const entryStartMonthInput = document.getElementById("entry-start-month");
@@ -103,11 +100,9 @@ let assetForecastRenderRafId = 0;
 let recurringEditingId = null;
 let transactionEditingId = null;
 let lifeEventEditingId = null;
-let sharedViewState = {
-  averageMode: "month",
-  year: "",
-  month: "",
-};
+let historyViewState = { year: "", month: "" };
+let dashboardViewState = { averageMode: "month", year: "", month: "" };
+let expenseViewState = { averageMode: "month", year: "", month: "" };
 
 const NAV_TARGETS = {
   home: "section-profile",
@@ -407,63 +402,61 @@ function getMonthsWithData(items) {
   return Array.from(monthSet).sort((a, b) => compareMonth(a, b));
 }
 
-function resolveInitialSharedViewState(baseMonth) {
+function resolveInitialYearMonthState(baseMonth) {
   const parsed = parseMonth(baseMonth) || parseMonth(todayISO().slice(0, 7));
   return {
-    averageMode: "month",
     year: String(parsed.year),
     month: String(parsed.monthIndex + 1).padStart(2, "0"),
   };
 }
 
-function resolveViewMonthFromState() {
-  const year = Number(sharedViewState.year);
-  const month = Number(sharedViewState.month);
+function resolveViewMonthFromState(state) {
+  const year = Number(state?.year);
+  const month = Number(state?.month);
   if (!Number.isInteger(year) || month < 1 || month > 12) return "";
   return formatMonth(year, month - 1);
 }
 
-function syncSharedViewFilterOptions(availableMonths) {
+function syncViewFilterOptions(controls, state, availableMonths, options = {}) {
+  if (!controls?.year || !controls.month) return;
+  const { includeAverageMode = false } = options;
   const yearSet = new Set();
   availableMonths.forEach((month) => {
     const parsed = parseMonth(month);
     if (!parsed) return;
     yearSet.add(parsed.year);
   });
-  const selectedYear = Number(sharedViewState.year);
+  const selectedYear = Number(state.year);
   if (Number.isInteger(selectedYear)) {
     yearSet.add(selectedYear);
   }
   if (yearSet.size === 0) {
-    yearSet.add(Number(sharedViewState.year) || Number(todayISO().slice(0, 4)));
+    yearSet.add(Number(state.year) || Number(todayISO().slice(0, 4)));
   }
   const years = Array.from(yearSet).sort((a, b) => b - a);
   if (!Number.isInteger(selectedYear)) {
-    sharedViewState.year = String(years[0]);
+    state.year = String(years[0]);
   }
-  if (!/^\d{2}$/.test(sharedViewState.month)) {
-    sharedViewState.month = todayISO().slice(5, 7);
+  if (!/^\d{2}$/.test(state.month)) {
+    state.month = todayISO().slice(5, 7);
   }
 
-  sharedViewFilterControls.forEach((controls) => {
-    if (!controls.year || !controls.month) return;
-    if (controls.mode) {
-      controls.mode.value = sharedViewState.averageMode;
-    }
+  if (controls.mode) {
+    controls.mode.value = includeAverageMode && state.averageMode === "average" ? "average" : "month";
+  }
 
-    controls.year.innerHTML = years.map((year) => `<option value="${year}">${year}年</option>`).join("");
-    controls.year.value = sharedViewState.year;
+  controls.year.innerHTML = years.map((year) => `<option value="${year}">${year}年</option>`).join("");
+  controls.year.value = state.year;
 
-    controls.month.innerHTML = Array.from({ length: 12 }, (_, index) => {
-      const value = String(index + 1).padStart(2, "0");
-      return `<option value="${value}">${index + 1}月</option>`;
-    }).join("");
-    controls.month.value = sharedViewState.month;
+  controls.month.innerHTML = Array.from({ length: 12 }, (_, index) => {
+    const value = String(index + 1).padStart(2, "0");
+    return `<option value="${value}">${index + 1}月</option>`;
+  }).join("");
+  controls.month.value = state.month;
 
-    const isAverage = sharedViewState.averageMode === "average";
-    controls.year.disabled = isAverage;
-    controls.month.disabled = isAverage;
-  });
+  const isAverage = includeAverageMode && state.averageMode === "average";
+  controls.year.disabled = isAverage;
+  controls.month.disabled = isAverage;
 }
 
 function normalizeMonthlyContributionHistory(plan) {
@@ -3487,20 +3480,26 @@ function render() {
   const recurringExpenses = loadRecurringExpenses();
   const rawTransactions = loadTransactions();
   const fallbackMonth = getLatestMonthFromTransactions(rawTransactions) || todayISO().slice(0, 7);
-  const currentViewMonth = resolveViewMonthFromState() || fallbackMonth;
-  const syncTargetMonth = [fallbackMonth, currentViewMonth].sort(compareMonth).at(-1);
+  const dashboardViewMonth = resolveViewMonthFromState(dashboardViewState) || fallbackMonth;
+  const historyViewMonth = resolveViewMonthFromState(historyViewState) || fallbackMonth;
+  const syncTargetMonth = [fallbackMonth, dashboardViewMonth, historyViewMonth].sort(compareMonth).at(-1);
   const transactions = syncRecurringAutoTransactions(rawTransactions, recurringExpenses, syncTargetMonth);
   const lifeEvents = loadLifeEvents();
   const settings = loadSettings();
   const assumptions = loadCashflowAssumptions();
   const dataMonths = getMonthsWithData(transactions);
-  syncSharedViewFilterOptions(dataMonths);
-  const currentMonth = resolveViewMonthFromState() || fallbackMonth;
-  const isAverageMode = sharedViewState.averageMode === "average";
-  const autoTransactions = createEligibleAutoExpensesForMonth(settings, transactions, currentMonth);
+  syncViewFilterOptions(historyViewFilterControls, historyViewState, dataMonths);
+  syncViewFilterOptions(dashboardViewFilterControls, dashboardViewState, dataMonths, { includeAverageMode: true });
+  syncViewFilterOptions(expenseViewFilterControls, expenseViewState, dataMonths, { includeAverageMode: true });
+  const currentHistoryMonth = resolveViewMonthFromState(historyViewState) || fallbackMonth;
+  const currentDashboardMonth = resolveViewMonthFromState(dashboardViewState) || fallbackMonth;
+  const currentExpenseMonth = resolveViewMonthFromState(expenseViewState) || fallbackMonth;
+  const isDashboardAverageMode = dashboardViewState.averageMode === "average";
+  const isExpenseAverageMode = expenseViewState.averageMode === "average";
+  const autoTransactions = createEligibleAutoExpensesForMonth(settings, transactions, currentHistoryMonth);
   const combinedTransactions = [...transactions, ...autoTransactions];
   const averageTargetMonths = resolveAverageTargetMonths(settings, transactions);
-  const summary = calculateMonthlySummary(transactions, settings, currentMonth);
+  const dashboardSummary = calculateMonthlySummary(transactions, settings, currentDashboardMonth);
   if (transactionEditingId && !transactions.some((item) => item.id === transactionEditingId)) {
     resetTransactionFormFields();
   }
@@ -3511,7 +3510,7 @@ function render() {
   birthDateInput.value = settings.birthDate || "";
   updateCashflowAssumptionInputs(assumptions);
 
-  const historyItems = buildTransactionHistoryItems(transactions, autoTransactions, currentMonth);
+  const historyItems = buildTransactionHistoryItems(transactions, autoTransactions, currentHistoryMonth);
   const nowMonth = todayISO().slice(0, 7);
   const lifeEventPlannedHistoryItems = buildLifeEventHistoryItems(lifeEvents, settings);
   const futureTransactionHistoryItems = buildFutureTransactionHistoryItems(transactions, settings, nowMonth);
@@ -3523,10 +3522,11 @@ function render() {
     plannedHistoryBlock.hidden = false;
   }
 
-  const monthlyExpenseComposition = buildMonthlyExpenseComposition(combinedTransactions, currentMonth);
+  const dashboardMonthlyExpenseComposition = buildMonthlyExpenseComposition(combinedTransactions, currentDashboardMonth);
+  const expenseMonthlyComposition = buildMonthlyExpenseComposition(combinedTransactions, currentExpenseMonth);
   const averageDataset = buildAverageModeDataset(settings, transactions, averageTargetMonths);
-  const chipMonthlySavingTotal = calculateMonthlyContributionTotal(settings, currentMonth);
-  renderDashboard(isAverageMode
+  const chipMonthlySavingTotal = calculateMonthlyContributionTotal(settings, currentDashboardMonth);
+  renderDashboard(isDashboardAverageMode
     ? {
         summary: averageDataset.summary.summary,
         settings,
@@ -3540,19 +3540,22 @@ function render() {
         monthCount: averageDataset.summary.monthCount,
       }
     : {
-        summary,
+        summary: dashboardSummary,
         settings,
         transactions,
         recurringExpenses,
         lifeEvents,
-        expenseComposition: monthlyExpenseComposition,
-        monthlySavingTotal: calculateMonthlyContributionTotal(settings, currentMonth),
+        expenseComposition: dashboardMonthlyExpenseComposition,
+        monthlySavingTotal: calculateMonthlyContributionTotal(settings, currentDashboardMonth),
         chipMonthlySavingTotal,
-        manualTransactionCount: transactions.filter((item) => monthISO(item.date) === currentMonth).length,
+        manualTransactionCount: transactions.filter((item) => monthISO(item.date) === currentDashboardMonth).length,
         monthCount: 0,
       });
 
-  renderExpenseChart(isAverageMode ? averageDataset.expenseComposition : monthlyExpenseComposition, isAverageMode);
+  renderExpenseChart(
+    isExpenseAverageMode ? averageDataset.expenseComposition : expenseMonthlyComposition,
+    isExpenseAverageMode
+  );
   renderCashflowTable({ settings, transactions, recurringExpenses, lifeEvents, assumptions });
   markAssetForecastDirty(settings);
   if (isAssetsSectionExpanded()) {
@@ -4088,31 +4091,50 @@ function setupBackToTopButton() {
   updateBackToTopVisibility();
 }
 
-function handleSharedViewFilterChange() {
-  const active = sharedViewFilterControls.find((controls) => controls.mode?.matches(":focus") || controls.year?.matches(":focus") || controls.month?.matches(":focus"))
-    || sharedViewFilterControls[0];
-  if (!active?.year || !active.month) return;
-  sharedViewState = {
-    averageMode: active.mode ? (active.mode.value === "average" ? "average" : "month") : sharedViewState.averageMode,
-    year: active.year.value,
-    month: active.month.value,
+function handleDashboardViewFilterChange() {
+  dashboardViewState = {
+    averageMode: dashboardViewFilterControls.mode?.value === "average" ? "average" : "month",
+    year: dashboardViewFilterControls.year?.value || dashboardViewState.year,
+    month: dashboardViewFilterControls.month?.value || dashboardViewState.month,
+  };
+  render();
+}
+
+function handleExpenseViewFilterChange() {
+  expenseViewState = {
+    averageMode: expenseViewFilterControls.mode?.value === "average" ? "average" : "month",
+    year: expenseViewFilterControls.year?.value || expenseViewState.year,
+    month: expenseViewFilterControls.month?.value || expenseViewState.month,
+  };
+  render();
+}
+
+function handleHistoryViewFilterChange() {
+  historyViewState = {
+    year: historyViewFilterControls.year?.value || historyViewState.year,
+    month: historyViewFilterControls.month?.value || historyViewState.month,
   };
   render();
 }
 
 function setupSharedViewFilters() {
-  sharedViewFilterControls.forEach((controls) => {
-    if (!controls.year || !controls.month) return;
-    controls.mode?.addEventListener("change", handleSharedViewFilterChange);
-    controls.year.addEventListener("change", handleSharedViewFilterChange);
-    controls.month.addEventListener("change", handleSharedViewFilterChange);
-  });
+  dashboardViewFilterControls.mode?.addEventListener("change", handleDashboardViewFilterChange);
+  dashboardViewFilterControls.year?.addEventListener("change", handleDashboardViewFilterChange);
+  dashboardViewFilterControls.month?.addEventListener("change", handleDashboardViewFilterChange);
+  expenseViewFilterControls.mode?.addEventListener("change", handleExpenseViewFilterChange);
+  expenseViewFilterControls.year?.addEventListener("change", handleExpenseViewFilterChange);
+  expenseViewFilterControls.month?.addEventListener("change", handleExpenseViewFilterChange);
+  historyViewFilterControls.year?.addEventListener("change", handleHistoryViewFilterChange);
+  historyViewFilterControls.month?.addEventListener("change", handleHistoryViewFilterChange);
 }
 
 function init() {
   const settings = loadSettings();
   const initialMonth = todayISO().slice(0, 7);
-  sharedViewState = resolveInitialSharedViewState(initialMonth);
+  const initialYearMonth = resolveInitialYearMonthState(initialMonth);
+  historyViewState = { ...initialYearMonth };
+  dashboardViewState = { ...initialYearMonth, averageMode: "month" };
+  expenseViewState = { ...initialYearMonth, averageMode: "month" };
 
   dateInput.value = todayISO();
   entryStartMonthInput.value = settings.entryStartMonth || todayISO().slice(0, 7);
