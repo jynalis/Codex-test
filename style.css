@@ -2349,12 +2349,13 @@ button.ghost {
 
 .cashflow-split-table {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: max-content minmax(0, 1fr);
 }
 
 .cashflow-fixed-pane {
   border-right: 1px solid #d8e1ee;
   background: #fff;
+  width: fit-content;
 }
 
 .cashflow-scroll-pane {
@@ -2368,7 +2369,7 @@ button.ghost {
 }
 
 .cashflow-table-fixed {
-  width: 100%;
+  width: auto;
 }
 
 .cashflow-table-scroll {
@@ -2383,6 +2384,11 @@ button.ghost {
   white-space: nowrap;
   height: 44px;
   box-sizing: border-box;
+}
+
+.cashflow-table-fixed th,
+.cashflow-table-fixed td {
+  min-width: 72px;
 }
 
 .cashflow-table th {
