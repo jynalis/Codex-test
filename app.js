@@ -120,7 +120,7 @@ const DEFAULT_CASHFLOW_ASSUMPTIONS = {
 const RETIREMENT_REFERENCE_AGE = 60;
 const RETIREMENT_REFERENCE_DAY_OFFSET = 2;
 
-const EXPENSE_CATEGORIES = ["日常費", "レジャー費", "ガソリン費", "雑費"];
+const EXPENSE_CATEGORIES = ["日常費", "レジャー費", "ガソリン費", "雑費", "出金"];
 const LEGACY_EXPENSE_CATEGORY_ALIASES = {
   "趣味・レジャー費": "レジャー費",
   "雑費・予備費": "雑費",
@@ -144,7 +144,7 @@ const LEGACY_LIFE_EVENT_CATEGORY_ALIASES = {
 };
 const CATEGORY_OPTIONS = {
   expense: EXPENSE_CATEGORIES,
-  income: ["定期収入", "臨時収入"],
+  income: ["定期収入", "臨時収入", "入金"],
 };
 const PLAN_TYPES = ["NISA", "iDeCo", "貯蓄性保険", "貯金"];
 const PLAN_TYPE_CLASS = {
@@ -166,6 +166,7 @@ const EXPENSE_COMPOSITION_ITEMS = [
   "レジャー費",
   "ガソリン費",
   "雑費",
+  "出金",
   "家賃・マイホーム費",
   "家賃・住宅ローン",
   "通信費",
@@ -3599,7 +3600,8 @@ function addTransaction(event) {
   if (!date || !category || !Number.isFinite(amount) || amount <= 0) {
     return;
   }
-  if (type === "expense" && !EXPENSE_CATEGORIES.includes(category)) {
+  const allowedCategories = CATEGORY_OPTIONS[type] ?? [];
+  if (!allowedCategories.includes(category)) {
     return;
   }
 
