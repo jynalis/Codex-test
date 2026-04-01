@@ -2341,18 +2341,47 @@ button.ghost {
 }
 
 .cashflow-table-wrap {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
   border: 1px solid #bfcbe0;
   border-radius: 12px;
   background: #fff;
+  overflow: hidden;
+}
+
+.cashflow-table-shell {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+}
+
+.cashflow-table-fixed {
+  flex: 0 0 auto;
+  border-right: 1px solid #d8e1ee;
+  background: #fff;
+  z-index: 2;
+}
+
+.cashflow-table-scroll {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
 .cashflow-table {
-  width: 100%;
-  min-width: 1110px;
   border-collapse: collapse;
   font-size: 0.86rem;
+}
+
+.cashflow-table-fixed-grid {
+  width: auto;
+  min-width: 154px;
+}
+
+.cashflow-table-scroll-grid {
+  width: 100%;
+  min-width: 956px;
+  border-collapse: collapse;
 }
 
 .cashflow-table th,
@@ -2360,6 +2389,7 @@ button.ghost {
   border-bottom: 1px solid #d8e1ee;
   padding: 10px 8px;
   white-space: nowrap;
+  line-height: 1.45;
 }
 
 .cashflow-table th {
@@ -2384,6 +2414,11 @@ button.ghost {
 .cashflow-table td:first-child,
 .cashflow-table td:nth-child(2) {
   text-align: center;
+}
+
+.cashflow-table-fixed td:first-child,
+.cashflow-table-fixed td:nth-child(2) {
+  min-width: 72px;
 }
 
 .cashflow-table .is-positive {
@@ -2439,8 +2474,15 @@ button.ghost {
   }
 
   .cashflow-table {
-    min-width: 1030px;
     font-size: 0.82rem;
+  }
+
+  .cashflow-table-fixed-grid {
+    min-width: 138px;
+  }
+
+  .cashflow-table-scroll-grid {
+    min-width: 930px;
   }
 
   .cashflow-table th,
