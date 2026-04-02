@@ -78,6 +78,7 @@ const dashboardAssetFormationChart = document.getElementById("dashboard-asset-fo
 const assetGrowthMonthlyChip = document.getElementById("asset-growth-monthly-chip");
 const expenseChart = document.getElementById("expense-chart");
 const bottomNavButtons = Array.from(document.querySelectorAll(".bottom-nav-btn"));
+const dashboardJumpCards = Array.from(document.querySelectorAll("[data-dashboard-jump-section]"));
 const navToast = document.getElementById("nav-toast");
 const accordionSections = Array.from(document.querySelectorAll("[data-accordion-section]"));
 const assetsSection = document.getElementById("section-assets");
@@ -3992,9 +3993,14 @@ function scrollToNavSection(target) {
   }
 
   const sectionId = NAV_TARGETS[target];
+  if (!sectionId) return;
+  setBottomNavActive(target);
+  scrollToSection(sectionId, { actionToken });
+}
+
+function scrollToSection(sectionId, { actionToken } = {}) {
   const targetSection = sectionId ? document.getElementById(sectionId) : null;
   if (!targetSection) return;
-  setBottomNavActive(target);
 
   if (targetSection.dataset.accordionSection === undefined) {
     targetSection.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -4012,7 +4018,7 @@ function scrollToNavSection(target) {
 
   setAccordionExpanded(targetSection, true);
   window.requestAnimationFrame(() => {
-    if (actionToken !== navActionToken) return;
+    if (actionToken && actionToken !== navActionToken) return;
     ensureSectionHeadingVisible(targetSection);
   });
 }
@@ -4055,6 +4061,30 @@ function setupBottomNavigation() {
   );
 
   sectionElements.forEach((item) => observer.observe(item.element));
+}
+
+function setupDashboardCardNavigation() {
+  const handleDashboardCardAction = (card) => {
+    const sectionId = card?.dataset?.dashboardJumpSection;
+    if (!sectionId) return;
+    scrollToSection(sectionId);
+  };
+
+  dashboardJumpCards.forEach((card) => {
+    card.addEventListener("pointerup", (event) => {
+      if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
+      event.preventDefault();
+      handleDashboardCardAction(card);
+    });
+    card.addEventListener("click", () => {
+      handleDashboardCardAction(card);
+    });
+    card.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      handleDashboardCardAction(card);
+    });
+  });
 }
 
 function handleDashboardViewFilterChange() {
@@ -4164,6 +4194,7 @@ function init() {
   setupSectionAccordions();
   setupChildAccordions();
   setupBottomNavigation();
+  setupDashboardCardNavigation();
 
   render();
 }
