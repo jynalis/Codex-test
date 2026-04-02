@@ -3954,8 +3954,16 @@ function isAccordionSectionExpanded(section) {
 function getSectionHeadingTargetY(section) {
   const trigger = section?.querySelector(".accordion-trigger");
   if (!trigger) return window.scrollY;
-  const topMargin = 12;
-  return window.scrollY + trigger.getBoundingClientRect().top - topMargin;
+  const topOffset = getViewportTopOffset();
+  return Math.max(0, window.scrollY + trigger.getBoundingClientRect().top - topOffset);
+}
+
+function getViewportTopOffset() {
+  const bodyStyle = window.getComputedStyle(document.body);
+  const bodyPaddingTop = Number.parseFloat(bodyStyle.paddingTop) || 0;
+  const htmlStyle = window.getComputedStyle(document.documentElement);
+  const htmlScrollPaddingTop = Number.parseFloat(htmlStyle.scrollPaddingTop) || 0;
+  return Math.max(bodyPaddingTop, htmlScrollPaddingTop, 0);
 }
 
 function distanceBasedScrollBehavior(distance) {
@@ -3967,15 +3975,6 @@ function ensureSectionHeadingVisible(section, { behavior } = {}) {
   if (!section) return;
   const trigger = section.querySelector(".accordion-trigger");
   if (!trigger) return;
-
-  const bottomNav = document.querySelector(".bottom-nav");
-  const navHeight = bottomNav?.offsetHeight || 0;
-  const topMargin = 12;
-  const bottomMargin = navHeight + 12;
-  const rect = trigger.getBoundingClientRect();
-  const isVisible = rect.top >= topMargin && rect.bottom <= window.innerHeight - bottomMargin;
-
-  if (isVisible) return;
   const targetY = getSectionHeadingTargetY(section);
   const distance = Math.abs(window.scrollY - targetY);
   window.scrollTo({
@@ -3995,10 +3994,10 @@ function scrollToNavSection(target) {
   const sectionId = NAV_TARGETS[target];
   if (!sectionId) return;
   setBottomNavActive(target);
-  scrollToSection(sectionId, { actionToken });
+  scrollToSection(sectionId, { actionToken, toggleIfExpanded: true });
 }
 
-function scrollToSection(sectionId, { actionToken } = {}) {
+function scrollToSection(sectionId, { actionToken, toggleIfExpanded = false } = {}) {
   const targetSection = sectionId ? document.getElementById(sectionId) : null;
   if (!targetSection) return;
 
@@ -4009,6 +4008,10 @@ function scrollToSection(sectionId, { actionToken } = {}) {
 
   const expanded = isAccordionSectionExpanded(targetSection);
   if (expanded) {
+    if (toggleIfExpanded) {
+      setAccordionExpanded(targetSection, false);
+      return;
+    }
     const distance = Math.abs(window.scrollY - getSectionHeadingTargetY(targetSection));
     ensureSectionHeadingVisible(targetSection, {
       behavior: distanceBasedScrollBehavior(distance),
@@ -4016,10 +4019,13 @@ function scrollToSection(sectionId, { actionToken } = {}) {
     return;
   }
 
-  setAccordionExpanded(targetSection, true);
-  window.requestAnimationFrame(() => {
-    if (actionToken && actionToken !== navActionToken) return;
-    ensureSectionHeadingVisible(targetSection);
+  setAccordionExpanded(targetSection, true).then(() => {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        if (actionToken && actionToken !== navActionToken) return;
+        ensureSectionHeadingVisible(targetSection);
+      });
+    });
   });
 }
 
