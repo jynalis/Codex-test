@@ -81,6 +81,7 @@ const bottomNavButtons = Array.from(document.querySelectorAll(".bottom-nav-btn")
 const dashboardJumpCards = Array.from(document.querySelectorAll("[data-dashboard-jump-section]"));
 const navToast = document.getElementById("nav-toast");
 const accordionSections = Array.from(document.querySelectorAll("[data-accordion-section]"));
+const dashboardSection = document.getElementById("section-home");
 const assetsSection = document.getElementById("section-assets");
 const cashflowSettingsForm = document.getElementById("cashflow-settings-form");
 const cashflowSalaryGrowthRateInput = document.getElementById("cashflow-salary-growth-rate");
@@ -4024,7 +4025,10 @@ function scrollToNavSection(target) {
   const actionToken = ++navActionToken;
   if (target === "top") {
     setBottomNavActive(target);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    closeNonDashboardAccordions().then(() => {
+      if (actionToken !== navActionToken) return;
+      scrollToDashboardHeading();
+    });
     return;
   }
 
@@ -4032,6 +4036,25 @@ function scrollToNavSection(target) {
   if (!sectionId) return;
   setBottomNavActive(target);
   scrollToSection(sectionId, { actionToken, toggleIfExpanded: true });
+}
+
+function closeNonDashboardAccordions() {
+  const closePromises = accordionSections
+    .filter((section) => section !== dashboardSection)
+    .map((section) => {
+      if (!isAccordionSectionExpanded(section)) return Promise.resolve();
+      return Promise.resolve(setAccordionExpanded(section, false));
+    });
+  return Promise.all(closePromises);
+}
+
+function scrollToDashboardHeading() {
+  if (!dashboardSection) return;
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      ensureSectionHeadingVisible(dashboardSection, { behavior: "smooth" });
+    });
+  });
 }
 
 function scrollToSection(sectionId, { actionToken, toggleIfExpanded = false } = {}) {
