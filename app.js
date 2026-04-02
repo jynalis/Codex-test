@@ -4009,7 +4009,7 @@ function scrollToNavSection(target) {
   scrollToSection(sectionId, { actionToken, toggleIfExpanded: true });
 }
 
-function scrollToSection(sectionId, { actionToken, toggleIfExpanded = false } = {}) {
+function scrollToSection(sectionId, { actionToken, toggleIfExpanded = false, alignAfterToggle = false } = {}) {
   const targetSection = sectionId ? document.getElementById(sectionId) : null;
   if (!targetSection) return;
 
@@ -4021,7 +4021,10 @@ function scrollToSection(sectionId, { actionToken, toggleIfExpanded = false } = 
   const expanded = isAccordionSectionExpanded(targetSection);
   if (expanded) {
     if (toggleIfExpanded) {
-      setAccordionExpanded(targetSection, false);
+      setAccordionExpanded(targetSection, false).then(() => {
+        if (!alignAfterToggle) return;
+        alignSectionHeadingAfterToggle(targetSection);
+      });
       return;
     }
     const distance = Math.abs(window.scrollY - getSectionHeadingTargetY(targetSection));
@@ -4032,6 +4035,10 @@ function scrollToSection(sectionId, { actionToken, toggleIfExpanded = false } = 
   }
 
   setAccordionExpanded(targetSection, true).then(() => {
+    if (alignAfterToggle) {
+      alignSectionHeadingAfterToggle(targetSection);
+      return;
+    }
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
         if (actionToken && actionToken !== navActionToken) return;
@@ -4092,14 +4099,10 @@ function setupBottomNavigation() {
 }
 
 function setupDashboardCardNavigation() {
-  const isAge60AssetCard = (card) =>
-    card?.dataset?.dashboardJumpSection === "section-assets"
-    && card.querySelector("#dashboard-age60-total");
-
   const handleDashboardCardAction = (card) => {
     const sectionId = card?.dataset?.dashboardJumpSection;
     if (!sectionId) return;
-    scrollToSection(sectionId, { toggleIfExpanded: true });
+    scrollToSection(sectionId, { toggleIfExpanded: true, alignAfterToggle: true });
   };
 
   dashboardJumpCards.forEach((card) => {
@@ -4108,20 +4111,16 @@ function setupDashboardCardNavigation() {
       event.preventDefault();
       const pressedCard = event.currentTarget;
       if (!(pressedCard instanceof HTMLElement)) return;
-      if (isAge60AssetCard(pressedCard)) {
-        pressedCard.dataset.suppressNextClickUntil = String(Date.now() + 500);
-      }
+      pressedCard.dataset.suppressNextClickUntil = String(Date.now() + 500);
       handleDashboardCardAction(pressedCard);
     });
     card.addEventListener("click", (event) => {
       const pressedCard = event.currentTarget;
       if (!(pressedCard instanceof HTMLElement)) return;
-      if (isAge60AssetCard(pressedCard)) {
-        const suppressNextClickUntil = Number.parseInt(pressedCard.dataset.suppressNextClickUntil || "0", 10);
-        if (Date.now() < suppressNextClickUntil) {
-          pressedCard.dataset.suppressNextClickUntil = "0";
-          return;
-        }
+      const suppressNextClickUntil = Number.parseInt(pressedCard.dataset.suppressNextClickUntil || "0", 10);
+      if (Date.now() < suppressNextClickUntil) {
+        pressedCard.dataset.suppressNextClickUntil = "0";
+        return;
       }
       handleDashboardCardAction(pressedCard);
     });
