@@ -88,7 +88,6 @@ const cashflowTableWrap = document.getElementById("cashflow-table-wrap");
 const cashflowDownloadPdfButton = document.getElementById("cashflow-download-pdf-button");
 const accordionCloseTimers = new WeakMap();
 const accordionCollapseWaiters = new WeakMap();
-const NAV_CLOSE_NEAR_DISTANCE = 180;
 const NAV_CLOSE_FAR_DISTANCE = 520;
 let navActionToken = 0;
 
@@ -3984,46 +3983,6 @@ function ensureSectionHeadingVisible(section, { behavior } = {}) {
   });
 }
 
-function waitForAccordionCollapseLayout(panel) {
-  const collapseWaiter = accordionCollapseWaiters.get(panel);
-  if (collapseWaiter?.promise) {
-    return collapseWaiter.promise.then(
-      () =>
-        new Promise((resolve) => {
-          window.requestAnimationFrame(resolve);
-        })
-    );
-  }
-
-  return new Promise((resolve) => {
-    if (!panel || panel.hidden) {
-      window.requestAnimationFrame(() => resolve());
-      return;
-    }
-
-    let settled = false;
-    let fallbackId = 0;
-
-    const finish = () => {
-      if (settled) return;
-      settled = true;
-      panel.removeEventListener("transitionend", handleTransitionEnd);
-      window.clearTimeout(fallbackId);
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(resolve);
-      });
-    };
-
-    const handleTransitionEnd = (event) => {
-      if (event.target !== panel) return;
-      finish();
-    };
-
-    panel.addEventListener("transitionend", handleTransitionEnd);
-    fallbackId = window.setTimeout(finish, 220);
-  });
-}
-
 function scrollToNavSection(target) {
   const actionToken = ++navActionToken;
   if (target === "top") {
@@ -4044,38 +4003,34 @@ function scrollToNavSection(target) {
 
   const expanded = isAccordionSectionExpanded(targetSection);
   if (expanded) {
-    const panel = targetSection.querySelector(".accordion-panel");
-    const beforeCloseDistance = Math.abs(window.scrollY - getSectionHeadingTargetY(targetSection));
-    if (beforeCloseDistance > NAV_CLOSE_NEAR_DISTANCE) {
-      const closeBehavior = distanceBasedScrollBehavior(beforeCloseDistance);
-      document.body.classList.add("is-nav-closing");
-      window.scrollTo({
-        top: getSectionHeadingTargetY(targetSection),
-        behavior: closeBehavior,
-      });
-    }
-
-    setAccordionExpanded(targetSection, false);
-    waitForAccordionCollapseLayout(panel).then(() => {
-      if (actionToken === navActionToken && !isAccordionSectionExpanded(targetSection)) {
-        ensureSectionHeadingVisible(targetSection, {
-          behavior: distanceBasedScrollBehavior(beforeCloseDistance),
-        });
-      }
-    }).finally(() => {
-      document.body.classList.remove("is-nav-closing");
+    const distance = Math.abs(window.scrollY - getSectionHeadingTargetY(targetSection));
+    ensureSectionHeadingVisible(targetSection, {
+      behavior: distanceBasedScrollBehavior(distance),
     });
     return;
   }
 
   setAccordionExpanded(targetSection, true);
-  ensureSectionHeadingVisible(targetSection);
+  window.requestAnimationFrame(() => {
+    if (actionToken !== navActionToken) return;
+    ensureSectionHeadingVisible(targetSection);
+  });
 }
 
 function setupBottomNavigation() {
+  const handleBottomNavAction = (button) => {
+    if (!button?.dataset?.navTarget) return;
+    scrollToNavSection(button.dataset.navTarget);
+  };
+
   bottomNavButtons.forEach((button) => {
+    button.addEventListener("pointerup", (event) => {
+      if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
+      event.preventDefault();
+      handleBottomNavAction(button);
+    });
     button.addEventListener("click", () => {
-      scrollToNavSection(button.dataset.navTarget);
+      handleBottomNavAction(button);
     });
   });
 
