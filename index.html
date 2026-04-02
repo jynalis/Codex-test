@@ -44,19 +44,43 @@
               <select id="dashboard-month-filter" aria-label="ダッシュボード表示月"></select>
             </div>
             <div class="dashboard-grid">
-              <article class="dashboard-card dashboard-card-balance">
+              <article
+                class="dashboard-card dashboard-card-jump dashboard-card-balance"
+                role="button"
+                tabindex="0"
+                data-dashboard-jump-section="section-history"
+                aria-label="取引履歴へ移動"
+              >
                 <span>当月末残高</span>
                 <strong id="dashboard-balance-total">¥0</strong>
               </article>
-              <article class="dashboard-card dashboard-card-future">
+              <article
+                class="dashboard-card dashboard-card-jump dashboard-card-future"
+                role="button"
+                tabindex="0"
+                data-dashboard-jump-section="section-assets"
+                aria-label="将来資産シミュレーションへ移動"
+              >
                 <span>60歳時資産形成額</span>
                 <strong id="dashboard-age60-total">¥0</strong>
               </article>
-              <article class="dashboard-card dashboard-card-income">
+              <article
+                class="dashboard-card dashboard-card-jump dashboard-card-income"
+                role="button"
+                tabindex="0"
+                data-dashboard-jump-section="section-cashflow"
+                aria-label="キャッシュフロー表へ移動"
+              >
                 <span>当月収入</span>
                 <strong id="dashboard-income-total">¥0</strong>
               </article>
-              <article class="dashboard-card dashboard-card-expense">
+              <article
+                class="dashboard-card dashboard-card-jump dashboard-card-expense"
+                role="button"
+                tabindex="0"
+                data-dashboard-jump-section="section-expense"
+                aria-label="支出バランス分析へ移動"
+              >
                 <span>当月支出</span>
                 <strong id="dashboard-expense-total">¥0</strong>
               </article>

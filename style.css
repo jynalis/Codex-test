@@ -988,6 +988,25 @@ button.plan-card-trigger {
   min-height: 116px;
 }
 
+.dashboard-card-jump {
+  cursor: pointer;
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+}
+
+.dashboard-card-jump:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgb(15 23 42 / 14%);
+}
+
+.dashboard-card-jump:active {
+  transform: translateY(0);
+}
+
+.dashboard-card-jump:focus-visible {
+  outline: 3px solid rgb(37 99 166 / 45%);
+  outline-offset: 2px;
+}
+
 .dashboard-card span {
   color: #365271;
   font-size: 0.82rem;
