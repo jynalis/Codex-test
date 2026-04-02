@@ -4073,7 +4073,7 @@ function setupDashboardCardNavigation() {
   const handleDashboardCardAction = (card) => {
     const sectionId = card?.dataset?.dashboardJumpSection;
     if (!sectionId) return;
-    scrollToSection(sectionId);
+    scrollToSection(sectionId, { toggleIfExpanded: true });
   };
 
   dashboardJumpCards.forEach((card) => {
