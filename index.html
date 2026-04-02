@@ -136,7 +136,7 @@
       </section>
 
 
-      <section class="card section-tone-recurring accordion-section" data-accordion-section>
+      <section id="section-recurring" class="card section-tone-recurring accordion-section" data-accordion-section>
         <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-recurring" id="trigger-recurring">
           <div class="section-heading">
             <h2>定期支出入力</h2>
@@ -506,37 +506,28 @@
     </main>
 
     <nav class="bottom-nav" aria-label="下部ナビゲーション">
-      <button type="button" class="bottom-nav-btn is-active" data-nav-target="home" aria-current="page">
+      <button type="button" class="bottom-nav-btn is-active" data-nav-target="basic" aria-current="page">
         <span class="nav-icon" aria-hidden="true">⌂</span>
-        <span class="nav-label">ホーム</span>
+        <span class="nav-label">基本</span>
       </button>
-      <button type="button" class="bottom-nav-btn" data-nav-target="input">
+      <button type="button" class="bottom-nav-btn" data-nav-target="recurring">
         <span class="nav-icon" aria-hidden="true">✎</span>
-        <span class="nav-label">入力</span>
+        <span class="nav-label">定期</span>
       </button>
-      <button type="button" class="bottom-nav-btn" data-nav-target="assets">
+      <button type="button" class="bottom-nav-btn" data-nav-target="income-expense">
         <span class="nav-icon" aria-hidden="true">◔</span>
-        <span class="nav-label">資産</span>
+        <span class="nav-label">収支</span>
       </button>
-      <button type="button" class="bottom-nav-btn" data-nav-target="expense">
+      <button type="button" class="bottom-nav-btn" data-nav-target="life">
         <span class="nav-icon" aria-hidden="true">☰</span>
-        <span class="nav-label">支出</span>
+        <span class="nav-label">ライフ</span>
       </button>
-      <button type="button" class="bottom-nav-btn" data-nav-target="transactions">
-        <span class="nav-icon" aria-hidden="true">⎘</span>
-        <span class="nav-label">取引</span>
+      <button type="button" class="bottom-nav-btn" data-nav-target="top">
+        <span class="nav-icon" aria-hidden="true">↑</span>
+        <span class="nav-label">⬆️</span>
       </button>
     </nav>
 
-    <button
-      type="button"
-      id="back-to-top-button"
-      class="back-to-top-button"
-      aria-label="ページの一番上に戻る"
-      title="一番上に戻る"
-    >
-      ↑
-    </button>
 
     <p id="nav-toast" class="nav-toast" role="status" aria-live="polite"></p>
 

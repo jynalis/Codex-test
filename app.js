@@ -79,7 +79,6 @@ const assetGrowthMonthlyChip = document.getElementById("asset-growth-monthly-chi
 const expenseChart = document.getElementById("expense-chart");
 const bottomNavButtons = Array.from(document.querySelectorAll(".bottom-nav-btn"));
 const navToast = document.getElementById("nav-toast");
-const backToTopButton = document.getElementById("back-to-top-button");
 const accordionSections = Array.from(document.querySelectorAll("[data-accordion-section]"));
 const assetsSection = document.getElementById("section-assets");
 const cashflowSettingsForm = document.getElementById("cashflow-settings-form");
@@ -91,7 +90,6 @@ const accordionCloseTimers = new WeakMap();
 const accordionCollapseWaiters = new WeakMap();
 const NAV_CLOSE_NEAR_DISTANCE = 180;
 const NAV_CLOSE_FAR_DISTANCE = 520;
-const BACK_TO_TOP_SHOW_SCROLL_Y = 320;
 let navActionToken = 0;
 
 let latestAssetForecastSettings = null;
@@ -105,11 +103,10 @@ let historyViewState = { year: "", month: "" };
 let sharedAverageViewState = { averageMode: "month" };
 
 const NAV_TARGETS = {
-  home: "section-profile",
-  input: "section-input",
-  assets: "section-assets",
-  expense: "section-expense",
-  transactions: "section-history",
+  basic: "section-profile",
+  recurring: "section-recurring",
+  "income-expense": "section-input",
+  life: "section-life-events",
 };
 
 const DEFAULT_CASHFLOW_ASSUMPTIONS = {
@@ -4029,6 +4026,12 @@ function waitForAccordionCollapseLayout(panel) {
 
 function scrollToNavSection(target) {
   const actionToken = ++navActionToken;
+  if (target === "top") {
+    setBottomNavActive(target);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+
   const sectionId = NAV_TARGETS[target];
   const targetSection = sectionId ? document.getElementById(sectionId) : null;
   if (!targetSection) return;
@@ -4097,23 +4100,6 @@ function setupBottomNavigation() {
   );
 
   sectionElements.forEach((item) => observer.observe(item.element));
-}
-
-function setupBackToTopButton() {
-  if (!backToTopButton) return;
-
-  const updateBackToTopVisibility = () => {
-    const shouldShow = window.scrollY >= BACK_TO_TOP_SHOW_SCROLL_Y;
-    backToTopButton.classList.toggle("is-visible", shouldShow);
-  };
-
-  backToTopButton.addEventListener("click", () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  });
-
-  window.addEventListener("scroll", updateBackToTopVisibility, { passive: true });
-  window.addEventListener("resize", updateBackToTopVisibility);
-  updateBackToTopVisibility();
 }
 
 function handleDashboardViewFilterChange() {
@@ -4223,7 +4209,6 @@ function init() {
   setupSectionAccordions();
   setupChildAccordions();
   setupBottomNavigation();
-  setupBackToTopButton();
 
   render();
 }
