@@ -4080,6 +4080,10 @@ function setupBottomNavigation() {
 }
 
 function setupDashboardCardNavigation() {
+  const isAge60AssetCard = (card) =>
+    card?.dataset?.dashboardJumpSection === "section-assets"
+    && card.querySelector("#dashboard-age60-total");
+
   const handleDashboardCardAction = (card) => {
     const sectionId = card?.dataset?.dashboardJumpSection;
     if (!sectionId) return;
@@ -4090,15 +4094,31 @@ function setupDashboardCardNavigation() {
     card.addEventListener("pointerup", (event) => {
       if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
       event.preventDefault();
-      handleDashboardCardAction(card);
+      const pressedCard = event.currentTarget;
+      if (!(pressedCard instanceof HTMLElement)) return;
+      if (isAge60AssetCard(pressedCard)) {
+        pressedCard.dataset.suppressNextClickUntil = String(Date.now() + 500);
+      }
+      handleDashboardCardAction(pressedCard);
     });
-    card.addEventListener("click", () => {
-      handleDashboardCardAction(card);
+    card.addEventListener("click", (event) => {
+      const pressedCard = event.currentTarget;
+      if (!(pressedCard instanceof HTMLElement)) return;
+      if (isAge60AssetCard(pressedCard)) {
+        const suppressNextClickUntil = Number.parseInt(pressedCard.dataset.suppressNextClickUntil || "0", 10);
+        if (Date.now() < suppressNextClickUntil) {
+          pressedCard.dataset.suppressNextClickUntil = "0";
+          return;
+        }
+      }
+      handleDashboardCardAction(pressedCard);
     });
     card.addEventListener("keydown", (event) => {
       if (event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();
-      handleDashboardCardAction(card);
+      const pressedCard = event.currentTarget;
+      if (!(pressedCard instanceof HTMLElement)) return;
+      handleDashboardCardAction(pressedCard);
     });
   });
 }
