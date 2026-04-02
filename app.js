@@ -4021,7 +4021,10 @@ function scrollToSection(sectionId, { actionToken, toggleIfExpanded = false } = 
   const expanded = isAccordionSectionExpanded(targetSection);
   if (expanded) {
     if (toggleIfExpanded) {
-      setAccordionExpanded(targetSection, false);
+      setAccordionExpanded(targetSection, false).then(() => {
+        if (actionToken && actionToken !== navActionToken) return;
+        ensureSectionHeadingVisible(targetSection);
+      });
       return;
     }
     const distance = Math.abs(window.scrollY - getSectionHeadingTargetY(targetSection));
