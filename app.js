@@ -1568,6 +1568,7 @@ function renderLifeEvents(items) {
 
 function addLifeEvent(event) {
   event.preventDefault();
+  const wasEditing = Boolean(lifeEventEditingId);
   const month = lifeEventMonthInput.value;
   const type = lifeEventTypeInput.value;
   const category = lifeEventCategoryInput.value;
@@ -1626,6 +1627,9 @@ function addLifeEvent(event) {
 
   resetLifeEventFormFields();
   render();
+  if (wasEditing) {
+    scrollToTopAfterMobileUpdate();
+  }
 }
 
 function cancelLifeEventEdit() {
@@ -3588,6 +3592,7 @@ function render() {
 
 function addTransaction(event) {
   event.preventDefault();
+  const wasEditing = Boolean(transactionEditingId);
 
   const date = dateInput.value;
   const type = typeInput.value;
@@ -3632,10 +3637,14 @@ function addTransaction(event) {
   }
 
   render();
+  if (wasEditing) {
+    scrollToTopAfterMobileUpdate();
+  }
 }
 
 function addRecurringExpense(event) {
   event.preventDefault();
+  const wasEditing = Boolean(recurringEditingId);
   const category = recurringCategoryInput.value;
   const amount = parseAmountInput(recurringAmountInput.value);
   const day = Math.min(Math.max(Number(recurringDayInput.value) || 1, 1), 31);
@@ -3677,6 +3686,9 @@ function addRecurringExpense(event) {
 
   resetRecurringFormFields();
   render();
+  if (wasEditing) {
+    scrollToTopAfterMobileUpdate();
+  }
 }
 
 function cancelRecurringExpenseEdit() {
@@ -3995,6 +4007,19 @@ function ensureSectionHeadingVisible(section, { behavior } = {}) {
   });
 }
 
+function isMobileViewport() {
+  return window.matchMedia("(max-width: 640px)").matches;
+}
+
+function scrollToTopAfterMobileUpdate() {
+  if (!isMobileViewport()) return;
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: "auto" });
+    });
+  });
+}
+
 function scrollToNavSection(target) {
   const actionToken = ++navActionToken;
   if (target === "top") {
@@ -4102,7 +4127,7 @@ function setupDashboardCardNavigation() {
   const handleDashboardCardAction = (card) => {
     const sectionId = card?.dataset?.dashboardJumpSection;
     if (!sectionId) return;
-    scrollToSection(sectionId, { toggleIfExpanded: true });
+    scrollToSection(sectionId, { toggleIfExpanded: false });
   };
 
   dashboardJumpCards.forEach((card) => {
