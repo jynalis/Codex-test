@@ -4039,10 +4039,20 @@ function setupBottomNavigation() {
     button.addEventListener("pointerup", (event) => {
       if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
       event.preventDefault();
-      handleBottomNavAction(button);
+      const pressedButton = event.currentTarget;
+      if (!(pressedButton instanceof HTMLElement)) return;
+      pressedButton.dataset.suppressNextClickUntil = String(Date.now() + 500);
+      handleBottomNavAction(pressedButton);
     });
-    button.addEventListener("click", () => {
-      handleBottomNavAction(button);
+    button.addEventListener("click", (event) => {
+      const pressedButton = event.currentTarget;
+      if (!(pressedButton instanceof HTMLElement)) return;
+      const suppressNextClickUntil = Number.parseInt(pressedButton.dataset.suppressNextClickUntil || "0", 10);
+      if (Date.now() < suppressNextClickUntil) {
+        pressedButton.dataset.suppressNextClickUntil = "0";
+        return;
+      }
+      handleBottomNavAction(pressedButton);
     });
   });
 
