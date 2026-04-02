@@ -2101,25 +2101,100 @@ function createDashboardDiagnosisComment({ summary, monthlySavingTotal, manualTr
   }
 
   const balance = summary.endingBalance;
-  const itemRatios = expenseComposition?.itemRatios || {};
-  const fixedExpenseRatio = (itemRatios["家賃・住宅ローン"] || 0) + (itemRatios["家賃"] || 0) + (itemRatios["通信費"] || 0) + (itemRatios["保険料"] || 0) + (itemRatios["カーローン"] || 0) + (itemRatios["教育費"] || 0) + (itemRatios["その他固定費"] || 0);
-  if (balance < 0) {
-    return "今月は赤字傾向です。固定費や臨時支出の見直し余地があります。";
-  }
-
   const income = summary.income;
+  const itemRatios = expenseComposition?.itemRatios || {};
+  const fixedExpenseRatio = (itemRatios["家賃・マイホーム費"] || 0) + (itemRatios["家賃・住宅ローン"] || 0) + (itemRatios["家賃"] || 0) + (itemRatios["通信費"] || 0) + (itemRatios["保険料"] || 0) + (itemRatios["カーローン"] || 0) + (itemRatios["教育費"] || 0) + (itemRatios["その他固定費"] || 0);
+  const dailyExpenseRatio = itemRatios["日常費"] || 0;
+  const leisureRatio = itemRatios["レジャー費"] || 0;
+  const miscRatio = (itemRatios["雑費"] || 0) + (itemRatios["出金"] || 0);
   const reserveRatio = income > 0 ? balance / income : 0;
-  const savingsHeavyAndLowCash = monthlySavingTotal > 0 && income > 0 && monthlySavingTotal / income >= 0.25 && reserveRatio <= 0.1;
-  if (savingsHeavyAndLowCash) {
-    return "資産形成はできていますが、手元資金に余裕が少ない状態です。積立額とのバランス確認がおすすめです。";
+  const savingRate = income > 0 ? monthlySavingTotal / income : 0;
+
+  const insights = [];
+
+  if (balance < 0) {
+    insights.push({
+      key: "balance-deficit",
+      priority: 120,
+      text: "今月は支出が収入を上回る赤字傾向です。赤字が続くと貯蓄や資産形成を圧迫する可能性があるため、まずは毎月固定で出る支出から見直すのが効果的です。",
+    });
+  } else if (reserveRatio <= 0.05) {
+    insights.push({
+      key: "balance-tight",
+      priority: 90,
+      text: "収支は均衡に近く、月末に残る余力はやや限定的です。突発費用に備えて、少額でも先取りで残す流れを作れると安心です。",
+    });
+  } else if (reserveRatio >= 0.2) {
+    insights.push({
+      key: "balance-healthy",
+      priority: 70,
+      text: "収支は黒字で、毎月の余力を確保できています。余剰分の使い道を生活防衛資金と積立に分けると、家計の安定性がさらに高まります。",
+    });
   }
 
-  const hasSavings = monthlySavingTotal > 0;
-  if (hasSavings && reserveRatio >= 0.2 && fixedExpenseRatio < 60) {
-    return "今月は家計が安定しています。この調子で資産形成を継続できそうです。";
+  if (fixedExpenseRatio >= 38) {
+    insights.push({
+      key: "expense-fixed-heavy",
+      priority: balance < 0 ? 115 : 100,
+      text: "家賃・住宅ローンを中心とした固定費の比率が高めです。固定費は一度下げると効果が続くため、住居費や通信費の最適化余地を確認してみましょう。",
+    });
+  } else if (dailyExpenseRatio >= 33) {
+    insights.push({
+      key: "expense-daily-heavy",
+      priority: 80,
+      text: "日常費の比率がやや高く、日々の支出が家計を押し上げている可能性があります。買い方や頻度を見直すだけでも改善につながります。",
+    });
+  } else if (leisureRatio >= 18) {
+    insights.push({
+      key: "expense-leisure-heavy",
+      priority: 80,
+      text: "レジャー費の比率が高めで、楽しみへの支出が家計に占める割合が大きい状態です。満足度を維持しながら予算上限を決めると管理しやすくなります。",
+    });
+  } else if (miscRatio >= 16) {
+    insights.push({
+      key: "expense-misc-heavy",
+      priority: 72,
+      text: "雑費・予備費の比率が高く、使途の曖昧な支出が増えている可能性があります。内容を小分けで記録すると、削減ポイントが見えやすくなります。",
+    });
+  } else {
+    insights.push({
+      key: "expense-balanced",
+      priority: 60,
+      text: "支出は特定費目に偏りにくく、全体としてバランス良く配分できています。この状態を維持しつつ、変動しやすい費目だけ定期確認すると安心です。",
+    });
   }
 
-  return "今月は黒字ですが、月末の余裕はやや小さめです。支出バランスを確認してみましょう。";
+  if (monthlySavingTotal > 0 && reserveRatio >= 0.1 && savingRate >= 0.15) {
+    insights.push({
+      key: "asset-good-progress",
+      priority: 95,
+      text: "毎月の積立を継続できており、資産形成は良好に進んでいます。現在の収支バランスを保てれば、将来への備えを積み上げやすい状況です。",
+    });
+  } else if (monthlySavingTotal > 0 && reserveRatio < 0.1) {
+    insights.push({
+      key: "asset-tight-progress",
+      priority: 88,
+      text: "積立は継続できていますが、収支に対する余力はやや限られています。積立額と手元資金のバランスを定期的に点検するのがおすすめです。",
+    });
+  } else {
+    insights.push({
+      key: "asset-review-needed",
+      priority: 84,
+      text: "積立余力はまだ大きくないため、支出の見直しとあわせて無理のない金額から資産形成を始める余地があります。",
+    });
+  }
+
+  const selectedInsights = insights
+    .sort((a, b) => b.priority - a.priority)
+    .reduce((acc, item) => {
+      if (acc.some((picked) => picked.key === item.key)) return acc;
+      acc.push(item);
+      return acc;
+    }, [])
+    .slice(0, 3)
+    .map((item) => item.text);
+
+  return selectedInsights.join(" ");
 }
 
 function formatYenAsManYenLabel(value) {
