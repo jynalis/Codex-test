@@ -92,6 +92,7 @@ const accordionCloseTimers = new WeakMap();
 const accordionCollapseWaiters = new WeakMap();
 const NAV_CLOSE_FAR_DISTANCE = 520;
 let navActionToken = 0;
+let mobileUpdateScrollToken = 0;
 
 let latestAssetForecastSettings = null;
 let assetForecastDirty = true;
@@ -4089,9 +4090,19 @@ function isMobileViewport() {
 
 function scrollToTopAfterMobileUpdate() {
   if (!isMobileViewport()) return;
+  const token = ++mobileUpdateScrollToken;
+  const scrollToDashboardStart = () => {
+    if (token !== mobileUpdateScrollToken) return;
+    if (!dashboardSection) return;
+    const targetY = getSectionHeadingTargetY(dashboardSection);
+    window.scrollTo({ top: targetY, behavior: "auto" });
+  };
+
   window.requestAnimationFrame(() => {
     window.requestAnimationFrame(() => {
-      window.scrollTo({ top: 0, behavior: "auto" });
+      window.setTimeout(() => {
+        window.requestAnimationFrame(scrollToDashboardStart);
+      }, 80);
     });
   });
 }
