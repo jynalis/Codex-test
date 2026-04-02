@@ -3879,7 +3879,7 @@ function setupSectionAccordions() {
       const expanded = trigger.getAttribute("aria-expanded") === "true";
       const nextExpanded = !expanded;
 
-      setAccordionExpanded(section, nextExpanded);
+      setAccordionExpanded(section, nextExpanded).then(() => alignSectionHeadingAfterToggle(section));
     };
 
     const initialExpanded = section.dataset.accordionInitialExpanded === "true";
@@ -3969,6 +3969,18 @@ function getViewportTopOffset() {
 function distanceBasedScrollBehavior(distance) {
   if (distance > NAV_CLOSE_FAR_DISTANCE) return "auto";
   return "smooth";
+}
+
+function alignSectionHeadingAfterToggle(section) {
+  if (!section) return Promise.resolve();
+  return new Promise((resolve) => {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        ensureSectionHeadingVisible(section);
+        resolve();
+      });
+    });
+  });
 }
 
 function ensureSectionHeadingVisible(section, { behavior } = {}) {
