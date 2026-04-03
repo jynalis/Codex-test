@@ -117,7 +117,9 @@ const DEFAULT_CASHFLOW_ASSUMPTIONS = {
   inflationRate: 1,
 };
 
-const RETIREMENT_REFERENCE_AGE = 60;
+const TARGET_AGE_PRIMARY = 60;
+const TARGET_AGE_SECONDARY = 65;
+const RETIREMENT_REFERENCE_AGE = TARGET_AGE_PRIMARY;
 const RETIREMENT_REFERENCE_DAY_OFFSET = 2;
 
 const EXPENSE_CATEGORIES = ["日常費", "レジャー費", "ガソリン費", "雑費", "出金"];
@@ -1978,13 +1980,38 @@ function isPlanHeldUntilAge(plan, age, birthDate = "") {
   return withdrawAgeByMonth >= age;
 }
 
-function resolveAge60AssetFormationBalance({ settings, transactions, recurringExpenses, lifeEvents, assumptions }) {
-  const cashflowRows = buildCashflowRows({ settings, transactions, recurringExpenses, lifeEvents, assumptions });
-  const retirementReferenceYear = resolveRetirementReferenceYear(settings.birthDate);
-  const age60CashflowRow = cashflowRows.find((row) => row.year === retirementReferenceYear)
+function calculateAssetFormationBalanceAtAge({
+  settings,
+  transactions,
+  recurringExpenses,
+  lifeEvents,
+  assumptions,
+  targetAge = RETIREMENT_REFERENCE_AGE,
+}) {
+  const cashflowRows = buildCashflowRowsUntilAge({
+    settings,
+    transactions,
+    recurringExpenses,
+    lifeEvents,
+    assumptions,
+    targetAge,
+  });
+  const referenceYear = resolveReferenceYearByAge(settings.birthDate, targetAge);
+  const targetRow = cashflowRows.find((row) => row.year === referenceYear)
     || cashflowRows[cashflowRows.length - 1]
     || null;
-  return age60CashflowRow?.assetFormationBalance ?? 0;
+  return targetRow?.assetFormationBalance ?? 0;
+}
+
+function resolveAge60AssetFormationBalance({ settings, transactions, recurringExpenses, lifeEvents, assumptions }) {
+  return calculateAssetFormationBalanceAtAge({
+    settings,
+    transactions,
+    recurringExpenses,
+    lifeEvents,
+    assumptions,
+    targetAge: TARGET_AGE_PRIMARY,
+  });
 }
 
 function normalizeExpenseCompositionCategory(item) {
@@ -2373,14 +2400,25 @@ function renderDashboard({
     assetGrowthMonthlyChip.textContent = `毎月の積立額: ¥${numberWithComma.format(normalizedMonthlySavingTotal)}`;
   }
   const assumptions = loadCashflowAssumptions();
-  const cashflowRows = buildCashflowRows({ settings, transactions, recurringExpenses, lifeEvents, assumptions });
+  const cashflowRows = buildCashflowRowsUntilAge({
+    settings,
+    transactions,
+    recurringExpenses,
+    lifeEvents,
+    assumptions,
+    targetAge: TARGET_AGE_PRIMARY,
+  });
   dashboardIncomeTotal.textContent = yen.format(summary.income);
   dashboardExpenseTotal.textContent = yen.format(summary.expense);
   dashboardBalanceTotal.textContent = yen.format(summary.endingBalance);
-  const retirementReferenceYear = resolveRetirementReferenceYear(settings.birthDate);
-  const age60AssetFormationBalance = cashflowRows.find((row) => row.year === retirementReferenceYear)?.assetFormationBalance
-    ?? cashflowRows[cashflowRows.length - 1]?.assetFormationBalance
-    ?? 0;
+  const age60AssetFormationBalance = calculateAssetFormationBalanceAtAge({
+    settings,
+    transactions,
+    recurringExpenses,
+    lifeEvents,
+    assumptions,
+    targetAge: TARGET_AGE_PRIMARY,
+  });
   dashboardAge60Total.textContent = yen.format(age60AssetFormationBalance);
   dashboardDiagnosisComment.textContent = createDashboardDiagnosisComment({
     summary,
@@ -2709,20 +2747,27 @@ function sumMonthlyAmountsInYear(monthlyMap, year, startMonth, endMonth) {
   return total;
 }
 
-function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEvents, assumptions }) {
+function buildCashflowRowsUntilAge({
+  settings,
+  transactions,
+  recurringExpenses,
+  lifeEvents,
+  assumptions,
+  targetAge = RETIREMENT_REFERENCE_AGE,
+}) {
   const birth = parseBirthDate(settings.birthDate);
   if (!birth) return [];
 
-  const retirementReferenceDate = resolveRetirementReferenceDate(settings.birthDate);
-  if (!retirementReferenceDate) return [];
-  const retirementReferenceYear = retirementReferenceDate.getFullYear();
-  const retirementReferenceMonth = formatMonth(retirementReferenceYear, retirementReferenceDate.getMonth());
+  const referenceDate = resolveReferenceDateByAge(settings.birthDate, targetAge);
+  if (!referenceDate) return [];
+  const referenceYear = referenceDate.getFullYear();
+  const referenceMonth = formatMonth(referenceYear, referenceDate.getMonth());
 
   const cashflowStartMonth = resolveEntryStartMonth(settings, transactions);
   const parsedCashflowStartMonth = parseMonth(cashflowStartMonth);
   if (!parsedCashflowStartMonth) return [];
   const startYear = parsedCashflowStartMonth.year;
-  const endYear = retirementReferenceYear;
+  const endYear = referenceYear;
   if (startYear > endYear) return [];
 
   const nowMonth = todayISO().slice(0, 7);
@@ -2760,10 +2805,10 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
   for (let year = startYear; year <= endYear; year += 1) {
     const yearOffset = year - startYear;
     const age = resolveAgeAtYear(settings.birthDate, year);
-    if (!Number.isFinite(age) || age < currentAge || age > RETIREMENT_REFERENCE_AGE) continue;
+    if (!Number.isFinite(age) || age < currentAge || age > targetAge) continue;
 
-    const isRetirementReferenceYear = year === retirementReferenceYear;
-    const activeMonthsInYear = isRetirementReferenceYear ? (retirementReferenceDate.getMonth() + 1) : 12;
+    const isReferenceYear = year === referenceYear;
+    const activeMonthsInYear = isReferenceYear ? (referenceDate.getMonth() + 1) : 12;
     const yearProgressRate = activeMonthsInYear / 12;
 
     const annualIncome = Math.round(monthlyIncome * activeMonthsInYear * ((1 + salaryGrowth) ** yearOffset));
@@ -2771,11 +2816,11 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
 
     const annualRecurringExpense = Math.round(recurringMonthlyBase * activeMonthsInYear);
 
-    const annualAssetFormationExpense = isRetirementReferenceYear
+    const annualAssetFormationExpense = isReferenceYear
       ? Math.round(calculateAnnualAssetFormationExpense(settings, year) * yearProgressRate)
       : calculateAnnualAssetFormationExpense(settings, year);
     const yearStartMonth = year === startYear ? cashflowStartMonth : formatMonth(year, 0);
-    const yearEndMonth = isRetirementReferenceYear ? retirementReferenceMonth : formatMonth(year, 11);
+    const yearEndMonth = isReferenceYear ? referenceMonth : formatMonth(year, 11);
     const annualLumpInvestmentExpense = sumMonthlyAmountsInYear(assetLumpInvestmentsByMonth, year, yearStartMonth, yearEndMonth);
 
     const annualLifeEventIncome = sumMonthlyAmountsInYear(
@@ -2820,7 +2865,7 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
       + annualExtraExpense;
     const annualBalance = annualTotalIncome - annualTotalExpense;
     endingBalance += annualBalance;
-    const rowTargetMonth = isRetirementReferenceYear ? retirementReferenceMonth : formatMonth(year, 11);
+    const rowTargetMonth = isReferenceYear ? referenceMonth : formatMonth(year, 11);
     const assetFormationBalance = calculateFinancialAssetTotalAtMonth(settings, rowTargetMonth);
     const financialAssetTotal = endingBalance + assetFormationBalance;
 
@@ -2843,6 +2888,17 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
   }
 
   return rows;
+}
+
+function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEvents, assumptions }) {
+  return buildCashflowRowsUntilAge({
+    settings,
+    transactions,
+    recurringExpenses,
+    lifeEvents,
+    assumptions,
+    targetAge: TARGET_AGE_PRIMARY,
+  });
 }
 
 function renderCashflowTable({ settings, transactions, recurringExpenses, lifeEvents, assumptions }) {
@@ -3024,22 +3080,34 @@ function resolveTargetAgeDate(birthDate, targetAge) {
   );
 }
 
-function resolveRetirementReferenceDate(birthDate) {
-  const ageDate = resolveTargetAgeDate(birthDate, RETIREMENT_REFERENCE_AGE);
+function resolveReferenceDateByAge(birthDate, targetAge = RETIREMENT_REFERENCE_AGE) {
+  const ageDate = resolveTargetAgeDate(birthDate, targetAge);
   if (!ageDate) return null;
   const cutoffDate = new Date(ageDate);
   cutoffDate.setDate(cutoffDate.getDate() - RETIREMENT_REFERENCE_DAY_OFFSET);
   return cutoffDate;
 }
 
-function resolveRetirementReferenceYear(birthDate) {
-  const cutoffDate = resolveRetirementReferenceDate(birthDate);
+function resolveReferenceYearByAge(birthDate, targetAge = RETIREMENT_REFERENCE_AGE) {
+  const cutoffDate = resolveReferenceDateByAge(birthDate, targetAge);
   return cutoffDate ? cutoffDate.getFullYear() : null;
 }
 
-function resolveRetirementReferenceMonth(birthDate) {
-  const cutoffDate = resolveRetirementReferenceDate(birthDate);
+function resolveReferenceMonthByAge(birthDate, targetAge = RETIREMENT_REFERENCE_AGE) {
+  const cutoffDate = resolveReferenceDateByAge(birthDate, targetAge);
   return cutoffDate ? formatMonth(cutoffDate.getFullYear(), cutoffDate.getMonth()) : null;
+}
+
+function resolveRetirementReferenceDate(birthDate) {
+  return resolveReferenceDateByAge(birthDate, TARGET_AGE_PRIMARY);
+}
+
+function resolveRetirementReferenceYear(birthDate) {
+  return resolveReferenceYearByAge(birthDate, TARGET_AGE_PRIMARY);
+}
+
+function resolveRetirementReferenceMonth(birthDate) {
+  return resolveReferenceMonthByAge(birthDate, TARGET_AGE_PRIMARY);
 }
 
 function resolveWithdrawExecutionMonth(plan) {
@@ -3155,6 +3223,63 @@ function resolveCurrentAssetTargetMonth() {
   return todayISO().slice(0, 7);
 }
 
+function createAgeLabel(age) {
+  return `${age}歳`;
+}
+
+function createAssetOutlookPointLabel(age) {
+  return `${createAgeLabel(age)}時点`;
+}
+
+function createAssetOutlookTotalLabel(age) {
+  return `${createAssetOutlookPointLabel(age)}の想定総資産額`;
+}
+
+function createAssetOutlookWithdrawTitle(age) {
+  return `${createAgeLabel(age)}前に取崩す予定の資産`;
+}
+
+function buildAssetOutlookAtAge({
+  settings,
+  transactions,
+  recurringExpenses,
+  lifeEvents,
+  assumptions,
+  targetAge,
+}) {
+  const targetMonth = resolveReferenceMonthByAge(settings.birthDate, targetAge);
+  const referenceYear = resolveReferenceYearByAge(settings.birthDate, targetAge);
+  const balanceTargetMonth = targetMonth || (referenceYear ? formatMonth(referenceYear, 11) : null);
+  const plansAtAge = settings.plans.map((plan) => {
+    const planTargetMonth = resolvePlanSimulationTargetMonth(plan, targetMonth);
+    const projection = projectPlanAssetDetails(plan, settings.birthDate, planTargetMonth);
+    return {
+      ...plan,
+      projectedAmount: projection.amount,
+      projection,
+      isHeldUntilTargetAge: isPlanHeldUntilAge(plan, targetAge, settings.birthDate),
+    };
+  });
+  const planBalancesAtAge = buildPlanBalancesAtMonth(settings, balanceTargetMonth)
+    .filter((plan) => plan.projectedAmount > 0);
+  const totalAtAge = calculateAssetFormationBalanceAtAge({
+    settings,
+    transactions,
+    recurringExpenses,
+    lifeEvents,
+    assumptions,
+    targetAge,
+  });
+
+  return {
+    targetAge,
+    targetMonth,
+    plansAtAge,
+    planBalancesAtAge,
+    totalAtAge,
+  };
+}
+
 function renderAssetForecast(settings) {
   assetForecast.innerHTML = "";
   if (!settings.birthDate || settings.plans.length === 0) {
@@ -3164,23 +3289,30 @@ function renderAssetForecast(settings) {
 
   const transactions = loadTransactions();
   const recurringExpenses = loadRecurringExpenses();
+  const lifeEvents = loadLifeEvents();
   const assumptions = loadCashflowAssumptions();
   const currentAge = calculateAge(settings.birthDate);
-  const age60TargetMonth = resolveRetirementReferenceMonth(settings.birthDate);
   const currentAssetTargetMonth = resolveCurrentAssetTargetMonth();
   const currentAssetBaseDate = todayISO();
-
-  const projectedRowsAt60 = settings.plans.map((plan) => {
-    const planTargetMonth = resolvePlanSimulationTargetMonth(plan, age60TargetMonth);
-    const projection = projectPlanAssetDetails(plan, settings.birthDate, planTargetMonth);
-    return {
-      ...plan,
-      isHeldUntil60: isPlanHeldUntilAge(plan, RETIREMENT_REFERENCE_AGE, settings.birthDate),
-      projectedAmount: projection.amount,
-      projection,
-    };
+  const primaryAssetOutlook = buildAssetOutlookAtAge({
+    settings,
+    transactions,
+    recurringExpenses,
+    lifeEvents,
+    assumptions,
+    targetAge: TARGET_AGE_PRIMARY,
   });
-  const earlyWithdrawPlans = projectedRowsAt60.filter((plan) => !plan.isHeldUntil60 && plan.projectedAmount > 0);
+  buildAssetOutlookAtAge({
+    settings,
+    transactions,
+    recurringExpenses,
+    lifeEvents,
+    assumptions,
+    targetAge: TARGET_AGE_SECONDARY,
+  });
+
+  const projectedRowsAt60 = primaryAssetOutlook.plansAtAge;
+  const earlyWithdrawPlans = projectedRowsAt60.filter((plan) => !plan.isHeldUntilTargetAge && plan.projectedAmount > 0);
   const earlyWithdrawPlansForDisplay = earlyWithdrawPlans.map((plan) => {
     const displayTargetMonth = resolveWithdrawExecutionMonth(plan);
     const displayProjection = displayTargetMonth
@@ -3201,17 +3333,8 @@ function renderAssetForecast(settings) {
     };
   });
 
-  const totalAt60 = resolveAge60AssetFormationBalance({
-    settings,
-    transactions,
-    recurringExpenses,
-    lifeEvents: loadLifeEvents(),
-    assumptions,
-  });
-  const retirementReferenceYear = resolveRetirementReferenceYear(settings.birthDate);
-  const age60BalanceTargetMonth = age60TargetMonth || (retirementReferenceYear ? formatMonth(retirementReferenceYear, 11) : null);
-  const planBalancesAt60 = buildPlanBalancesAtMonth(settings, age60BalanceTargetMonth)
-    .filter((plan) => plan.projectedAmount > 0);
+  const totalAt60 = primaryAssetOutlook.totalAtAge;
+  const planBalancesAt60 = primaryAssetOutlook.planBalancesAtAge;
 
   const rows = planBalancesAt60
     .map(
@@ -3265,7 +3388,7 @@ function renderAssetForecast(settings) {
         aria-controls="${outlookPanelId}"
         id="${outlookTriggerId}"
       >
-        <h3>将来の資産見通し（60歳時点）</h3>
+        <h3>将来の資産見通し（${createAssetOutlookPointLabel(TARGET_AGE_PRIMARY)}）</h3>
         <span class="child-accordion-toggle" aria-hidden="true">+</span>
       </button>
       <div
@@ -3277,17 +3400,17 @@ function renderAssetForecast(settings) {
       >
         <div class="child-accordion-panel-inner">
           <section class="chart asset-outlook">
-            <p class="section-description">現在年齢: <strong>${currentAge}歳</strong> / 60歳時点の一覧は、キャッシュフロー表の資産形成額と同じ計算条件で表示しています。</p>
-            <h4>60歳時点の想定資産額（契約別）</h4>
-            ${rows ? `<ul class="asset-list">${rows}</ul>` : '<p class="chart-empty">60歳時点の評価対象となる契約はありません。</p>'}
-            <h4>60歳時点の想定資産額（種別別）</h4>
-            ${typeTotalsHtml ? `<ul class="asset-list">${typeTotalsHtml}</ul>` : '<p class="chart-empty">60歳時点の評価対象となる契約はありません。</p>'}
-            <div class="asset-total">60歳時点の想定総資産額: <strong>${yen.format(totalAt60)}</strong></div>
-            <section class="asset-withdraw-card" aria-label="60歳前に取崩す予定の資産">
-              <h4>60歳前に取崩す予定の資産</h4>
+            <p class="section-description">現在年齢: <strong>${currentAge}歳</strong> / ${createAssetOutlookPointLabel(TARGET_AGE_PRIMARY)}の一覧は、キャッシュフロー表の資産形成額と同じ計算条件で表示しています。</p>
+            <h4>${createAssetOutlookPointLabel(TARGET_AGE_PRIMARY)}の想定資産額（契約別）</h4>
+            ${rows ? `<ul class="asset-list">${rows}</ul>` : `<p class="chart-empty">${createAssetOutlookPointLabel(TARGET_AGE_PRIMARY)}の評価対象となる契約はありません。</p>`}
+            <h4>${createAssetOutlookPointLabel(TARGET_AGE_PRIMARY)}の想定資産額（種別別）</h4>
+            ${typeTotalsHtml ? `<ul class="asset-list">${typeTotalsHtml}</ul>` : `<p class="chart-empty">${createAssetOutlookPointLabel(TARGET_AGE_PRIMARY)}の評価対象となる契約はありません。</p>`}
+            <div class="asset-total">${createAssetOutlookTotalLabel(TARGET_AGE_PRIMARY)}: <strong>${yen.format(totalAt60)}</strong></div>
+            <section class="asset-withdraw-card" aria-label="${createAssetOutlookWithdrawTitle(TARGET_AGE_PRIMARY)}">
+              <h4>${createAssetOutlookWithdrawTitle(TARGET_AGE_PRIMARY)}</h4>
               ${earlyWithdrawHtml
     ? `<ul class="asset-list asset-withdraw-list">${earlyWithdrawHtml}</ul>`
-    : '<p class="chart-empty">60歳前に取崩す予定の契約はありません。</p>'}
+    : `<p class="chart-empty">${createAssetOutlookWithdrawTitle(TARGET_AGE_PRIMARY)}の契約はありません。</p>`}
             </section>
           </section>
         </div>
