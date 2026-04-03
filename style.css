@@ -144,6 +144,82 @@ header p {
   overflow: hidden;
 }
 
+.step-guide-card {
+  padding: 18px 20px;
+  border-color: #c9d8eb;
+  background: linear-gradient(160deg, #f9fcff 0%, #edf4fe 100%);
+}
+
+.step-guide-header {
+  display: grid;
+  gap: 6px;
+}
+
+.step-guide-header h2 {
+  width: fit-content;
+  font-size: 1.08rem;
+  color: #15375d;
+  font-weight: 850;
+}
+
+.step-guide-header p {
+  color: #4f6177;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.step-guide-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.step-guide-item {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  text-align: left;
+  border-radius: 12px;
+  border: 1px solid #b7cce5;
+  background: #fff;
+  color: #1b3554;
+  padding: 10px;
+  min-height: 78px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.step-guide-item-label {
+  width: fit-content;
+  border-radius: 999px;
+  background: #eaf2ff;
+  border: 1px solid #c8d8f0;
+  color: #31537c;
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+}
+
+.step-guide-item-title {
+  font-size: 0.82rem;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.step-guide-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgb(21 42 74 / 10%);
+}
+
+.step-guide-note {
+  margin-top: 10px;
+  color: #4a6079;
+  font-size: 0.79rem;
+  line-height: 1.5;
+}
+
 .accent-card {
   background: var(--profile-bg);
   border-color: #bfd2ee;
@@ -205,6 +281,20 @@ header p {
 .section-heading {
   display: grid;
   gap: 4px;
+}
+
+.section-role-badge {
+  width: fit-content;
+  margin-bottom: 1px;
+  border: 1px solid #bfd0e6;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 92%);
+  color: #466384;
+  font-size: 0.72rem;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 3px 9px;
 }
 
 .accordion-section {
@@ -349,6 +439,38 @@ header p {
 
 .section-tone-history .section-heading h2 {
   border-left-color: #37649c;
+}
+
+.section-tone-profile .section-role-badge {
+  border-color: #b7d1ee;
+}
+
+.section-tone-recurring .section-role-badge {
+  border-color: #abd0e2;
+}
+
+.section-tone-input .section-role-badge {
+  border-color: #ebd3a3;
+}
+
+.section-tone-life-events .section-role-badge {
+  border-color: #b8dec4;
+}
+
+.section-tone-assets .section-role-badge {
+  border-color: #cfd4fb;
+}
+
+.section-tone-cashflow .section-role-badge {
+  border-color: #aed8e8;
+}
+
+.section-tone-chart .section-role-badge {
+  border-color: #f3bfd8;
+}
+
+.section-tone-history .section-role-badge {
+  border-color: #bfd4eb;
 }
 
 .section-description {
@@ -1670,6 +1792,35 @@ button.ghost {
   font-variant-numeric: tabular-nums;
 }
 
+.dashboard-intro-card {
+  margin-top: 10px;
+  border: 1px solid #c7d8ea;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 80%);
+  padding: 12px 14px;
+}
+
+.dashboard-intro-title {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #1f3a5a;
+}
+
+.dashboard-intro-list {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+  color: #3e566f;
+  font-size: 0.82rem;
+}
+
+.dashboard-intro-note {
+  margin-top: 7px;
+  color: #526a83;
+  font-size: 0.76rem;
+}
+
 .amount.income {
   color: var(--income);
 }
@@ -2040,6 +2191,29 @@ button.ghost {
     line-height: 1.52;
   }
 
+  .step-guide-card {
+    padding: 14px 12px;
+  }
+
+  .step-guide-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .step-guide-item {
+    min-height: 72px;
+    padding: 9px 8px;
+  }
+
+  .step-guide-item-title {
+    font-size: 0.78rem;
+  }
+
+  .step-guide-note {
+    margin-top: 8px;
+    font-size: 0.74rem;
+  }
+
   .accordion-section {
     padding: 8px;
   }
@@ -2051,6 +2225,16 @@ button.ghost {
   .accordion-trigger {
     padding: 12px;
     min-height: 70px;
+  }
+
+  .section-heading {
+    gap: 5px;
+  }
+
+  .section-role-badge {
+    font-size: 0.66rem;
+    line-height: 1.18;
+    padding: 2px 7px;
   }
 
   .dashboard-header {
@@ -2082,6 +2266,10 @@ button.ghost {
   .section-description {
     font-size: 0.8rem;
     line-height: 1.55;
+  }
+
+  .section-heading h2 {
+    margin-top: 1px;
   }
 
   .filters {
@@ -2131,6 +2319,26 @@ button.ghost {
 
   .dashboard-panel-inner {
     padding-top: 12px;
+  }
+
+  .dashboard-intro-card {
+    margin-top: 8px;
+    padding: 10px 11px;
+  }
+
+  .dashboard-intro-title {
+    font-size: 0.82rem;
+  }
+
+  .dashboard-intro-list {
+    font-size: 0.76rem;
+    line-height: 1.35;
+    gap: 3px;
+  }
+
+  .dashboard-intro-note {
+    margin-top: 6px;
+    font-size: 0.71rem;
   }
 
   .dashboard-card {
