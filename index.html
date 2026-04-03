@@ -18,6 +18,34 @@
         </div>
       </header>
 
+      <section class="card step-guide-card" aria-labelledby="step-guide-title">
+        <div class="step-guide-header">
+          <h2 id="step-guide-title">最初にやること</h2>
+          <p>はじめての方は、次の順番で入力するとスムーズです。</p>
+        </div>
+        <div class="step-guide-grid">
+          <button type="button" class="step-guide-item" data-step-target="section-profile">
+            <span class="step-guide-item-label">STEP1</span>
+            <span class="step-guide-item-title">基本情報・資産形成設定</span>
+          </button>
+          <button type="button" class="step-guide-item" data-step-target="section-recurring">
+            <span class="step-guide-item-label">STEP2</span>
+            <span class="step-guide-item-title">定期支出入力</span>
+          </button>
+          <button type="button" class="step-guide-item" data-step-target="section-input">
+            <span class="step-guide-item-label">STEP3</span>
+            <span class="step-guide-item-title">収支を入力</span>
+          </button>
+          <button type="button" class="step-guide-item" data-step-target="section-life-events">
+            <span class="step-guide-item-label">STEP4</span>
+            <span class="step-guide-item-title">ライフイベント入力</span>
+          </button>
+        </div>
+        <p class="step-guide-note">
+          入力後は、家計診断ダッシュボード・将来資産シミュレーション・キャッシュフロー表で結果を確認できます。
+        </p>
+      </section>
+
       <section
         id="section-home"
         class="card dashboard-section section-tone-home accordion-section"
@@ -43,6 +71,16 @@
               <select id="dashboard-year-filter" aria-label="ダッシュボード表示年"></select>
               <select id="dashboard-month-filter" aria-label="ダッシュボード表示月"></select>
             </div>
+            <article class="dashboard-intro-card" aria-label="この画面で分かること">
+              <p class="dashboard-intro-title">この画面で分かること</p>
+              <ul class="dashboard-intro-list">
+                <li>今月の収支が黒字か赤字か</li>
+                <li>毎月の積立がどれくらい進んでいるか</li>
+                <li>60歳時点の資産形成額の目安</li>
+                <li>支出がどの項目に偏っているか</li>
+              </ul>
+              <p class="dashboard-intro-note">入力が増えるほど、FPコメントの精度が上がります。</p>
+            </article>
             <div class="dashboard-grid">
               <article
                 class="dashboard-card dashboard-card-jump dashboard-card-balance"
@@ -97,7 +135,7 @@
             <article class="diagnosis-card" aria-live="polite">
               <p class="diagnosis-label">FPコメント</p>
               <p id="dashboard-diagnosis-comment" class="diagnosis-text">
-                取引データを入力すると、今月の家計診断コメントが表示されます。
+                収支・定期支出・資産形成を入力すると、家計の偏りや改善ポイントをここに表示します。
               </p>
             </article>
           </div>
@@ -107,9 +145,10 @@
       <section id="section-profile" class="card section-tone-profile accordion-section" data-nav-section="home" data-accordion-section>
         <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-profile" id="trigger-profile">
           <div class="section-heading">
+            <p class="section-role-badge">最初に設定</p>
             <h2>基本情報・資産形成設定</h2>
             <p class="section-description">
-              記入開始月や生年月日、積立・保有資産の設定を行います。
+              家計簿の開始時期や生年月日、積立・保有資産の前提を設定します。
             </p>
           </div>
           <span class="accordion-toggle-icon" aria-hidden="true">＋</span>
@@ -163,6 +202,7 @@
       <section id="section-recurring" class="card section-tone-recurring accordion-section" data-accordion-section>
         <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-recurring" id="trigger-recurring">
           <div class="section-heading">
+            <p class="section-role-badge">毎月の固定費を登録</p>
             <h2>定期支出入力</h2>
             <p class="section-description">
               毎月の固定支出を登録すると、該当月の取引履歴へ自動反映します。
@@ -260,6 +300,7 @@
       <section id="section-input" class="card section-tone-input accordion-section" data-nav-section="input" data-accordion-section>
         <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-input" id="trigger-input">
           <div class="section-heading">
+            <p class="section-role-badge">日々の家計を記録</p>
             <h2>収支を入力</h2>
             <p class="section-description">
               日々の収入・支出を追加して、今月の家計を記録します。
@@ -308,6 +349,7 @@
       <section id="section-life-events" class="card section-tone-life-events accordion-section" data-accordion-section>
         <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-life-events" id="trigger-life-events">
           <div class="section-heading">
+            <p class="section-role-badge">将来の臨時収支を登録</p>
             <h2>ライフイベント入力</h2>
             <p class="section-description">
               60歳までの臨時収入・臨時支出を登録して、将来のイベントを整理します。
@@ -407,6 +449,7 @@
       <section id="section-assets" class="card section-tone-assets accordion-section" data-nav-section="assets" data-accordion-section>
         <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-assets" id="trigger-assets">
           <div class="section-heading">
+            <p class="section-role-badge">将来の資産を確認</p>
             <h2>将来資産シミュレーション</h2>
             <p class="section-description">
               現在資産形成の構成比と、60歳時点の想定総資産額を確認できます。
@@ -424,6 +467,7 @@
       <section id="section-cashflow" class="card section-tone-cashflow accordion-section" data-accordion-section>
         <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-cashflow" id="trigger-cashflow">
           <div class="section-heading">
+            <p class="section-role-badge">60歳までの推移を確認</p>
             <h2>キャッシュフロー表</h2>
             <p class="section-description">
               60歳までの毎年の収入・支出・残高を確認、ダウンロードできます。
@@ -456,6 +500,7 @@
       <section id="section-expense" class="card section-tone-chart accordion-section" data-nav-section="expense" data-accordion-section>
         <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-chart" id="trigger-chart">
           <div class="section-heading">
+            <p class="section-role-badge">支出の偏りを確認</p>
             <h2>支出バランス分析</h2>
             <p class="section-description">
               どの項目に支出が偏っているかを視覚的に確認できます。
@@ -481,6 +526,7 @@
       <section id="section-history" class="card section-tone-history accordion-section" data-nav-section="transactions" data-accordion-section>
         <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-history" id="trigger-history">
           <div class="section-heading">
+            <p class="section-role-badge">入力内容を確認・修正</p>
             <h2>取引履歴</h2>
             <p class="section-description">
               入力済みの取引内容を時系列で確認・削除できます。

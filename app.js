@@ -79,6 +79,7 @@ const assetGrowthMonthlyChip = document.getElementById("asset-growth-monthly-chi
 const expenseChart = document.getElementById("expense-chart");
 const bottomNavButtons = Array.from(document.querySelectorAll(".bottom-nav-btn"));
 const dashboardJumpCards = Array.from(document.querySelectorAll("[data-dashboard-jump-section]"));
+const stepGuideButtons = Array.from(document.querySelectorAll("[data-step-target]"));
 const navToast = document.getElementById("nav-toast");
 const accordionSections = Array.from(document.querySelectorAll("[data-accordion-section]"));
 const dashboardSection = document.getElementById("section-home");
@@ -2098,7 +2099,7 @@ function buildAverageExpenseComposition(transactions, targetMonths) {
 
 function createDashboardDiagnosisComment({ summary, monthlySavingTotal, manualTransactionCount, expenseComposition }) {
   if (manualTransactionCount < 3) {
-    return "取引データが少ないため、簡易診断を表示しています。入力が増えると、より実態に近い診断ができます。";
+    return "まだ入力が少ないため簡易診断です。定期支出や日々の収支を追加すると、固定費の重さや黒字余力が見えやすくなります。";
   }
 
   const balance = summary.endingBalance;
@@ -4272,6 +4273,24 @@ function setupDashboardCardNavigation() {
   });
 }
 
+function setupStepGuideNavigation() {
+  if (stepGuideButtons.length === 0) return;
+
+  const handleStepGuideAction = (button) => {
+    const sectionId = button?.dataset?.stepTarget;
+    if (!sectionId) return;
+    scrollToSection(sectionId, { toggleIfExpanded: false });
+  };
+
+  stepGuideButtons.forEach((button) => {
+    button.addEventListener("click", (event) => {
+      const pressedButton = event.currentTarget;
+      if (!(pressedButton instanceof HTMLElement)) return;
+      handleStepGuideAction(pressedButton);
+    });
+  });
+}
+
 function handleDashboardViewFilterChange() {
   const nextAverageMode = dashboardViewFilterControls.mode?.value === "average" ? "average" : "month";
   const wasAverageMode = sharedAverageViewState.averageMode === "average";
@@ -4380,6 +4399,7 @@ function init() {
   setupChildAccordions();
   setupBottomNavigation();
   setupDashboardCardNavigation();
+  setupStepGuideNavigation();
 
   render();
 }
