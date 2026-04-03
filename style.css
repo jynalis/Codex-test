@@ -1794,6 +1794,7 @@ button.ghost {
 
 .dashboard-intro-card {
   margin-top: 10px;
+  margin-bottom: 10px;
   border: 1px solid #c7d8ea;
   border-radius: 12px;
   background: rgb(255 255 255 / 80%);
@@ -2323,6 +2324,7 @@ button.ghost {
 
   .dashboard-intro-card {
     margin-top: 8px;
+    margin-bottom: 10px;
     padding: 10px 11px;
   }
 
