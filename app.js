@@ -2407,7 +2407,7 @@ function renderDashboard({
     recurringExpenses,
     lifeEvents,
     assumptions,
-    targetAge: TARGET_AGE_PRIMARY,
+    targetAge: TARGET_AGE_SECONDARY,
   });
   dashboardIncomeTotal.textContent = yen.format(summary.income);
   dashboardExpenseTotal.textContent = yen.format(summary.expense);
