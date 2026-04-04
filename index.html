@@ -18,32 +18,32 @@
         </div>
       </header>
 
-      <section class="card step-guide-card" aria-labelledby="step-guide-title">
-        <div class="step-guide-header">
-          <h2 id="step-guide-title">最初にやること</h2>
-          <p>はじめての方は、次の順番で入力するとスムーズです。</p>
+      <section class="card step-guide-card accordion-section" aria-labelledby="step-guide-title" data-accordion-section>
+        <button
+          type="button"
+          class="accordion-trigger step-guide-trigger"
+          aria-expanded="false"
+          aria-controls="panel-step-guide"
+          id="trigger-step-guide"
+        >
+          <div class="section-heading">
+            <h2 id="step-guide-title">最初にやること</h2>
+            <p class="section-description">初めての方や、入力内容の意味を確認したい方のための補助ガイドです。</p>
+          </div>
+          <span class="accordion-toggle-icon" aria-hidden="true">＋</span>
+        </button>
+        <div class="accordion-panel" id="panel-step-guide" role="region" aria-labelledby="trigger-step-guide">
+          <div class="accordion-panel-inner step-guide-panel-inner">
+            <p class="step-guide-note">操作は下部ショートカットボタンから行えます。各ボタンの役割は次のとおりです。</p>
+            <ul class="step-guide-list" aria-label="下部ショートカットボタンの役割">
+              <li><strong>基本：</strong>年齢・年収・現在資産・積立設定など、将来推計の土台を入力します。</li>
+              <li><strong>定期：</strong>家賃・保険・通信費など、毎月ほぼ固定の支出を入力します。</li>
+              <li><strong>収支：</strong>変動収入・変動支出や臨時の入出金を入力します。</li>
+              <li><strong>ライフ：</strong>将来の大きな支出や収入予定を入力します。</li>
+              <li><strong>TOP：</strong>画面上部へ戻りたいときに使います。</li>
+            </ul>
+          </div>
         </div>
-        <div class="step-guide-grid">
-          <button type="button" class="step-guide-item" data-step-target="section-profile">
-            <span class="step-guide-item-label">STEP1</span>
-            <span class="step-guide-item-title">基本情報・資産形成設定</span>
-          </button>
-          <button type="button" class="step-guide-item" data-step-target="section-recurring">
-            <span class="step-guide-item-label">STEP2</span>
-            <span class="step-guide-item-title">定期支出入力</span>
-          </button>
-          <button type="button" class="step-guide-item" data-step-target="section-input">
-            <span class="step-guide-item-label">STEP3</span>
-            <span class="step-guide-item-title">収支を入力</span>
-          </button>
-          <button type="button" class="step-guide-item" data-step-target="section-life-events">
-            <span class="step-guide-item-label">STEP4</span>
-            <span class="step-guide-item-title">ライフイベント入力</span>
-          </button>
-        </div>
-        <p class="step-guide-note">
-          入力後は、家計診断ダッシュボード・将来資産シミュレーション・キャッシュフロー表で結果を確認できます。
-        </p>
       </section>
 
       <section
