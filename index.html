@@ -496,14 +496,19 @@
           <div class="accordion-panel-inner">
             <form id="cashflow-settings-form" class="grid cashflow-settings-grid" autocomplete="off">
               <label>
-                昇給率（%）
-                <input id="cashflow-salary-growth-rate" type="number" inputmode="decimal" min="-10" max="20" step="0.1" />
+                59歳までの昇給率（%）
+                <input id="cashflow-salary-growth-rate-before-60" type="number" inputmode="decimal" min="-10" max="20" step="0.1" />
+              </label>
+              <label>
+                60歳以降の昇給率（%）
+                <input id="cashflow-salary-growth-rate-after-60" type="number" inputmode="decimal" min="-10" max="20" step="0.1" />
               </label>
               <label>
                 物価上昇率（%）
                 <input id="cashflow-inflation-rate" type="number" inputmode="decimal" min="-10" max="20" step="0.1" />
               </label>
             </form>
+            <p class="cashflow-forecast-note">※59歳までは通常昇給、60歳以降は再雇用後などを想定して別設定できます。</p>
             <p class="cashflow-forecast-note">※将来の見込みを表示します。</p>
             <p class="cashflow-scroll-hint">左右にスワイプで確認できます。</p>
             <div class="cashflow-table-wrap" id="cashflow-table-wrap"></div>
