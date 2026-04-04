@@ -73,6 +73,7 @@ const dashboardIncomeTotal = document.getElementById("dashboard-income-total");
 const dashboardExpenseTotal = document.getElementById("dashboard-expense-total");
 const dashboardBalanceTotal = document.getElementById("dashboard-balance-total");
 const dashboardAge60Total = document.getElementById("dashboard-age60-total");
+const dashboardAge65Total = document.getElementById("dashboard-age65-total");
 const dashboardDiagnosisComment = document.getElementById("dashboard-diagnosis-comment");
 const dashboardAssetFormationChart = document.getElementById("dashboard-asset-formation-chart");
 const assetGrowthMonthlyChip = document.getElementById("asset-growth-monthly-chip");
@@ -2419,7 +2420,18 @@ function renderDashboard({
     assumptions,
     targetAge: TARGET_AGE_PRIMARY,
   });
+  const age65AssetFormationBalance = calculateAssetFormationBalanceAtAge({
+    settings,
+    transactions,
+    recurringExpenses,
+    lifeEvents,
+    assumptions,
+    targetAge: TARGET_AGE_SECONDARY,
+  });
   dashboardAge60Total.textContent = yen.format(age60AssetFormationBalance);
+  if (dashboardAge65Total) {
+    dashboardAge65Total.textContent = yen.format(age65AssetFormationBalance);
+  }
   dashboardDiagnosisComment.textContent = createDashboardDiagnosisComment({
     summary,
     monthlySavingTotal,
@@ -3283,7 +3295,7 @@ function buildAssetOutlookAtAge({
 function renderAssetForecast(settings) {
   assetForecast.innerHTML = "";
   if (!settings.birthDate || settings.plans.length === 0) {
-    assetForecast.innerHTML = '<p class="chart-empty">生年月日と積立設定を保存すると、現時点と60歳時点の資産試算が表示されます。</p>';
+    assetForecast.innerHTML = '<p class="chart-empty">生年月日と積立設定を保存すると、現時点と60歳・65歳時点の資産試算が表示されます。</p>';
     return;
   }
 
@@ -3302,7 +3314,7 @@ function renderAssetForecast(settings) {
     assumptions,
     targetAge: TARGET_AGE_PRIMARY,
   });
-  buildAssetOutlookAtAge({
+  const secondaryAssetOutlook = buildAssetOutlookAtAge({
     settings,
     transactions,
     recurringExpenses,
@@ -3334,6 +3346,7 @@ function renderAssetForecast(settings) {
   });
 
   const totalAt60 = primaryAssetOutlook.totalAtAge;
+  const totalAt65 = secondaryAssetOutlook.totalAtAge;
   const planBalancesAt60 = primaryAssetOutlook.planBalancesAtAge;
 
   const rows = planBalancesAt60
@@ -3401,11 +3414,14 @@ function renderAssetForecast(settings) {
         <div class="child-accordion-panel-inner">
           <section class="chart asset-outlook">
             <p class="section-description">現在年齢: <strong>${currentAge}歳</strong> / ${createAssetOutlookPointLabel(TARGET_AGE_PRIMARY)}の一覧は、キャッシュフロー表の資産形成額と同じ計算条件で表示しています。</p>
+            <div class="asset-outlook-summary-grid">
+              <div class="asset-total asset-total-compact">${createAssetOutlookTotalLabel(TARGET_AGE_PRIMARY)}: <strong>${yen.format(totalAt60)}</strong></div>
+              <div class="asset-total asset-total-compact">${createAssetOutlookTotalLabel(TARGET_AGE_SECONDARY)}: <strong>${yen.format(totalAt65)}</strong></div>
+            </div>
             <h4>${createAssetOutlookPointLabel(TARGET_AGE_PRIMARY)}の想定資産額（契約別）</h4>
             ${rows ? `<ul class="asset-list">${rows}</ul>` : `<p class="chart-empty">${createAssetOutlookPointLabel(TARGET_AGE_PRIMARY)}の評価対象となる契約はありません。</p>`}
             <h4>${createAssetOutlookPointLabel(TARGET_AGE_PRIMARY)}の想定資産額（種別別）</h4>
             ${typeTotalsHtml ? `<ul class="asset-list">${typeTotalsHtml}</ul>` : `<p class="chart-empty">${createAssetOutlookPointLabel(TARGET_AGE_PRIMARY)}の評価対象となる契約はありません。</p>`}
-            <div class="asset-total">${createAssetOutlookTotalLabel(TARGET_AGE_PRIMARY)}: <strong>${yen.format(totalAt60)}</strong></div>
             <section class="asset-withdraw-card" aria-label="${createAssetOutlookWithdrawTitle(TARGET_AGE_PRIMARY)}">
               <h4>${createAssetOutlookWithdrawTitle(TARGET_AGE_PRIMARY)}</h4>
               ${earlyWithdrawHtml
