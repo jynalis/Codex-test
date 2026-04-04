@@ -2909,7 +2909,7 @@ function buildCashflowRows({ settings, transactions, recurringExpenses, lifeEven
     recurringExpenses,
     lifeEvents,
     assumptions,
-    targetAge: TARGET_AGE_PRIMARY,
+    targetAge: TARGET_AGE_SECONDARY,
   });
 }
 
