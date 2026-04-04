@@ -1009,7 +1009,7 @@ function formatScheduledMonthLabel(month) {
 function formatWithdrawMonthLabelWithAge(withdrawMonth, birthDate) {
   const monthLabel = formatScheduledMonthLabel(withdrawMonth);
   if (!parseMonth(withdrawMonth)) return monthLabel;
-  const age = resolveAgeAtDate(birthDate, `${withdrawMonth}-01`);
+  const age = resolveAgeAtMonth(birthDate, withdrawMonth);
   if (!Number.isFinite(age)) return monthLabel;
   return `${monthLabel}（${age}歳）`;
 }
@@ -1606,7 +1606,7 @@ function renderLifeEvents(items) {
     .sort((a, b) => (a.month !== b.month ? compareMonth(a.month, b.month) : a.createdAt.localeCompare(b.createdAt)))
     .forEach((item) => {
       const monthLabel = formatScheduledMonthLabel(item.month);
-      const age = resolveAgeAtDate(settings?.birthDate, `${item.month}-01`);
+      const age = resolveAgeAtMonth(settings?.birthDate, item.month);
       const monthWithAgeLabel = Number.isFinite(age) ? `${monthLabel}（${age}歳）` : monthLabel;
       const card = document.createElement("article");
       card.className = "life-event-card";
