@@ -2700,20 +2700,32 @@ function getRecurringExpenseMonthsInYear(item, year) {
   return monthsBetweenInclusive(effectiveStart, effectiveEnd);
 }
 
+function calculateAnnualRecurringExpenseForYear(recurringExpenses, year, yearStartMonth, yearEndMonth) {
+  if (!Number.isInteger(year) || !parseMonth(yearStartMonth) || !parseMonth(yearEndMonth)) return 0;
+  if (compareMonth(yearStartMonth, yearEndMonth) > 0) return 0;
+
+  return (Array.isArray(recurringExpenses) ? recurringExpenses : []).reduce((sum, item) => {
+    const monthlyAmount = Math.max(Number(item?.amount) || 0, 0);
+    if (monthlyAmount <= 0) return sum;
+    if (getRecurringExpenseMonthsInYear(item, year) <= 0) return sum;
+
+    let monthsWithinYearRange = 0;
+    for (let monthIndex = 0; monthIndex < 12; monthIndex += 1) {
+      const month = formatMonth(year, monthIndex);
+      if (compareMonth(month, yearStartMonth) < 0 || compareMonth(month, yearEndMonth) > 0) continue;
+      if (!isRecurringExpenseActiveOnMonth(item, month)) continue;
+      monthsWithinYearRange += 1;
+    }
+    return sum + (monthlyAmount * monthsWithinYearRange);
+  }, 0);
+}
+
 function isRecurringExpenseActiveOnMonth(item, month) {
   if (!parseMonth(month)) return false;
   if (!parseMonth(item?.startMonth)) return false;
   if (compareMonth(item.startMonth, month) > 0) return false;
   if (parseMonth(item.endMonth) && compareMonth(item.endMonth, month) < 0) return false;
   return true;
-}
-
-function calculateCurrentRecurringExpenseMonthlyTotal(recurringExpenses, nowMonth) {
-  if (!parseMonth(nowMonth)) return 0;
-  return (Array.isArray(recurringExpenses) ? recurringExpenses : []).reduce((sum, item) => {
-    if (!isRecurringExpenseActiveOnMonth(item, nowMonth)) return sum;
-    return sum + Math.max(Number(item.amount) || 0, 0);
-  }, 0);
 }
 
 function resolveAgeAtYear(birthDate, year) {
@@ -2874,8 +2886,6 @@ function buildCashflowRowsUntilAge({
     categories: EXPENSE_CATEGORIES,
   });
 
-  const recurringMonthlyBase = calculateCurrentRecurringExpenseMonthlyTotal(recurringExpenses, cashflowStartMonth);
-
   const inflationRate = (Number(assumptions?.inflationRate) || 0) / 100;
   const lifeEventByMonth = buildLifeEventTotalsByMonth(lifeEvents, settings.birthDate);
   const plannedExtraByMonth = buildPlannedExtraTotalsByMonth(transactions, averageStartMonth);
@@ -2902,13 +2912,14 @@ function buildCashflowRowsUntilAge({
     const yearOffset = year - startYear;
     const annualRegularExpense = Math.round(monthlyRegularExpense * activeMonthsInYear * ((1 + inflationRate) ** yearOffset));
 
-    const annualRecurringExpense = Math.round(recurringMonthlyBase * activeMonthsInYear);
-
     const annualAssetFormationExpense = isReferenceYear
       ? Math.round(calculateAnnualAssetFormationExpense(settings, year) * yearProgressRate)
       : calculateAnnualAssetFormationExpense(settings, year);
     const yearStartMonth = year === startYear ? cashflowStartMonth : formatMonth(year, 0);
     const yearEndMonth = isReferenceYear ? referenceMonth : formatMonth(year, 11);
+    const annualRecurringExpense = Math.round(
+      calculateAnnualRecurringExpenseForYear(recurringExpenses, year, yearStartMonth, yearEndMonth)
+    );
     const annualLumpInvestmentExpense = sumMonthlyAmountsInYear(assetLumpInvestmentsByMonth, year, yearStartMonth, yearEndMonth);
 
     const annualLifeEventIncome = sumMonthlyAmountsInYear(
