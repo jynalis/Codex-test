@@ -208,6 +208,11 @@ const yen = new Intl.NumberFormat("ja-JP", {
 });
 const numberWithComma = new Intl.NumberFormat("ja-JP");
 
+function parseRateInput(value, fallback = 0) {
+  const parsed = Number.parseFloat(String(value ?? "").trim());
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 function parseAmountInput(value) {
   if (typeof value !== "string") return 0;
   const normalized = value.replace(/[^\d]/g, "");
@@ -815,28 +820,30 @@ function loadCashflowAssumptions() {
   if (!raw) return { ...DEFAULT_CASHFLOW_ASSUMPTIONS };
   try {
     const data = JSON.parse(raw);
-    const legacySalaryGrowthRate = Number(data?.salaryGrowthRate);
-    const legacySalaryGrowthRateAfter60 = Number(data?.salaryGrowthRateAfter60);
+    const legacySalaryGrowthRate = parseRateInput(data?.salaryGrowthRate, Number.NaN);
+    const legacySalaryGrowthRateAfter60 = parseRateInput(data?.salaryGrowthRateAfter60, Number.NaN);
     const normalizedLegacySalaryGrowthRate = Number.isFinite(legacySalaryGrowthRate)
       ? legacySalaryGrowthRate
       : DEFAULT_CASHFLOW_ASSUMPTIONS.salaryGrowthRateBefore60;
     const normalizedLegacySalaryCorrectionRateAfter60 = Number.isFinite(legacySalaryGrowthRateAfter60)
       ? (100 + legacySalaryGrowthRateAfter60)
       : DEFAULT_CASHFLOW_ASSUMPTIONS.salaryCorrectionRateAfter60;
-    const salaryGrowthRateBefore60 = Number.isFinite(Number(data?.salaryGrowthRateBefore60))
-      ? Number(data.salaryGrowthRateBefore60)
+    const salaryGrowthRateBefore60 = Number.isFinite(parseRateInput(data?.salaryGrowthRateBefore60, Number.NaN))
+      ? parseRateInput(data.salaryGrowthRateBefore60)
       : normalizedLegacySalaryGrowthRate;
-    const salaryCorrectionRateAt60 = Number.isFinite(Number(data?.salaryCorrectionRateAt60))
-      ? Number(data.salaryCorrectionRateAt60)
+    const salaryCorrectionRateAt60 = Number.isFinite(parseRateInput(data?.salaryCorrectionRateAt60, Number.NaN))
+      ? parseRateInput(data.salaryCorrectionRateAt60)
       : DEFAULT_CASHFLOW_ASSUMPTIONS.salaryCorrectionRateAt60;
-    const salaryCorrectionRateAfter60 = Number.isFinite(Number(data?.salaryCorrectionRateAfter60))
-      ? Number(data.salaryCorrectionRateAfter60)
+    const salaryCorrectionRateAfter60 = Number.isFinite(parseRateInput(data?.salaryCorrectionRateAfter60, Number.NaN))
+      ? parseRateInput(data.salaryCorrectionRateAfter60)
       : normalizedLegacySalaryCorrectionRateAfter60;
     return {
       salaryGrowthRateBefore60,
       salaryCorrectionRateAt60,
       salaryCorrectionRateAfter60,
-      inflationRate: Number.isFinite(Number(data?.inflationRate)) ? Number(data.inflationRate) : DEFAULT_CASHFLOW_ASSUMPTIONS.inflationRate,
+      inflationRate: Number.isFinite(parseRateInput(data?.inflationRate, Number.NaN))
+        ? parseRateInput(data.inflationRate)
+        : DEFAULT_CASHFLOW_ASSUMPTIONS.inflationRate,
     };
   } catch {
     return { ...DEFAULT_CASHFLOW_ASSUMPTIONS };
@@ -845,10 +852,10 @@ function loadCashflowAssumptions() {
 
 function saveCashflowAssumptions(assumptions) {
   localStorage.setItem(CASHFLOW_ASSUMPTIONS_KEY, JSON.stringify({
-    salaryGrowthRateBefore60: Number(assumptions?.salaryGrowthRateBefore60) || 0,
-    salaryCorrectionRateAt60: Number(assumptions?.salaryCorrectionRateAt60) || 0,
-    salaryCorrectionRateAfter60: Number(assumptions?.salaryCorrectionRateAfter60) || 0,
-    inflationRate: Number(assumptions?.inflationRate) || 0,
+    salaryGrowthRateBefore60: parseRateInput(assumptions?.salaryGrowthRateBefore60),
+    salaryCorrectionRateAt60: parseRateInput(assumptions?.salaryCorrectionRateAt60),
+    salaryCorrectionRateAfter60: parseRateInput(assumptions?.salaryCorrectionRateAfter60),
+    inflationRate: parseRateInput(assumptions?.inflationRate),
   }));
 }
 
@@ -867,9 +874,9 @@ function updateCashflowAssumptionInputs(assumptions) {
 }
 
 function resolveAnnualIncomeTransitionFactor(assumptions, age) {
-  const before60GrowthRate = (Number(assumptions?.salaryGrowthRateBefore60) || 0) / 100;
-  const correctionRateAt60 = (Number(assumptions?.salaryCorrectionRateAt60) || 0) / 100;
-  const correctionRateAfter60 = (Number(assumptions?.salaryCorrectionRateAfter60) || 0) / 100;
+  const before60GrowthRate = parseRateInput(assumptions?.salaryGrowthRateBefore60) / 100;
+  const correctionRateAt60 = parseRateInput(assumptions?.salaryCorrectionRateAt60) / 100;
+  const correctionRateAfter60 = parseRateInput(assumptions?.salaryCorrectionRateAfter60) / 100;
   if (age <= 59) return 1 + before60GrowthRate;
   if (age === 60) return correctionRateAt60;
   return correctionRateAfter60;
@@ -2885,7 +2892,7 @@ function buildCashflowRowsUntilAge({
     categories: EXPENSE_CATEGORIES,
   });
 
-  const inflationRate = (Number(assumptions?.inflationRate) || 0) / 100;
+  const inflationRate = parseRateInput(assumptions?.inflationRate) / 100;
   const lifeEventByMonth = buildLifeEventTotalsByMonth(lifeEvents, settings.birthDate);
   const plannedExtraByMonth = buildPlannedExtraTotalsByMonth(transactions, averageStartMonth);
   const assetWithdrawalTransfersByMonth = buildAssetWithdrawalTransfersByMonth(settings);
@@ -4590,10 +4597,10 @@ function init() {
   lifeEventCancelButton?.addEventListener("click", cancelLifeEventEdit);
   cashflowSettingsForm?.addEventListener("input", () => {
     const assumptions = {
-      salaryGrowthRateBefore60: Number(cashflowSalaryGrowthRateBefore60Input?.value) || 0,
-      salaryCorrectionRateAt60: Number(cashflowSalaryCorrectionRateAt60Input?.value) || 0,
-      salaryCorrectionRateAfter60: Number(cashflowSalaryCorrectionRateAfter60Input?.value) || 0,
-      inflationRate: Number(cashflowInflationRateInput?.value) || 0,
+      salaryGrowthRateBefore60: parseRateInput(cashflowSalaryGrowthRateBefore60Input?.value),
+      salaryCorrectionRateAt60: parseRateInput(cashflowSalaryCorrectionRateAt60Input?.value),
+      salaryCorrectionRateAfter60: parseRateInput(cashflowSalaryCorrectionRateAfter60Input?.value),
+      inflationRate: parseRateInput(cashflowInflationRateInput?.value),
     };
     saveCashflowAssumptions(assumptions);
     render();
