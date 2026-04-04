@@ -1186,6 +1186,23 @@ button.plan-card-trigger {
   line-height: 1.15;
 }
 
+.dashboard-card-future-secondary {
+  background: linear-gradient(180deg, #7a5bc0 0%, #5b4291 100%);
+  border: 1px solid #c6b6eb;
+  box-shadow: 0 8px 20px rgb(97 73 148 / 16%);
+}
+
+.dashboard-card-future-secondary span {
+  color: #f5efff;
+  font-size: 0.8rem;
+}
+
+.dashboard-card-future-secondary strong {
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 12%);
+  line-height: 1.15;
+}
+
 .dashboard-card-expense {
   background: linear-gradient(160deg, #fff5f6 0%, #ffe9eb 100%);
   border-color: #e6b8c0;
@@ -1399,6 +1416,34 @@ button.plan-card-trigger {
   border-radius: 12px;
   padding: 12px 14px;
   font-size: 1.02rem;
+}
+
+.asset-total-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 8px 0 2px;
+}
+
+.asset-total-card {
+  display: grid;
+  gap: 6px;
+  border: 1px solid #cfdbec;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fbff 0%, #eff5ff 100%);
+  padding: 10px 12px;
+}
+
+.asset-total-card span {
+  color: #345576;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.asset-total-card strong {
+  color: #0f2e52;
+  font-size: 1.06rem;
+  line-height: 1.2;
 }
 
 .asset-breakdown-list {
@@ -2315,7 +2360,7 @@ button.ghost {
 
   .dashboard-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    gap: 8px;
   }
 
   .dashboard-panel-inner {
@@ -2344,12 +2389,35 @@ button.ghost {
   }
 
   .dashboard-card {
-    min-height: 102px;
-    padding: 12px 10px;
+    min-height: 96px;
+    padding: 11px 9px;
   }
 
   .dashboard-card strong {
-    font-size: 1.06rem;
+    font-size: 0.98rem;
+    overflow-wrap: anywhere;
+  }
+
+  .dashboard-card span {
+    letter-spacing: 0.02em;
+    line-height: 1.35;
+  }
+
+  .asset-forecast {
+    gap: 10px;
+  }
+
+  .asset-total-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .asset-total-card {
+    padding: 9px 10px;
+  }
+
+  .asset-total-card strong {
+    font-size: 1rem;
   }
 
   .diagnosis-card {
