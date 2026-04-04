@@ -861,16 +861,25 @@ function saveCashflowAssumptions(assumptions) {
 
 function updateCashflowAssumptionInputs(assumptions) {
   if (!cashflowSalaryGrowthRateBefore60Input || !cashflowSalaryCorrectionRateAt60Input || !cashflowSalaryCorrectionRateAfter60Input || !cashflowInflationRateInput) return;
-  cashflowSalaryGrowthRateBefore60Input.value = String(
-    assumptions.salaryGrowthRateBefore60 ?? DEFAULT_CASHFLOW_ASSUMPTIONS.salaryGrowthRateBefore60
-  );
-  cashflowSalaryCorrectionRateAt60Input.value = String(
-    assumptions.salaryCorrectionRateAt60 ?? DEFAULT_CASHFLOW_ASSUMPTIONS.salaryCorrectionRateAt60
-  );
-  cashflowSalaryCorrectionRateAfter60Input.value = String(
-    assumptions.salaryCorrectionRateAfter60 ?? DEFAULT_CASHFLOW_ASSUMPTIONS.salaryCorrectionRateAfter60
-  );
-  cashflowInflationRateInput.value = String(assumptions.inflationRate ?? DEFAULT_CASHFLOW_ASSUMPTIONS.inflationRate);
+  const activeElement = document.activeElement;
+  if (activeElement !== cashflowSalaryGrowthRateBefore60Input) {
+    cashflowSalaryGrowthRateBefore60Input.value = String(
+      assumptions.salaryGrowthRateBefore60 ?? DEFAULT_CASHFLOW_ASSUMPTIONS.salaryGrowthRateBefore60
+    );
+  }
+  if (activeElement !== cashflowSalaryCorrectionRateAt60Input) {
+    cashflowSalaryCorrectionRateAt60Input.value = String(
+      assumptions.salaryCorrectionRateAt60 ?? DEFAULT_CASHFLOW_ASSUMPTIONS.salaryCorrectionRateAt60
+    );
+  }
+  if (activeElement !== cashflowSalaryCorrectionRateAfter60Input) {
+    cashflowSalaryCorrectionRateAfter60Input.value = String(
+      assumptions.salaryCorrectionRateAfter60 ?? DEFAULT_CASHFLOW_ASSUMPTIONS.salaryCorrectionRateAfter60
+    );
+  }
+  if (activeElement !== cashflowInflationRateInput) {
+    cashflowInflationRateInput.value = String(assumptions.inflationRate ?? DEFAULT_CASHFLOW_ASSUMPTIONS.inflationRate);
+  }
 }
 
 function resolveAnnualIncomeTransitionFactor(assumptions, age) {
