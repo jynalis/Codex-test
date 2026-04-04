@@ -77,6 +77,7 @@ const dashboardAge65Total = document.getElementById("dashboard-age65-total");
 const dashboardDiagnosisComment = document.getElementById("dashboard-diagnosis-comment");
 const dashboardAssetFormationChart = document.getElementById("dashboard-asset-formation-chart");
 const assetGrowthMonthlyChip = document.getElementById("asset-growth-monthly-chip");
+const assetGrowthMetricToggle = document.getElementById("asset-growth-metric-toggle");
 const expenseChart = document.getElementById("expense-chart");
 const bottomNavButtons = Array.from(document.querySelectorAll(".bottom-nav-btn"));
 const dashboardJumpCards = Array.from(document.querySelectorAll("[data-dashboard-jump-section]"));
@@ -105,6 +106,7 @@ let lifeEventEditingId = null;
 let sharedYearMonthState = { year: "", month: "" };
 let historyViewState = { year: "", month: "" };
 let sharedAverageViewState = { averageMode: "month" };
+let dashboardAssetGrowthMetric = "assetFormationBalance";
 
 const NAV_TARGETS = {
   basic: "section-profile",
@@ -184,6 +186,18 @@ const EXPENSE_COMPOSITION_ITEMS = [
   "生命保険",
 ];
 const EXPENSE_CHART_COLORS = ["#ff6b6b", "#ff922b", "#ffd43b", "#38d9a9", "#4dabf7", "#9775fa", "#f06595", "#74c0fc", "#2f9e44", "#5c7cfa", "#e64980", "#15aabf"];
+const DASHBOARD_ASSET_GROWTH_METRICS = {
+  assetFormationBalance: {
+    label: "資産形成額",
+    emptyText: "資産形成額データがないため、グラフを表示できません。",
+    ariaLabel: "年ごとの資産形成額棒グラフ",
+  },
+  financialAssetTotal: {
+    label: "金融資産合計",
+    emptyText: "金融資産合計データがないため、グラフを表示できません。",
+    ariaLabel: "年ごとの金融資産合計棒グラフ",
+  },
+};
 
 const yen = new Intl.NumberFormat("ja-JP", {
   style: "currency",
@@ -2250,18 +2264,21 @@ function calculateNiceYAxisStep(maxValue) {
   return Math.max(niceFraction * exponent, 1000000);
 }
 
-function renderDashboardAssetFormationChart(cashflowRows) {
+function renderDashboardAssetFormationChart(cashflowRows, metricKey = "assetFormationBalance") {
   if (!dashboardAssetFormationChart) return;
   dashboardAssetFormationChart.innerHTML = "";
+  const metric = DASHBOARD_ASSET_GROWTH_METRICS[metricKey] || DASHBOARD_ASSET_GROWTH_METRICS.assetFormationBalance;
   const points = (Array.isArray(cashflowRows) ? cashflowRows : [])
-    .map((row) => ({ year: row.year, amount: row.assetFormationBalance }))
+    .map((row) => ({ year: row.year, amount: row[metricKey] }))
     .filter((row) => Number.isFinite(row.year) && Number.isFinite(row.amount) && row.amount >= 0);
+  const labels = points.map((item) => item.year);
+  const amounts = points.map((item) => item.amount);
 
-  const hasPositiveValue = points.some((item) => item.amount > 0);
-  if (points.length === 0 || !hasPositiveValue) {
+  const hasPositiveValue = amounts.some((value) => value > 0);
+  if (labels.length === 0 || labels.length !== amounts.length || !hasPositiveValue) {
     const empty = document.createElement("p");
     empty.className = "chart-empty";
-    empty.textContent = "資産形成額データがないため、グラフを表示できません。";
+    empty.textContent = metric.emptyText;
     dashboardAssetFormationChart.appendChild(empty);
     return;
   }
@@ -2271,13 +2288,14 @@ function renderDashboardAssetFormationChart(cashflowRows) {
   const chartHeight = 280;
   const margin = { top: 24, right: 12, bottom: 56 };
   const fixedAxisWidth = 84;
-  const visibleYearCount = points.length;
+  const visibleYearCount = labels.length;
   const minScrollableWidth = visibleYearCount * YEAR_SLOT_WIDTH_PX;
   const plotWidth = minScrollableWidth;
   const scrollChartWidth = plotWidth + margin.right;
   const plotHeight = chartHeight - margin.top - margin.bottom;
-  const yStep = calculateNiceYAxisStep(Math.max(...points.map((item) => item.amount)));
-  const yMax = Math.max(yStep, Math.ceil(Math.max(...points.map((item) => item.amount)) / yStep) * yStep);
+  const maxAmount = Math.max(...amounts);
+  const yStep = calculateNiceYAxisStep(maxAmount);
+  const yMax = Math.max(yStep, Math.ceil(maxAmount / yStep) * yStep);
   const yTickCount = Math.max(2, Math.ceil(yMax / yStep));
   const slotWidth = YEAR_SLOT_WIDTH_PX;
   const barWidth = BAR_WIDTH_PX;
@@ -2293,7 +2311,7 @@ function renderDashboardAssetFormationChart(cashflowRows) {
   const plotSvg = document.createElementNS(svgNS, "svg");
   plotSvg.setAttribute("viewBox", `0 0 ${scrollChartWidth} ${chartHeight}`);
   plotSvg.setAttribute("role", "img");
-  plotSvg.setAttribute("aria-label", "年ごとの資産形成額棒グラフ");
+  plotSvg.setAttribute("aria-label", metric.ariaLabel);
   plotSvg.classList.add("dashboard-asset-formation-chart-svg");
   plotSvg.style.width = `${scrollChartWidth}px`;
   plotSvg.style.minWidth = `${minScrollableWidth}px`;
@@ -2320,9 +2338,10 @@ function renderDashboardAssetFormationChart(cashflowRows) {
     plotSvg.appendChild(grid);
   }
 
-  points.forEach((item, index) => {
+  labels.forEach((yearLabel, index) => {
+    const amount = amounts[index];
     const xCenter = slotWidth * index + slotWidth / 2;
-    const barHeight = item.amount > 0 ? Math.max(1, (item.amount / yMax) * plotHeight) : 0;
+    const barHeight = amount > 0 ? Math.max(1, (amount / yMax) * plotHeight) : 0;
     const y = margin.top + plotHeight - barHeight;
     const rect = document.createElementNS(svgNS, "rect");
     rect.setAttribute("x", String(xCenter - barWidth / 2));
@@ -2338,7 +2357,7 @@ function renderDashboardAssetFormationChart(cashflowRows) {
     xLabel.setAttribute("y", String(chartHeight - 24));
     xLabel.setAttribute("text-anchor", "middle");
     xLabel.setAttribute("class", "dashboard-bar-chart-x-label");
-    xLabel.textContent = String(item.year);
+    xLabel.textContent = String(yearLabel);
     plotSvg.appendChild(xLabel);
   });
 
@@ -2382,6 +2401,27 @@ function renderDashboardAssetFormationChart(cashflowRows) {
   scrollPane.appendChild(scrollContent);
   chartLayout.appendChild(scrollPane);
   dashboardAssetFormationChart.appendChild(chartLayout);
+}
+
+function updateDashboardAssetGrowthMetricToggleUI() {
+  if (!assetGrowthMetricToggle) return;
+  const buttons = assetGrowthMetricToggle.querySelectorAll("[data-asset-growth-metric]");
+  buttons.forEach((button) => {
+    const isActive = button.dataset.assetGrowthMetric === dashboardAssetGrowthMetric;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+  });
+}
+
+function handleAssetGrowthMetricToggleClick(event) {
+  const targetButton = event.target.closest("[data-asset-growth-metric]");
+  if (!targetButton) return;
+  const metricKey = targetButton.dataset.assetGrowthMetric;
+  if (!DASHBOARD_ASSET_GROWTH_METRICS[metricKey]) return;
+  if (dashboardAssetGrowthMetric === metricKey) return;
+  dashboardAssetGrowthMetric = metricKey;
+  updateDashboardAssetGrowthMetricToggleUI();
+  render();
 }
 
 function renderDashboard({
@@ -2441,7 +2481,8 @@ function renderDashboard({
   if (monthCount > 0) {
     dashboardDiagnosisComment.textContent = `平均対象 ${monthCount}か月。${dashboardDiagnosisComment.textContent}`;
   }
-  renderDashboardAssetFormationChart(cashflowRows);
+  renderDashboardAssetFormationChart(cashflowRows, dashboardAssetGrowthMetric);
+  updateDashboardAssetGrowthMetricToggleUI();
 }
 
 function renderExpenseChart(expenseComposition, isAverageMode) {
@@ -4539,6 +4580,7 @@ function init() {
   setupBottomNavigation();
   setupDashboardCardNavigation();
   setupStepGuideNavigation();
+  assetGrowthMetricToggle?.addEventListener("click", handleAssetGrowthMetricToggleClick);
 
   render();
 }

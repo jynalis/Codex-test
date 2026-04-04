@@ -1233,6 +1233,36 @@ button.plan-card-trigger {
   align-items: center;
 }
 
+.asset-growth-card__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 3px;
+  border: 1px solid #b8cce3;
+  border-radius: 999px;
+  background: #f4f8fd;
+}
+
+.asset-growth-card__toggle-btn {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #355474;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 9px 12px;
+  cursor: pointer;
+}
+
+.asset-growth-card__toggle-btn.is-active {
+  background: #2f6fb2;
+  color: #fff;
+}
+
 .asset-growth-card__chip {
   margin: 0;
   width: fit-content;
@@ -2383,6 +2413,16 @@ button.ghost {
     min-height: 250px;
     margin-left: -10px;
     width: calc(100% + 10px);
+  }
+
+  .asset-growth-card__toggle {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .asset-growth-card__toggle-btn {
+    flex: 1 1 0;
+    min-height: 40px;
   }
 
   .dashboard-asset-formation-chart-layout {

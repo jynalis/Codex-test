@@ -133,6 +133,19 @@
                 <div class="asset-growth-card__meta">
                   <p id="asset-growth-monthly-chip" class="asset-growth-card__chip">毎月の積立額: ¥0</p>
                 </div>
+                <div
+                  id="asset-growth-metric-toggle"
+                  class="asset-growth-card__toggle"
+                  role="group"
+                  aria-label="年ごとの資産形成グラフの表示切り替え"
+                >
+                  <button type="button" class="asset-growth-card__toggle-btn is-active" data-asset-growth-metric="assetFormationBalance" aria-pressed="true">
+                    資産形成額
+                  </button>
+                  <button type="button" class="asset-growth-card__toggle-btn" data-asset-growth-metric="financialAssetTotal" aria-pressed="false">
+                    金融資産合計
+                  </button>
+                </div>
               </div>
               <div id="dashboard-asset-formation-chart" class="dashboard-asset-formation-chart"></div>
             </article>
