@@ -952,7 +952,7 @@ function startLifeEventEdit(id) {
 
 function resolveLifeEventHistoryPeriodLabel(item, settings) {
   const monthLabel = formatScheduledMonthLabel(item.month);
-  const age = resolveAgeAtDate(settings?.birthDate, `${item.month}-01`);
+  const age = resolveAgeAtMonth(settings?.birthDate, item.month);
   if (!Number.isFinite(age)) return `${monthLabel}の予定`;
   return `${monthLabel}（${age}歳）の予定`;
 }
@@ -969,7 +969,7 @@ function buildLifeEventHistoryItems(lifeEvents, settings) {
       category: item.category,
       amount: item.amount,
       memo: item.memo,
-      age: resolveAgeAtDate(settings?.birthDate, `${item.month}-01`),
+      age: resolveAgeAtMonth(settings?.birthDate, item.month),
       classificationLabel: LIFE_EVENT_TYPES[item.type],
       scheduledLabel: resolveLifeEventHistoryPeriodLabel(item, settings),
       scheduledMonth: item.month,
@@ -988,6 +988,15 @@ function resolveAgeAtDate(birthDate, dateString) {
     targetDate.getMonth() > birth.getMonth()
     || (targetDate.getMonth() === birth.getMonth() && targetDate.getDate() >= birth.getDate());
   if (!hadBirthday) age -= 1;
+  return Math.max(age, 0);
+}
+
+function resolveAgeAtMonth(birthDate, monthString) {
+  const birth = parseBirthDate(birthDate);
+  const targetMonth = parseMonth(monthString);
+  if (!birth || !targetMonth) return null;
+  let age = targetMonth.year - birth.getFullYear();
+  if (targetMonth.monthIndex < birth.getMonth()) age -= 1;
   return Math.max(age, 0);
 }
 
@@ -1720,7 +1729,7 @@ function updateLifeEventAgePreview() {
     return;
   }
   const monthLabel = formatScheduledMonthLabel(month);
-  const age = resolveAgeAtDate(loadSettings()?.birthDate, `${month}-01`);
+  const age = resolveAgeAtMonth(loadSettings()?.birthDate, month);
   lifeEventAgePreview.textContent = Number.isFinite(age)
     ? `想定年齢: ${monthLabel}（${age}歳）`
     : `予定: ${monthLabel}`;
