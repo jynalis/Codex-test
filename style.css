@@ -992,69 +992,50 @@ button.plan-card-trigger {
 }
 
 .dashboard-section {
-  padding: 24px;
-  box-shadow: 0 28px 46px rgb(16 39 67 / 20%);
+  padding: 18px 20px 20px;
+  box-shadow: 0 20px 34px rgb(16 39 67 / 16%);
   background:
     radial-gradient(circle at 100% 0%, rgb(255 255 255 / 52%) 0%, transparent 36%),
     linear-gradient(148deg, #ceddf2 0%, #dce8f9 36%, #c9d9ef 100%);
   border: 1px solid #9fb9d8;
-  border-top: 7px solid #1b4674;
-}
-
-.dashboard-section.accordion-section {
-  padding: 10px 12px;
+  border-top: 5px solid #1b4674;
 }
 
 .dashboard-header {
-  align-items: center;
-  gap: 10px;
+  display: block;
+  padding: 0 0 10px;
+  border-bottom: 1px solid rgb(24 59 100 / 16%);
 }
 
 .dashboard-header .section-heading {
-  flex: 1;
-  min-width: 0;
+  display: block;
 }
 
 .dashboard-header h2 {
-  display: inline-flex;
+  display: inline-block;
   flex-wrap: wrap;
-  align-items: baseline;
-  column-gap: 0.2em;
-  row-gap: 0.12em;
-  width: auto;
   max-width: 100%;
-  background: linear-gradient(145deg, #0c2f54 0%, #174f84 100%);
-  color: #fff;
-  border: 1px solid #163f6a;
-  border-left: 10px solid #66b2ff;
-  border-radius: 12px;
-  box-shadow: 0 16px 24px rgb(15 44 75 / 24%);
-  font-size: clamp(1.45rem, 3vw, 1.84rem);
-  padding: 13px 18px;
+  background: rgb(255 255 255 / 70%);
+  color: #123a62;
+  border: 1px solid #aac3de;
+  border-left: 6px solid #2c6da8;
+  border-radius: 10px;
+  box-shadow: none;
+  font-size: clamp(1.32rem, 2.8vw, 1.72rem);
+  padding: 10px 14px;
 }
 
 .dashboard-title-chunk {
   white-space: nowrap;
 }
 
-.dashboard-header .accordion-toggle-icon {
-  flex: 0 0 42px;
-}
-
-.dashboard-header .section-description {
-  color: #11355d;
-  font-size: 1rem;
-  font-weight: 600;
-  max-width: 760px;
-}
-
-.dashboard-section .accordion-panel-inner {
-  padding-inline: 0;
+.dashboard-panel {
+  padding-top: 12px;
 }
 
 .dashboard-panel-inner {
-  padding-top: 16px;
-  padding-bottom: 4px;
+  min-height: 0;
+  padding: 0 2px 4px;
 }
 
 .dashboard-grid {
@@ -2219,10 +2200,6 @@ button.ghost {
     padding: 8px;
   }
 
-  .dashboard-section.accordion-section {
-    padding: 8px;
-  }
-
   .accordion-trigger {
     padding: 12px;
     min-height: 70px;
@@ -2239,25 +2216,14 @@ button.ghost {
   }
 
   .dashboard-header {
-    gap: 8px;
+    padding-bottom: 8px;
   }
 
   .dashboard-header h2 {
-    font-size: clamp(1.2rem, 5.2vw, 1.48rem);
+    font-size: clamp(1.2rem, 5.2vw, 1.46rem);
     line-height: 1.2;
-    padding: 10px 12px;
-    border-left-width: 8px;
-  }
-
-  .dashboard-header .accordion-toggle-icon {
-    width: 40px;
-    height: 40px;
-    font-size: 1.58rem;
-    flex-basis: 40px;
-  }
-
-  .dashboard-header[aria-expanded="true"] .accordion-toggle-icon {
-    font-size: 1.7rem;
+    padding: 9px 11px;
+    border-left-width: 6px;
   }
 
   .accordion-panel-inner {
