@@ -48,21 +48,18 @@
 
       <section
         id="section-home"
-        class="card dashboard-section section-tone-home accordion-section"
-        data-accordion-section
+        class="card dashboard-section section-tone-home"
       >
-        <button type="button" class="accordion-trigger dashboard-header" aria-expanded="false" aria-controls="panel-home" id="trigger-home">
+        <div class="dashboard-header" id="trigger-home">
           <div class="section-heading">
             <h2>
               <span class="dashboard-title-chunk">家計診断</span>
               <span class="dashboard-title-chunk">ダッシュボード</span>
             </h2>
-            <p class="section-description">毎月の収支と資産形成の進捗を一目で確認できます。</p>
           </div>
-          <span class="accordion-toggle-icon" aria-hidden="true">＋</span>
-        </button>
-        <div class="accordion-panel" id="panel-home" role="region" aria-labelledby="trigger-home">
-          <div class="accordion-panel-inner dashboard-panel-inner">
+        </div>
+        <div class="dashboard-panel" id="panel-home" role="region" aria-labelledby="trigger-home">
+          <div class="dashboard-panel-inner">
             <div class="filters shared-view-filters" data-shared-view-filter="dashboard">
               <select id="dashboard-view-mode" aria-label="ダッシュボード表示モード">
                 <option value="month">年月</option>

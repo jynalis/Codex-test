@@ -4256,8 +4256,13 @@ function isAccordionSectionExpanded(section) {
   return trigger?.getAttribute("aria-expanded") === "true";
 }
 
+function getSectionAnchorElement(section) {
+  if (!section) return null;
+  return section.querySelector(".accordion-trigger") || section.querySelector(".dashboard-header") || section;
+}
+
 function getSectionHeadingTargetY(section) {
-  const trigger = section?.querySelector(".accordion-trigger");
+  const trigger = getSectionAnchorElement(section);
   if (!trigger) return window.scrollY;
   const topOffset = getViewportTopOffset();
   return Math.max(0, window.scrollY + trigger.getBoundingClientRect().top - topOffset);
@@ -4290,7 +4295,7 @@ function alignSectionHeadingAfterToggle(section) {
 
 function ensureSectionHeadingVisible(section, { behavior } = {}) {
   if (!section) return;
-  const trigger = section.querySelector(".accordion-trigger");
+  const trigger = getSectionAnchorElement(section);
   if (!trigger) return;
   const targetY = getSectionHeadingTargetY(section);
   const distance = Math.abs(window.scrollY - targetY);
