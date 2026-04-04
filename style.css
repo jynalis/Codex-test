@@ -298,34 +298,60 @@ header p {
 
 .accordion-toggle-icon {
   flex: 0 0 auto;
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
   border-radius: 999px;
   border: 1px solid #8ea4be;
   display: grid;
   place-items: center;
-  font-size: 1.8rem;
-  line-height: 1;
-  font-weight: 700;
-  color: #183b64;
+  position: relative;
   background: linear-gradient(160deg, #fff 0%, #e7effa 100%);
   box-shadow: 0 8px 16px rgb(30 62 98 / 18%);
+  transition:
+    border-color var(--accordion-duration) ease,
+    background var(--accordion-duration) ease,
+    box-shadow var(--accordion-duration) ease;
 }
 
-.accordion-trigger[aria-expanded="true"] .accordion-toggle-icon {
-  font-size: 2rem;
+.accordion-toggle-icon::before,
+.accordion-toggle-icon::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 11px;
+  height: 1.6px;
+  border-radius: 999px;
+  background: #183b64;
+  transform-origin: center;
+  transition:
+    transform var(--accordion-duration) ease,
+    background-color var(--accordion-duration) ease;
+}
+
+.accordion-toggle-icon::before {
+  left: 11px;
+  transform: translateY(-50%) rotate(38deg);
+}
+
+.accordion-toggle-icon::after {
+  right: 11px;
+  transform: translateY(-50%) rotate(-38deg);
 }
 
 .accordion-trigger[aria-expanded="true"] .accordion-toggle-icon::before {
-  content: "−";
+  transform: translateY(-50%) rotate(-38deg);
 }
 
-.accordion-trigger[aria-expanded="false"] .accordion-toggle-icon::before {
-  content: "＋";
+.accordion-trigger[aria-expanded="true"] .accordion-toggle-icon::after {
+  transform: translateY(-50%) rotate(38deg);
 }
 
-.accordion-trigger .accordion-toggle-icon {
-  color: transparent;
+.accordion-trigger[aria-expanded="true"] .accordion-toggle-icon {
+  border-color: #6f89aa;
+  background: linear-gradient(160deg, #fff 0%, #dce9f8 100%);
+  box-shadow:
+    0 8px 16px rgb(30 62 98 / 22%),
+    inset 0 0 0 1px rgb(255 255 255 / 72%);
 }
 
 .accordion-section .accordion-panel {
@@ -2173,6 +2199,11 @@ button.ghost {
   .accordion-trigger {
     padding: 12px;
     min-height: 70px;
+  }
+
+  .accordion-toggle-icon {
+    width: 48px;
+    height: 48px;
   }
 
   .section-heading {
