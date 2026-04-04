@@ -145,79 +145,43 @@ header p {
 }
 
 .step-guide-card {
-  padding: 18px 20px;
+  padding: 10px 12px;
   border-color: #c9d8eb;
   background: linear-gradient(160deg, #f9fcff 0%, #edf4fe 100%);
 }
 
-.step-guide-header {
-  display: grid;
-  gap: 6px;
-}
-
-.step-guide-header h2 {
+.step-guide-trigger h2 {
   width: fit-content;
   font-size: 1.08rem;
   color: #15375d;
   font-weight: 850;
 }
 
-.step-guide-header p {
-  color: #4f6177;
-  font-size: 0.88rem;
-  line-height: 1.55;
-}
-
-.step-guide-grid {
-  margin-top: 12px;
+.step-guide-panel-inner {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.step-guide-item {
-  display: grid;
-  align-content: start;
-  gap: 4px;
-  text-align: left;
-  border-radius: 12px;
-  border: 1px solid #b7cce5;
-  background: #fff;
-  color: #1b3554;
-  padding: 10px;
-  min-height: 78px;
-  font: inherit;
-  cursor: pointer;
-}
-
-.step-guide-item-label {
-  width: fit-content;
-  border-radius: 999px;
-  background: #eaf2ff;
-  border: 1px solid #c8d8f0;
-  color: #31537c;
-  font-size: 0.67rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  padding: 2px 8px;
-}
-
-.step-guide-item-title {
-  font-size: 0.82rem;
-  font-weight: 750;
-  line-height: 1.4;
-}
-
-.step-guide-item:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 16px rgb(21 42 74 / 10%);
+  gap: 10px;
+  padding-top: 12px;
 }
 
 .step-guide-note {
-  margin-top: 10px;
+  margin: 0;
   color: #4a6079;
-  font-size: 0.79rem;
-  line-height: 1.5;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.step-guide-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 8px;
+  color: #1d3551;
+  font-size: 0.83rem;
+  line-height: 1.55;
+}
+
+.step-guide-list strong {
+  color: #173e67;
 }
 
 .accent-card {
@@ -2235,26 +2199,20 @@ button.ghost {
   }
 
   .step-guide-card {
-    padding: 14px 12px;
+    padding: 8px;
   }
 
-  .step-guide-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 7px;
-  }
-
-  .step-guide-item {
-    min-height: 72px;
-    padding: 9px 8px;
-  }
-
-  .step-guide-item-title {
-    font-size: 0.78rem;
+  .step-guide-trigger h2 {
+    font-size: 1.02rem;
   }
 
   .step-guide-note {
-    margin-top: 8px;
-    font-size: 0.74rem;
+    font-size: 0.79rem;
+  }
+
+  .step-guide-list {
+    gap: 7px;
+    font-size: 0.78rem;
   }
 
   .accordion-section {

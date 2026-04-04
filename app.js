@@ -80,7 +80,6 @@ const assetGrowthMetricToggle = document.getElementById("asset-growth-metric-tog
 const expenseChart = document.getElementById("expense-chart");
 const bottomNavButtons = Array.from(document.querySelectorAll(".bottom-nav-btn"));
 const dashboardJumpCards = Array.from(document.querySelectorAll("[data-dashboard-jump-section]"));
-const stepGuideButtons = Array.from(document.querySelectorAll("[data-step-target]"));
 const navToast = document.getElementById("nav-toast");
 const accordionSections = Array.from(document.querySelectorAll("[data-accordion-section]"));
 const dashboardSection = document.getElementById("section-home");
@@ -4489,24 +4488,6 @@ function setupDashboardCardNavigation() {
   });
 }
 
-function setupStepGuideNavigation() {
-  if (stepGuideButtons.length === 0) return;
-
-  const handleStepGuideAction = (button) => {
-    const sectionId = button?.dataset?.stepTarget;
-    if (!sectionId) return;
-    scrollToSection(sectionId, { toggleIfExpanded: false });
-  };
-
-  stepGuideButtons.forEach((button) => {
-    button.addEventListener("click", (event) => {
-      const pressedButton = event.currentTarget;
-      if (!(pressedButton instanceof HTMLElement)) return;
-      handleStepGuideAction(pressedButton);
-    });
-  });
-}
-
 function handleDashboardViewFilterChange() {
   const nextAverageMode = dashboardViewFilterControls.mode?.value === "average" ? "average" : "month";
   const wasAverageMode = sharedAverageViewState.averageMode === "average";
@@ -4617,7 +4598,6 @@ function init() {
   setupChildAccordions();
   setupBottomNavigation();
   setupDashboardCardNavigation();
-  setupStepGuideNavigation();
   assetGrowthMetricToggle?.addEventListener("click", handleAssetGrowthMetricToggleClick);
 
   render();
