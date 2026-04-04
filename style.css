@@ -1577,7 +1577,7 @@ button.ghost {
 }
 
 .dashboard-panel-inner > .shared-view-filters[data-shared-view-filter="dashboard"] {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .shared-view-filters select {
@@ -1777,36 +1777,6 @@ button.ghost {
   font-weight: 700;
   font-size: 1.02rem;
   font-variant-numeric: tabular-nums;
-}
-
-.dashboard-intro-card {
-  margin-top: 10px;
-  margin-bottom: 10px;
-  border: 1px solid #c7d8ea;
-  border-radius: 12px;
-  background: rgb(255 255 255 / 80%);
-  padding: 12px 14px;
-}
-
-.dashboard-intro-title {
-  font-size: 0.88rem;
-  font-weight: 800;
-  color: #1f3a5a;
-}
-
-.dashboard-intro-list {
-  margin: 6px 0 0;
-  padding-left: 18px;
-  display: grid;
-  gap: 4px;
-  color: #3e566f;
-  font-size: 0.82rem;
-}
-
-.dashboard-intro-note {
-  margin-top: 7px;
-  color: #526a83;
-  font-size: 0.76rem;
 }
 
 .amount.income {
@@ -2288,25 +2258,8 @@ button.ghost {
     padding-top: 12px;
   }
 
-  .dashboard-intro-card {
-    margin-top: 8px;
+  .dashboard-panel-inner > .shared-view-filters[data-shared-view-filter="dashboard"] {
     margin-bottom: 10px;
-    padding: 10px 11px;
-  }
-
-  .dashboard-intro-title {
-    font-size: 0.82rem;
-  }
-
-  .dashboard-intro-list {
-    font-size: 0.76rem;
-    line-height: 1.35;
-    gap: 3px;
-  }
-
-  .dashboard-intro-note {
-    margin-top: 6px;
-    font-size: 0.71rem;
   }
 
   .dashboard-card {
