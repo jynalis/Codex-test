@@ -529,7 +529,7 @@ function normalizePlan(rawPlan) {
     id: plan.id || crypto.randomUUID(),
     type: PLAN_TYPES.includes(plan.type) ? plan.type : "NISA",
     name: typeof plan.name === "string" ? plan.name : "",
-    expectedReturn: Number(plan.expectedReturn) || 0,
+    expectedReturn: parseRateInput(plan.expectedReturn),
     withdrawalDay: Math.max(Number(plan.withdrawalDay) || 1, 1),
     withdrawMonth: parseMonth(plan.withdrawMonth) ? plan.withdrawMonth : "",
     lumpSums: normalizeLumpSumHistory(plan),
@@ -3278,7 +3278,7 @@ function buildPlanBalancesAtMonth(settings, targetMonth) {
 }
 
 function projectPlanAssetDetails(plan, birthDate, explicitTargetMonth = null) {
-  const annualReturn = (Number(plan.expectedReturn) || 0) / 100;
+  const annualReturn = parseRateInput(plan.expectedReturn) / 100;
   const monthlyRate = Math.pow(1 + annualReturn, 1 / 12) - 1;
   const targetMonth = explicitTargetMonth || resolveWithdrawExecutionMonth(plan);
   if (!targetMonth) {
@@ -3631,7 +3631,7 @@ function createPlanBlock(plan = {}) {
         <div class="plan-grid">
           <label>種類<select class="plan-type">${typeOptions}</select></label>
           <label>識別名<input class="plan-name" type="text" maxlength="30" placeholder="例: つみたて枠" value="${normalizedPlan.name || ""}" /></label>
-          <label>想定利回り(年%)<input class="plan-expected-return" type="number" step="0.1" value="${normalizedPlan.expectedReturn ?? ""}" /></label>
+          <label>想定利回り(年%)<input class="plan-expected-return" type="number" inputmode="decimal" step="0.01" value="${normalizedPlan.expectedReturn ?? ""}" /></label>
           <label>取崩年月<input class="plan-withdraw-month" type="month" value="${normalizedPlan.withdrawMonth || ""}" /></label>
           <p class="plan-withdraw-hint">※取崩年月が未設定の場合は、積立支出を継続します。</p>
           <label>引き落とし日<input class="plan-withdrawal-day" type="number" min="1" max="31" step="1" value="${normalizedPlan.withdrawalDay ?? 1}" /></label>
@@ -3747,7 +3747,7 @@ function collectPlansFromForm() {
         id: block.querySelector(".plan-id").value,
         type: block.querySelector(".plan-type").value,
         name: block.querySelector(".plan-name").value.trim(),
-        expectedReturn: Number(block.querySelector(".plan-expected-return").value),
+        expectedReturn: parseRateInput(block.querySelector(".plan-expected-return").value),
         withdrawMonth: block.querySelector(".plan-withdraw-month").value,
         withdrawalDay: Number(block.querySelector(".plan-withdrawal-day").value),
         lumpSums,
