@@ -72,7 +72,6 @@ const template = document.getElementById("transaction-item-template");
 const dashboardIncomeTotal = document.getElementById("dashboard-income-total");
 const dashboardExpenseTotal = document.getElementById("dashboard-expense-total");
 const dashboardBalanceTotal = document.getElementById("dashboard-balance-total");
-const dashboardAge60Total = document.getElementById("dashboard-age60-total");
 const dashboardAge65Total = document.getElementById("dashboard-age65-total");
 const dashboardDiagnosisComment = document.getElementById("dashboard-diagnosis-comment");
 const dashboardAssetFormationChart = document.getElementById("dashboard-asset-formation-chart");
@@ -2452,14 +2451,6 @@ function renderDashboard({
   dashboardIncomeTotal.textContent = yen.format(summary.income);
   dashboardExpenseTotal.textContent = yen.format(summary.expense);
   dashboardBalanceTotal.textContent = yen.format(summary.endingBalance);
-  const age60AssetFormationBalance = calculateAssetFormationBalanceAtAge({
-    settings,
-    transactions,
-    recurringExpenses,
-    lifeEvents,
-    assumptions,
-    targetAge: TARGET_AGE_PRIMARY,
-  });
   const age65AssetFormationBalance = calculateAssetFormationBalanceAtAge({
     settings,
     transactions,
@@ -2468,7 +2459,6 @@ function renderDashboard({
     assumptions,
     targetAge: TARGET_AGE_SECONDARY,
   });
-  dashboardAge60Total.textContent = yen.format(age60AssetFormationBalance);
   if (dashboardAge65Total) {
     dashboardAge65Total.textContent = yen.format(age65AssetFormationBalance);
   }
@@ -3336,7 +3326,7 @@ function buildAssetOutlookAtAge({
 function renderAssetForecast(settings) {
   assetForecast.innerHTML = "";
   if (!settings.birthDate || settings.plans.length === 0) {
-    assetForecast.innerHTML = '<p class="chart-empty">生年月日と積立設定を保存すると、現時点と60歳・65歳時点の資産試算が表示されます。</p>';
+    assetForecast.innerHTML = '<p class="chart-empty">生年月日と積立設定を保存すると、現時点と65歳時点の資産試算が表示されます。</p>';
     return;
   }
 
@@ -3347,14 +3337,6 @@ function renderAssetForecast(settings) {
   const currentAge = calculateAge(settings.birthDate);
   const currentAssetTargetMonth = resolveCurrentAssetTargetMonth();
   const currentAssetBaseDate = todayISO();
-  const primaryAssetOutlook = buildAssetOutlookAtAge({
-    settings,
-    transactions,
-    recurringExpenses,
-    lifeEvents,
-    assumptions,
-    targetAge: TARGET_AGE_PRIMARY,
-  });
   const secondaryAssetOutlook = buildAssetOutlookAtAge({
     settings,
     transactions,
@@ -3364,8 +3346,8 @@ function renderAssetForecast(settings) {
     targetAge: TARGET_AGE_SECONDARY,
   });
 
-  const projectedRowsAt60 = primaryAssetOutlook.plansAtAge;
-  const earlyWithdrawPlans = projectedRowsAt60.filter((plan) => !plan.isHeldUntilTargetAge && plan.projectedAmount > 0);
+  const projectedRowsAt65 = secondaryAssetOutlook.plansAtAge;
+  const earlyWithdrawPlans = projectedRowsAt65.filter((plan) => !plan.isHeldUntilTargetAge && plan.projectedAmount > 0);
   const earlyWithdrawPlansForDisplay = earlyWithdrawPlans.map((plan) => {
     const displayTargetMonth = resolveWithdrawExecutionMonth(plan);
     const displayProjection = displayTargetMonth
@@ -3386,11 +3368,10 @@ function renderAssetForecast(settings) {
     };
   });
 
-  const totalAt60 = primaryAssetOutlook.totalAtAge;
   const totalAt65 = secondaryAssetOutlook.totalAtAge;
-  const planBalancesAt60 = primaryAssetOutlook.planBalancesAtAge;
+  const planBalancesAt65 = secondaryAssetOutlook.planBalancesAtAge;
 
-  const rows = planBalancesAt60
+  const rows = planBalancesAt65
     .map(
       (plan) => `
       <li>
@@ -3402,7 +3383,7 @@ function renderAssetForecast(settings) {
     .join("");
 
   const typeTotals = PLAN_TYPES.map((type) => {
-    const amount = planBalancesAt60
+    const amount = planBalancesAt65
       .filter((plan) => plan.type === type)
       .reduce((sum, plan) => sum + plan.projectedAmount, 0);
     return { type, amount };
@@ -3442,7 +3423,7 @@ function renderAssetForecast(settings) {
         aria-controls="${outlookPanelId}"
         id="${outlookTriggerId}"
       >
-        <h3>将来の資産見通し（${createAssetOutlookPointLabel(TARGET_AGE_PRIMARY)}）</h3>
+        <h3>将来の資産見通し（${createAssetOutlookPointLabel(TARGET_AGE_SECONDARY)}）</h3>
         <span class="child-accordion-toggle" aria-hidden="true">+</span>
       </button>
       <div
@@ -3454,20 +3435,19 @@ function renderAssetForecast(settings) {
       >
         <div class="child-accordion-panel-inner">
           <section class="chart asset-outlook">
-            <p class="section-description">現在年齢: <strong>${currentAge}歳</strong> / ${createAssetOutlookPointLabel(TARGET_AGE_PRIMARY)}の一覧は、キャッシュフロー表の資産形成額と同じ計算条件で表示しています。</p>
+            <p class="section-description">現在年齢: <strong>${currentAge}歳</strong> / ${createAssetOutlookPointLabel(TARGET_AGE_SECONDARY)}の一覧は、キャッシュフロー表の資産形成額と同じ計算条件で表示しています。</p>
             <div class="asset-outlook-summary-grid">
-              <div class="asset-total asset-total-compact">${createAssetOutlookTotalLabel(TARGET_AGE_PRIMARY)}: <strong>${yen.format(totalAt60)}</strong></div>
               <div class="asset-total asset-total-compact">${createAssetOutlookTotalLabel(TARGET_AGE_SECONDARY)}: <strong>${yen.format(totalAt65)}</strong></div>
             </div>
-            <h4>${createAssetOutlookPointLabel(TARGET_AGE_PRIMARY)}の想定資産額（契約別）</h4>
-            ${rows ? `<ul class="asset-list">${rows}</ul>` : `<p class="chart-empty">${createAssetOutlookPointLabel(TARGET_AGE_PRIMARY)}の評価対象となる契約はありません。</p>`}
-            <h4>${createAssetOutlookPointLabel(TARGET_AGE_PRIMARY)}の想定資産額（種別別）</h4>
-            ${typeTotalsHtml ? `<ul class="asset-list">${typeTotalsHtml}</ul>` : `<p class="chart-empty">${createAssetOutlookPointLabel(TARGET_AGE_PRIMARY)}の評価対象となる契約はありません。</p>`}
-            <section class="asset-withdraw-card" aria-label="${createAssetOutlookWithdrawTitle(TARGET_AGE_PRIMARY)}">
-              <h4>${createAssetOutlookWithdrawTitle(TARGET_AGE_PRIMARY)}</h4>
+            <h4>${createAssetOutlookPointLabel(TARGET_AGE_SECONDARY)}の想定資産額（契約別）</h4>
+            ${rows ? `<ul class="asset-list">${rows}</ul>` : `<p class="chart-empty">${createAssetOutlookPointLabel(TARGET_AGE_SECONDARY)}の評価対象となる契約はありません。</p>`}
+            <h4>${createAssetOutlookPointLabel(TARGET_AGE_SECONDARY)}の想定資産額（種別別）</h4>
+            ${typeTotalsHtml ? `<ul class="asset-list">${typeTotalsHtml}</ul>` : `<p class="chart-empty">${createAssetOutlookPointLabel(TARGET_AGE_SECONDARY)}の評価対象となる契約はありません。</p>`}
+            <section class="asset-withdraw-card" aria-label="${createAssetOutlookWithdrawTitle(TARGET_AGE_SECONDARY)}">
+              <h4>${createAssetOutlookWithdrawTitle(TARGET_AGE_SECONDARY)}</h4>
               ${earlyWithdrawHtml
     ? `<ul class="asset-list asset-withdraw-list">${earlyWithdrawHtml}</ul>`
-    : `<p class="chart-empty">${createAssetOutlookWithdrawTitle(TARGET_AGE_PRIMARY)}の契約はありません。</p>`}
+    : `<p class="chart-empty">${createAssetOutlookWithdrawTitle(TARGET_AGE_SECONDARY)}の契約はありません。</p>`}
             </section>
           </section>
         </div>
@@ -4410,9 +4390,9 @@ function setupBottomNavigation() {
 }
 
 function setupDashboardCardNavigation() {
-  const isAge60AssetCard = (card) =>
+  const isAssetsJumpCard = (card) =>
     card?.dataset?.dashboardJumpSection === "section-assets"
-    && card.querySelector("#dashboard-age60-total");
+    && card.querySelector("#dashboard-age65-total");
 
   const handleDashboardCardAction = (card) => {
     const sectionId = card?.dataset?.dashboardJumpSection;
@@ -4426,7 +4406,7 @@ function setupDashboardCardNavigation() {
       event.preventDefault();
       const pressedCard = event.currentTarget;
       if (!(pressedCard instanceof HTMLElement)) return;
-      if (isAge60AssetCard(pressedCard)) {
+      if (isAssetsJumpCard(pressedCard)) {
         pressedCard.dataset.suppressNextClickUntil = String(Date.now() + 500);
       }
       handleDashboardCardAction(pressedCard);
@@ -4434,7 +4414,7 @@ function setupDashboardCardNavigation() {
     card.addEventListener("click", (event) => {
       const pressedCard = event.currentTarget;
       if (!(pressedCard instanceof HTMLElement)) return;
-      if (isAge60AssetCard(pressedCard)) {
+      if (isAssetsJumpCard(pressedCard)) {
         const suppressNextClickUntil = Number.parseInt(pressedCard.dataset.suppressNextClickUntil || "0", 10);
         if (Date.now() < suppressNextClickUntil) {
           pressedCard.dataset.suppressNextClickUntil = "0";
