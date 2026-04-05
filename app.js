@@ -3520,7 +3520,10 @@ function renderAssetForecast(settings) {
       <p class="section-description">老後前に取り崩す設定の契約を一覧化しています。取崩し年月は「基本情報・資産形成設定」から編集できます。</p>
       ${earlyWithdrawHtml
     ? `<ul class="asset-list asset-withdraw-list">${earlyWithdrawHtml}</ul>`
-    : `<p class="chart-empty">${createAssetOutlookWithdrawTitle(TARGET_AGE_SECONDARY)}の契約はありません。</p>`}
+    : `<div class="asset-withdraw-placeholder">
+          <p>${createAssetOutlookWithdrawTitle(TARGET_AGE_SECONDARY)}の契約はまだありません。</p>
+          <p>取崩予定がある場合は、「基本情報・資産形成設定」で契約ごとの取崩し年月を登録してください。</p>
+       </div>`}
     </section>
   `;
 
@@ -4392,6 +4395,7 @@ function setActiveAssetTab(tabName, { focusButton = false } = {}) {
     const isActive = panel.dataset.assetTabPanel === nextTab;
     panel.classList.toggle("is-active", isActive);
     panel.hidden = !isActive;
+    panel.setAttribute("aria-hidden", String(!isActive));
   });
 }
 

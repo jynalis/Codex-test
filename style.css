@@ -1368,14 +1368,39 @@ button.plan-card-trigger {
   gap: 14px;
 }
 
-.assets-tablist {
+.assets-tab-intro {
+  border: 1px solid #cddcf0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: linear-gradient(180deg, #f8fbff 0%, #f0f6ff 100%);
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.assets-tab-intro-label {
+  color: #22466f;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.assets-tab-intro-text {
+  color: #365b84;
+  font-size: 0.83rem;
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+.assets-tablist {
+  display: flex;
+  flex-wrap: nowrap;
   gap: 8px;
   padding: 4px;
   border-radius: 14px;
-  background: #f2f6fc;
-  border: 1px solid #d8e3f1;
+  background: linear-gradient(180deg, #edf4fe 0%, #e6effa 100%);
+  border: 1px solid #c9d8eb;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 .assets-tab-button {
@@ -1387,21 +1412,33 @@ button.plan-card-trigger {
   font-size: 0.88rem;
   font-weight: 700;
   line-height: 1.25;
-  min-height: 42px;
-  padding: 10px 8px;
+  min-height: 46px;
+  min-width: 130px;
+  padding: 10px 12px;
+  white-space: nowrap;
+  flex: 1 0 0;
   cursor: pointer;
 }
 
 .assets-tab-button.is-active {
-  color: #0f3763;
+  color: #0d345f;
   background: #fff;
-  border-color: #aac2dd;
-  box-shadow: 0 1px 3px rgba(21, 56, 97, 0.12);
+  border-color: #84a8d0;
+  box-shadow:
+    0 1px 3px rgba(21, 56, 97, 0.14),
+    0 0 0 1px rgba(132, 168, 208, 0.25);
 }
 
 .assets-tab-button:focus-visible {
   outline: 2px solid #2c7fd8;
   outline-offset: 2px;
+}
+
+.assets-tab-panel {
+  border: 1px solid #d5e2f2;
+  border-radius: 12px;
+  padding: 10px;
+  background: linear-gradient(180deg, #fbfdff 0%, #f5f9ff 100%);
 }
 
 .assets-tab-panel[hidden] {
@@ -1413,9 +1450,23 @@ button.plan-card-trigger {
 }
 
 .asset-withdrawal-content {
-  margin-top: 14px;
   display: grid;
   gap: 14px;
+}
+
+.asset-withdraw-placeholder {
+  border: 1px solid #f0d6a8;
+  border-radius: 12px;
+  padding: 12px;
+  background: linear-gradient(180deg, #fff9ef 0%, #fff4e1 100%);
+  display: grid;
+  gap: 6px;
+}
+
+.asset-withdraw-placeholder p {
+  color: #6d4a1a;
+  font-size: 0.9rem;
+  line-height: 1.6;
 }
 
 .asset-list {
