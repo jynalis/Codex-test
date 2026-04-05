@@ -86,7 +86,6 @@ const dashboardJumpCards = Array.from(document.querySelectorAll("[data-dashboard
 const navToast = document.getElementById("nav-toast");
 const accordionSections = Array.from(document.querySelectorAll("[data-accordion-section]"));
 const dashboardSection = document.getElementById("section-home");
-const assetsSection = document.getElementById("section-assets");
 const cashflowSettingsForm = document.getElementById("cashflow-settings-form");
 const cashflowSalaryGrowthRateBefore60Input = document.getElementById("cashflow-salary-growth-rate-before-60");
 const cashflowSalaryCorrectionRateAt60Input = document.getElementById("cashflow-salary-correction-rate-at-60");
@@ -3855,11 +3854,7 @@ function render() {
   );
   renderCashflowTable({ settings, transactions, recurringExpenses, lifeEvents, assumptions });
   markAssetForecastDirty(settings);
-  if (isAssetsSectionExpanded()) {
-    queueAssetForecastRender();
-  } else {
-    clearAssetForecastDOM();
-  }
+  queueAssetForecastRender();
 }
 
 function addTransaction(event) {
@@ -3988,30 +3983,18 @@ function showNavToast(message) {
   }, 1500);
 }
 
-function isAssetsSectionExpanded() {
-  return assetsSection?.classList.contains("is-expanded");
-}
-
 function markAssetForecastDirty(settings) {
   latestAssetForecastSettings = settings;
   assetForecastDirty = true;
 }
 
-function clearAssetForecastDOM() {
-  assetForecastRenderRafId = 0;
-  if (assetFormationContent?.childNodes.length) assetFormationContent.replaceChildren();
-  if (assetWithdrawalContent?.childNodes.length) assetWithdrawalContent.replaceChildren();
-}
-
 function queueAssetForecastRender(force = false) {
   if (!assetFormationContent || !assetWithdrawalContent || !latestAssetForecastSettings) return;
   if (!force && !assetForecastDirty) return;
-  if (!isAssetsSectionExpanded()) return;
   if (assetForecastRenderRafId) return;
 
   assetForecastRenderRafId = window.requestAnimationFrame(() => {
     assetForecastRenderRafId = 0;
-    if (!isAssetsSectionExpanded()) return;
     renderAssetForecast(latestAssetForecastSettings);
     assetForecastDirty = false;
   });
@@ -4132,14 +4115,6 @@ function setAccordionExpanded(section, expanded) {
       clearAccordionCloseTimer(panel);
       panel.hidden = true;
       panel.classList.remove("is-collapsing");
-    }
-  }
-
-  if (section.id === "section-assets" && wasExpanded !== expanded) {
-    if (expanded) {
-      queueAssetForecastRender(true);
-    } else {
-      clearAssetForecastDOM();
     }
   }
 

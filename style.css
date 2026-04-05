@@ -1366,6 +1366,11 @@ button.plan-card-trigger {
 .assets-tab-view {
   display: grid;
   gap: 14px;
+  margin-top: 14px;
+}
+
+.assets-section-header {
+  padding-bottom: 4px;
 }
 
 .assets-tab-intro {
@@ -1392,15 +1397,13 @@ button.plan-card-trigger {
 }
 
 .assets-tablist {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
   padding: 4px;
   border-radius: 14px;
   background: linear-gradient(180deg, #edf4fe 0%, #e6effa 100%);
   border: 1px solid #c9d8eb;
-  overflow-x: auto;
-  scrollbar-width: thin;
 }
 
 .assets-tab-button {
@@ -1409,14 +1412,13 @@ button.plan-card-trigger {
   border-radius: 10px;
   background: transparent;
   color: #365270;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   font-weight: 700;
   line-height: 1.25;
-  min-height: 46px;
-  min-width: 130px;
-  padding: 10px 12px;
+  min-height: 44px;
+  min-width: 0;
+  padding: 9px 8px;
   white-space: nowrap;
-  flex: 1 0 0;
   cursor: pointer;
 }
 
@@ -2354,6 +2356,23 @@ button.ghost {
   .filters button,
   .filters select {
     flex: 1;
+  }
+
+  .assets-tab-view {
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .assets-tablist {
+    gap: 5px;
+    padding: 4px;
+  }
+
+  .assets-tab-button {
+    min-height: 42px;
+    font-size: 0.79rem;
+    letter-spacing: -0.01em;
+    padding: 8px 6px;
   }
 
   .plan-item {

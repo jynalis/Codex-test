@@ -447,8 +447,8 @@
         </div>
       </section>
 
-      <section id="section-assets" class="card section-tone-assets accordion-section" data-nav-section="assets" data-accordion-section>
-        <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-assets" id="trigger-assets">
+      <section id="section-assets" class="card section-tone-assets" data-nav-section="assets">
+        <div class="assets-section-header" id="trigger-assets">
           <div class="section-heading">
             <p class="section-role-badge">将来の資産を確認</p>
             <h2>資産シミュレーション</h2>
@@ -456,58 +456,53 @@
               現在資産形成の構成比と、65歳時点の想定総資産額を確認できます。
             </p>
           </div>
-          <span class="accordion-toggle-icon" aria-hidden="true">＋</span>
-        </button>
-        <div class="accordion-panel" id="panel-assets" role="region" aria-labelledby="trigger-assets">
-          <div class="accordion-panel-inner">
-            <div class="assets-tab-view">
-              <div class="assets-tab-intro">
-                <p class="assets-tab-intro-label">資産系メイン表示</p>
-                <p class="assets-tab-intro-text">下のタブで「資産形成 / キャッシュフロー / 資産取崩」を切り替えて確認できます。</p>
-              </div>
-              <div class="assets-tablist" role="tablist" aria-label="資産シミュレーション表示切り替え">
-                <button type="button" class="assets-tab-button is-active" role="tab" id="asset-tab-formation" aria-selected="true" aria-controls="asset-tabpanel-formation" data-asset-tab="formation">資産形成</button>
-                <button type="button" class="assets-tab-button" role="tab" id="asset-tab-cashflow" aria-selected="false" aria-controls="asset-tabpanel-cashflow" data-asset-tab="cashflow" tabindex="-1">キャッシュフロー</button>
-                <button type="button" class="assets-tab-button" role="tab" id="asset-tab-withdrawal" aria-selected="false" aria-controls="asset-tabpanel-withdrawal" data-asset-tab="withdrawal" tabindex="-1">資産取崩</button>
-              </div>
-
-              <section class="assets-tab-panel is-active" id="asset-tabpanel-formation" role="tabpanel" aria-labelledby="asset-tab-formation" data-asset-tab-panel="formation">
-                <div id="asset-formation-content" class="asset-forecast"></div>
-              </section>
-
-              <section class="assets-tab-panel" id="asset-tabpanel-cashflow" role="tabpanel" aria-labelledby="asset-tab-cashflow" data-asset-tab-panel="cashflow" hidden>
-                <form id="cashflow-settings-form" class="grid cashflow-settings-grid" autocomplete="off">
-                  <label>
-                    59歳までの昇給率（%）
-                    <input id="cashflow-salary-growth-rate-before-60" type="number" inputmode="decimal" min="-10" max="20" step="any" />
-                  </label>
-                  <label>
-                    60歳時の年収補正率（%）
-                    <input id="cashflow-salary-correction-rate-at-60" type="number" inputmode="decimal" min="0" max="300" step="any" />
-                  </label>
-                  <label>
-                    60歳以降の年収補正率（%）
-                    <input id="cashflow-salary-correction-rate-after-60" type="number" inputmode="decimal" min="0" max="300" step="any" />
-                  </label>
-                  <label>
-                    物価上昇率（%）
-                    <input id="cashflow-inflation-rate" type="number" inputmode="decimal" min="-10" max="20" step="any" />
-                  </label>
-                </form>
-                <p class="cashflow-forecast-note">※59歳までは通常昇給、60歳時は一度だけ補正、60歳以降は毎年の補正率で調整します。</p>
-                <p class="cashflow-forecast-note">※将来の見込みを表示します。</p>
-                <p class="cashflow-scroll-hint">左右にスワイプで確認できます。</p>
-                <div class="cashflow-table-wrap" id="cashflow-table-wrap"></div>
-                <div class="cashflow-actions">
-                  <button type="button" id="cashflow-download-pdf-button">PDF保存</button>
-                </div>
-              </section>
-
-              <section class="assets-tab-panel" id="asset-tabpanel-withdrawal" role="tabpanel" aria-labelledby="asset-tab-withdrawal" data-asset-tab-panel="withdrawal" hidden>
-                <div id="asset-withdrawal-content" class="asset-withdrawal-content"></div>
-              </section>
-            </div>
+        </div>
+        <div class="assets-tab-view" role="region" aria-labelledby="trigger-assets">
+          <div class="assets-tab-intro">
+            <p class="assets-tab-intro-label">資産系メイン表示</p>
+            <p class="assets-tab-intro-text">下のタブで「資産形成 / キャッシュフロー / 資産取崩」を切り替えて確認できます。</p>
           </div>
+          <div class="assets-tablist" role="tablist" aria-label="資産シミュレーション表示切り替え">
+            <button type="button" class="assets-tab-button is-active" role="tab" id="asset-tab-formation" aria-selected="true" aria-controls="asset-tabpanel-formation" data-asset-tab="formation">資産形成</button>
+            <button type="button" class="assets-tab-button" role="tab" id="asset-tab-cashflow" aria-selected="false" aria-controls="asset-tabpanel-cashflow" data-asset-tab="cashflow" tabindex="-1">キャッシュフロー</button>
+            <button type="button" class="assets-tab-button" role="tab" id="asset-tab-withdrawal" aria-selected="false" aria-controls="asset-tabpanel-withdrawal" data-asset-tab="withdrawal" tabindex="-1">資産取崩</button>
+          </div>
+
+          <section class="assets-tab-panel is-active" id="asset-tabpanel-formation" role="tabpanel" aria-labelledby="asset-tab-formation" data-asset-tab-panel="formation">
+            <div id="asset-formation-content" class="asset-forecast"></div>
+          </section>
+
+          <section class="assets-tab-panel" id="asset-tabpanel-cashflow" role="tabpanel" aria-labelledby="asset-tab-cashflow" data-asset-tab-panel="cashflow" hidden>
+            <form id="cashflow-settings-form" class="grid cashflow-settings-grid" autocomplete="off">
+              <label>
+                59歳までの昇給率（%）
+                <input id="cashflow-salary-growth-rate-before-60" type="number" inputmode="decimal" min="-10" max="20" step="any" />
+              </label>
+              <label>
+                60歳時の年収補正率（%）
+                <input id="cashflow-salary-correction-rate-at-60" type="number" inputmode="decimal" min="0" max="300" step="any" />
+              </label>
+              <label>
+                60歳以降の年収補正率（%）
+                <input id="cashflow-salary-correction-rate-after-60" type="number" inputmode="decimal" min="0" max="300" step="any" />
+              </label>
+              <label>
+                物価上昇率（%）
+                <input id="cashflow-inflation-rate" type="number" inputmode="decimal" min="-10" max="20" step="any" />
+              </label>
+            </form>
+            <p class="cashflow-forecast-note">※59歳までは通常昇給、60歳時は一度だけ補正、60歳以降は毎年の補正率で調整します。</p>
+            <p class="cashflow-forecast-note">※将来の見込みを表示します。</p>
+            <p class="cashflow-scroll-hint">左右にスワイプで確認できます。</p>
+            <div class="cashflow-table-wrap" id="cashflow-table-wrap"></div>
+            <div class="cashflow-actions">
+              <button type="button" id="cashflow-download-pdf-button">PDF保存</button>
+            </div>
+          </section>
+
+          <section class="assets-tab-panel" id="asset-tabpanel-withdrawal" role="tabpanel" aria-labelledby="asset-tab-withdrawal" data-asset-tab-panel="withdrawal" hidden>
+            <div id="asset-withdrawal-content" class="asset-withdrawal-content"></div>
+          </section>
         </div>
       </section>
 
