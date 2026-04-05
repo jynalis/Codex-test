@@ -93,7 +93,8 @@
                 class="dashboard-card dashboard-card-jump dashboard-card-income"
                 role="button"
                 tabindex="0"
-                data-dashboard-jump-section="section-cashflow"
+                data-dashboard-jump-section="section-assets"
+                data-dashboard-jump-asset-tab="cashflow"
                 aria-label="キャッシュフロー表へ移動"
               >
                 <span>当月収入</span>
@@ -459,48 +460,48 @@
         </button>
         <div class="accordion-panel" id="panel-assets" role="region" aria-labelledby="trigger-assets">
           <div class="accordion-panel-inner">
-            <div id="asset-forecast" class="asset-forecast"></div>
-          </div>
-        </div>
-      </section>
+            <div class="assets-tab-view">
+              <div class="assets-tablist" role="tablist" aria-label="資産シミュレーション表示切り替え">
+                <button type="button" class="assets-tab-button is-active" role="tab" id="asset-tab-formation" aria-selected="true" aria-controls="asset-tabpanel-formation" data-asset-tab="formation">資産形成</button>
+                <button type="button" class="assets-tab-button" role="tab" id="asset-tab-cashflow" aria-selected="false" aria-controls="asset-tabpanel-cashflow" data-asset-tab="cashflow" tabindex="-1">キャッシュフロー</button>
+                <button type="button" class="assets-tab-button" role="tab" id="asset-tab-withdrawal" aria-selected="false" aria-controls="asset-tabpanel-withdrawal" data-asset-tab="withdrawal" tabindex="-1">資産取崩</button>
+              </div>
 
-      <section id="section-cashflow" class="card section-tone-cashflow accordion-section" data-accordion-section>
-        <button type="button" class="accordion-trigger" aria-expanded="false" aria-controls="panel-cashflow" id="trigger-cashflow">
-          <div class="section-heading">
-            <p class="section-role-badge">65歳までの推移を確認</p>
-            <h2>キャッシュフロー表</h2>
-            <p class="section-description">
-              65歳までの毎年の収入・支出・残高を確認、ダウンロードできます。
-            </p>
-          </div>
-          <span class="accordion-toggle-icon" aria-hidden="true">＋</span>
-        </button>
-        <div class="accordion-panel" id="panel-cashflow" role="region" aria-labelledby="trigger-cashflow">
-          <div class="accordion-panel-inner">
-            <form id="cashflow-settings-form" class="grid cashflow-settings-grid" autocomplete="off">
-              <label>
-                59歳までの昇給率（%）
-                <input id="cashflow-salary-growth-rate-before-60" type="number" inputmode="decimal" min="-10" max="20" step="any" />
-              </label>
-              <label>
-                60歳時の年収補正率（%）
-                <input id="cashflow-salary-correction-rate-at-60" type="number" inputmode="decimal" min="0" max="300" step="any" />
-              </label>
-              <label>
-                60歳以降の年収補正率（%）
-                <input id="cashflow-salary-correction-rate-after-60" type="number" inputmode="decimal" min="0" max="300" step="any" />
-              </label>
-              <label>
-                物価上昇率（%）
-                <input id="cashflow-inflation-rate" type="number" inputmode="decimal" min="-10" max="20" step="any" />
-              </label>
-            </form>
-            <p class="cashflow-forecast-note">※59歳までは通常昇給、60歳時は一度だけ補正、60歳以降は毎年の補正率で調整します。</p>
-            <p class="cashflow-forecast-note">※将来の見込みを表示します。</p>
-            <p class="cashflow-scroll-hint">左右にスワイプで確認できます。</p>
-            <div class="cashflow-table-wrap" id="cashflow-table-wrap"></div>
-            <div class="cashflow-actions">
-              <button type="button" id="cashflow-download-pdf-button">PDF保存</button>
+              <section class="assets-tab-panel is-active" id="asset-tabpanel-formation" role="tabpanel" aria-labelledby="asset-tab-formation" data-asset-tab-panel="formation">
+                <div id="asset-formation-content" class="asset-forecast"></div>
+              </section>
+
+              <section class="assets-tab-panel" id="asset-tabpanel-cashflow" role="tabpanel" aria-labelledby="asset-tab-cashflow" data-asset-tab-panel="cashflow" hidden>
+                <form id="cashflow-settings-form" class="grid cashflow-settings-grid" autocomplete="off">
+                  <label>
+                    59歳までの昇給率（%）
+                    <input id="cashflow-salary-growth-rate-before-60" type="number" inputmode="decimal" min="-10" max="20" step="any" />
+                  </label>
+                  <label>
+                    60歳時の年収補正率（%）
+                    <input id="cashflow-salary-correction-rate-at-60" type="number" inputmode="decimal" min="0" max="300" step="any" />
+                  </label>
+                  <label>
+                    60歳以降の年収補正率（%）
+                    <input id="cashflow-salary-correction-rate-after-60" type="number" inputmode="decimal" min="0" max="300" step="any" />
+                  </label>
+                  <label>
+                    物価上昇率（%）
+                    <input id="cashflow-inflation-rate" type="number" inputmode="decimal" min="-10" max="20" step="any" />
+                  </label>
+                </form>
+                <p class="cashflow-forecast-note">※59歳までは通常昇給、60歳時は一度だけ補正、60歳以降は毎年の補正率で調整します。</p>
+                <p class="cashflow-forecast-note">※将来の見込みを表示します。</p>
+                <p class="cashflow-scroll-hint">左右にスワイプで確認できます。</p>
+                <div class="cashflow-table-wrap" id="cashflow-table-wrap"></div>
+                <div class="cashflow-actions">
+                  <button type="button" id="cashflow-download-pdf-button">PDF保存</button>
+                </div>
+              </section>
+
+              <section class="assets-tab-panel" id="asset-tabpanel-withdrawal" role="tabpanel" aria-labelledby="asset-tab-withdrawal" data-asset-tab-panel="withdrawal" hidden>
+                <div id="asset-withdrawal-content" class="asset-withdrawal-content"></div>
+              </section>
             </div>
           </div>
         </div>
