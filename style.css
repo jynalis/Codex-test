@@ -1363,6 +1363,61 @@ button.plan-card-trigger {
   gap: 14px;
 }
 
+.assets-tab-view {
+  display: grid;
+  gap: 14px;
+}
+
+.assets-tablist {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 4px;
+  border-radius: 14px;
+  background: #f2f6fc;
+  border: 1px solid #d8e3f1;
+}
+
+.assets-tab-button {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: #365270;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.25;
+  min-height: 42px;
+  padding: 10px 8px;
+  cursor: pointer;
+}
+
+.assets-tab-button.is-active {
+  color: #0f3763;
+  background: #fff;
+  border-color: #aac2dd;
+  box-shadow: 0 1px 3px rgba(21, 56, 97, 0.12);
+}
+
+.assets-tab-button:focus-visible {
+  outline: 2px solid #2c7fd8;
+  outline-offset: 2px;
+}
+
+.assets-tab-panel[hidden] {
+  display: none !important;
+}
+
+.assets-tab-panel.is-active {
+  display: block;
+}
+
+.asset-withdrawal-content {
+  margin-top: 14px;
+  display: grid;
+  gap: 14px;
+}
+
 .asset-list {
   list-style: none;
   margin: 0;
@@ -2305,6 +2360,17 @@ button.ghost {
   .asset-outlook-summary-grid {
     grid-template-columns: 1fr;
     gap: 8px;
+  }
+
+  .assets-tablist {
+    gap: 6px;
+    padding: 3px;
+  }
+
+  .assets-tab-button {
+    font-size: 0.82rem;
+    min-height: 40px;
+    padding: 8px 6px;
   }
 
   .diagnosis-card {

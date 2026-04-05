@@ -34,7 +34,10 @@ const entryStartMonthInput = document.getElementById("entry-start-month");
 const birthDateInput = document.getElementById("birth-date");
 const planList = document.getElementById("plan-list");
 const addPlanButton = document.getElementById("add-plan-button");
-const assetForecast = document.getElementById("asset-forecast");
+const assetFormationContent = document.getElementById("asset-formation-content");
+const assetWithdrawalContent = document.getElementById("asset-withdrawal-content");
+const assetTabButtons = Array.from(document.querySelectorAll("[data-asset-tab]"));
+const assetTabPanels = Array.from(document.querySelectorAll("[data-asset-tab-panel]"));
 const recurringForm = document.getElementById("recurring-form");
 const recurringCategoryInput = document.getElementById("recurring-category");
 const recurringAmountInput = document.getElementById("recurring-amount");
@@ -96,6 +99,7 @@ const accordionCollapseWaiters = new WeakMap();
 const NAV_CLOSE_FAR_DISTANCE = 520;
 let navActionToken = 0;
 let mobileUpdateScrollToken = 0;
+let activeAssetTab = "formation";
 
 let latestAssetForecastSettings = null;
 let assetForecastDirty = true;
@@ -3404,9 +3408,13 @@ function buildAssetOutlookAtAge({
 }
 
 function renderAssetForecast(settings) {
-  assetForecast.innerHTML = "";
+  if (!assetFormationContent || !assetWithdrawalContent) return;
+  assetFormationContent.innerHTML = "";
+  assetWithdrawalContent.innerHTML = "";
   if (!settings.birthDate || settings.plans.length === 0) {
-    assetForecast.innerHTML = '<p class="chart-empty">生年月日と積立設定を保存すると、現時点と65歳時点の資産試算が表示されます。</p>';
+    const emptyMessage = '<p class="chart-empty">生年月日と積立設定を保存すると、現時点と65歳時点の資産試算が表示されます。</p>';
+    assetFormationContent.innerHTML = emptyMessage;
+    assetWithdrawalContent.innerHTML = emptyMessage;
     return;
   }
 
@@ -3489,87 +3497,35 @@ function renderAssetForecast(settings) {
     .map((item) => `<li><span>${item.type} 合計</span><strong>${yen.format(item.amount)}</strong></li>`)
     .join("");
 
-  const outlookPanelId = "panel-assets-outlook";
-  const outlookTriggerId = "trigger-assets-outlook";
-  const compositionPanelId = "panel-assets-composition";
-  const compositionTriggerId = "trigger-assets-composition";
-
-  assetForecast.innerHTML = `
-    <section class="child-accordion" data-child-accordion>
-      <button
-        type="button"
-        class="child-accordion-trigger"
-        aria-expanded="false"
-        aria-controls="${outlookPanelId}"
-        id="${outlookTriggerId}"
-      >
-        <h3>将来の資産見通し（${createAssetOutlookPointLabel(TARGET_AGE_SECONDARY)}）</h3>
-        <span class="child-accordion-toggle" aria-hidden="true">+</span>
-      </button>
-      <div
-        class="child-accordion-panel"
-        id="${outlookPanelId}"
-        role="region"
-        aria-labelledby="${outlookTriggerId}"
-        aria-hidden="true"
-      >
-        <div class="child-accordion-panel-inner">
-          <section class="chart asset-outlook">
-            <p class="section-description">現在年齢: <strong>${currentAge}歳</strong> / ${createAssetOutlookPointLabel(TARGET_AGE_SECONDARY)}の一覧は、キャッシュフロー表の資産形成額と同じ計算条件で表示しています。</p>
-            <div class="asset-outlook-summary-grid">
-              <div class="asset-total asset-total-compact">${createAssetOutlookTotalLabel(TARGET_AGE_SECONDARY)}: <strong>${yen.format(totalAt65)}</strong></div>
-            </div>
-            <h4>${createAssetOutlookPointLabel(TARGET_AGE_SECONDARY)}の想定資産額（契約別）</h4>
-            ${rows ? `<ul class="asset-list">${rows}</ul>` : `<p class="chart-empty">${createAssetOutlookPointLabel(TARGET_AGE_SECONDARY)}の評価対象となる契約はありません。</p>`}
-            <h4>${createAssetOutlookPointLabel(TARGET_AGE_SECONDARY)}の想定資産額（種別別）</h4>
-            ${typeTotalsHtml ? `<ul class="asset-list">${typeTotalsHtml}</ul>` : `<p class="chart-empty">${createAssetOutlookPointLabel(TARGET_AGE_SECONDARY)}の評価対象となる契約はありません。</p>`}
-            <section class="asset-withdraw-card" aria-label="${createAssetOutlookWithdrawTitle(TARGET_AGE_SECONDARY)}">
-              <h4>${createAssetOutlookWithdrawTitle(TARGET_AGE_SECONDARY)}</h4>
-              ${earlyWithdrawHtml
-    ? `<ul class="asset-list asset-withdraw-list">${earlyWithdrawHtml}</ul>`
-    : `<p class="chart-empty">${createAssetOutlookWithdrawTitle(TARGET_AGE_SECONDARY)}の契約はありません。</p>`}
-            </section>
-          </section>
-        </div>
+  assetFormationContent.innerHTML = `
+    <section class="chart asset-outlook">
+      <p class="section-description">現在年齢: <strong>${currentAge}歳</strong> / ${createAssetOutlookPointLabel(TARGET_AGE_SECONDARY)}の一覧は、キャッシュフロー表の資産形成額と同じ計算条件で表示しています。</p>
+      <div class="asset-outlook-summary-grid">
+        <div class="asset-total asset-total-compact">${createAssetOutlookTotalLabel(TARGET_AGE_SECONDARY)}: <strong>${yen.format(totalAt65)}</strong></div>
       </div>
+      <h4>${createAssetOutlookPointLabel(TARGET_AGE_SECONDARY)}の想定資産額（契約別）</h4>
+      ${rows ? `<ul class="asset-list">${rows}</ul>` : `<p class="chart-empty">${createAssetOutlookPointLabel(TARGET_AGE_SECONDARY)}の評価対象となる契約はありません。</p>`}
+      <h4>${createAssetOutlookPointLabel(TARGET_AGE_SECONDARY)}の想定資産額（種別別）</h4>
+      ${typeTotalsHtml ? `<ul class="asset-list">${typeTotalsHtml}</ul>` : `<p class="chart-empty">${createAssetOutlookPointLabel(TARGET_AGE_SECONDARY)}の評価対象となる契約はありません。</p>`}
+    </section>
+    <section class="chart asset-composition">
+      <h4>現在資産形成の構成比</h4>
+      <p class="section-description">現在入力されている資産形成の契約（積立・一括入金）の実績をもとに算出しています（基準日: ${currentAssetBaseDate}）。</p>
     </section>
   `;
 
-  const compositionAccordion = document.createElement("section");
-  compositionAccordion.className = "child-accordion";
-  compositionAccordion.dataset.childAccordion = "";
-  compositionAccordion.innerHTML = `
-    <button
-      type="button"
-      class="child-accordion-trigger"
-      aria-expanded="false"
-      aria-controls="${compositionPanelId}"
-      id="${compositionTriggerId}"
-    >
-      <h3>現在資産形成の構成比</h3>
-      <span class="child-accordion-toggle" aria-hidden="true">+</span>
-    </button>
-    <div
-      class="child-accordion-panel"
-      id="${compositionPanelId}"
-      role="region"
-      aria-labelledby="${compositionTriggerId}"
-      aria-hidden="true"
-    >
-      <div class="child-accordion-panel-inner">
-        <section class="chart asset-composition">
-          <p class="section-description">現在入力されている資産形成の契約（積立・一括入金）の実績をもとに算出しています（基準日: ${currentAssetBaseDate}）。</p>
-        </section>
-      </div>
-    </div>
+  assetWithdrawalContent.innerHTML = `
+    <section class="chart asset-withdraw-card" aria-label="${createAssetOutlookWithdrawTitle(TARGET_AGE_SECONDARY)}">
+      <h4>${createAssetOutlookWithdrawTitle(TARGET_AGE_SECONDARY)}</h4>
+      <p class="section-description">老後前に取り崩す設定の契約を一覧化しています。取崩し年月は「基本情報・資産形成設定」から編集できます。</p>
+      ${earlyWithdrawHtml
+    ? `<ul class="asset-list asset-withdraw-list">${earlyWithdrawHtml}</ul>`
+    : `<p class="chart-empty">${createAssetOutlookWithdrawTitle(TARGET_AGE_SECONDARY)}の契約はありません。</p>`}
+    </section>
   `;
 
-  const chartSection = compositionAccordion.querySelector(".asset-composition");
-  if (!chartSection) {
-    assetForecast.appendChild(compositionAccordion);
-    setupChildAccordions(assetForecast);
-    return;
-  }
+  const chartSection = assetFormationContent.querySelector(".asset-composition");
+  if (!chartSection) return;
 
   const currentTotal = currentRows.reduce((sum, plan) => sum + plan.currentAmount, 0);
   if (currentRows.length === 0 || currentTotal === 0) {
@@ -3577,8 +3533,6 @@ function renderAssetForecast(settings) {
     empty.className = "chart-empty";
     empty.textContent = "データがありません";
     chartSection.appendChild(empty);
-    assetForecast.appendChild(compositionAccordion);
-    setupChildAccordions(assetForecast);
     return;
   }
 
@@ -3592,9 +3546,6 @@ function renderAssetForecast(settings) {
   });
   chartSection.appendChild(pieWrap);
   chartSection.appendChild(legend);
-
-  assetForecast.appendChild(compositionAccordion);
-  setupChildAccordions(assetForecast);
 }
 
 function createHistoryRow({ type, month = "", amount = "" } = {}) {
@@ -4045,13 +3996,12 @@ function markAssetForecastDirty(settings) {
 
 function clearAssetForecastDOM() {
   assetForecastRenderRafId = 0;
-  if (assetForecast?.childNodes.length) {
-    assetForecast.replaceChildren();
-  }
+  if (assetFormationContent?.childNodes.length) assetFormationContent.replaceChildren();
+  if (assetWithdrawalContent?.childNodes.length) assetWithdrawalContent.replaceChildren();
 }
 
 function queueAssetForecastRender(force = false) {
-  if (!assetForecast || !latestAssetForecastSettings) return;
+  if (!assetFormationContent || !assetWithdrawalContent || !latestAssetForecastSettings) return;
   if (!force && !assetForecastDirty) return;
   if (!isAssetsSectionExpanded()) return;
   if (assetForecastRenderRafId) return;
@@ -4424,6 +4374,56 @@ function scrollToSection(sectionId, { actionToken, toggleIfExpanded = false } = 
   });
 }
 
+function setActiveAssetTab(tabName, { focusButton = false } = {}) {
+  const nextTab = assetTabPanels.some((panel) => panel.dataset.assetTabPanel === tabName) ? tabName : "formation";
+  activeAssetTab = nextTab;
+
+  assetTabButtons.forEach((button) => {
+    const isActive = button.dataset.assetTab === nextTab;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+    button.tabIndex = isActive ? 0 : -1;
+    if (focusButton && isActive) {
+      button.focus({ preventScroll: true });
+    }
+  });
+
+  assetTabPanels.forEach((panel) => {
+    const isActive = panel.dataset.assetTabPanel === nextTab;
+    panel.classList.toggle("is-active", isActive);
+    panel.hidden = !isActive;
+  });
+}
+
+function setupAssetTabs() {
+  if (!assetTabButtons.length || !assetTabPanels.length) return;
+  setActiveAssetTab("formation");
+  assetTabButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      setActiveAssetTab(button.dataset.assetTab);
+    });
+    button.addEventListener("keydown", (event) => {
+      const currentIndex = assetTabButtons.indexOf(button);
+      if (currentIndex < 0) return;
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        const nextIndex = (currentIndex + 1) % assetTabButtons.length;
+        setActiveAssetTab(assetTabButtons[nextIndex].dataset.assetTab, { focusButton: true });
+      } else if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        const nextIndex = (currentIndex - 1 + assetTabButtons.length) % assetTabButtons.length;
+        setActiveAssetTab(assetTabButtons[nextIndex].dataset.assetTab, { focusButton: true });
+      } else if (event.key === "Home") {
+        event.preventDefault();
+        setActiveAssetTab(assetTabButtons[0].dataset.assetTab, { focusButton: true });
+      } else if (event.key === "End") {
+        event.preventDefault();
+        setActiveAssetTab(assetTabButtons[assetTabButtons.length - 1].dataset.assetTab, { focusButton: true });
+      }
+    });
+  });
+}
+
 function setupBottomNavigation() {
   const handleBottomNavAction = (button) => {
     if (!button?.dataset?.navTarget) return;
@@ -4482,6 +4482,9 @@ function setupDashboardCardNavigation() {
   const handleDashboardCardAction = (card) => {
     const sectionId = card?.dataset?.dashboardJumpSection;
     if (!sectionId) return;
+    if (sectionId === "section-assets") {
+      setActiveAssetTab(card.dataset.dashboardJumpAssetTab || "formation");
+    }
     scrollToSection(sectionId, { toggleIfExpanded: false });
   };
 
@@ -4626,6 +4629,7 @@ function init() {
   cashflowDownloadPdfButton?.addEventListener("click", downloadCashflowPdf);
   setupSectionAccordions();
   setupChildAccordions();
+  setupAssetTabs();
   setupBottomNavigation();
   setupDashboardCardNavigation();
   assetGrowthMetricToggle?.addEventListener("click", handleAssetGrowthMetricToggleClick);
